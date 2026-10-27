@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check tag matches Cargo.toml version
+        shell: bash
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match Cargo.toml version $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - run: cargo test
+      - run: cargo build --release
+
+      # The asset name is what the self-update looks for: SurvivorsForge-<version>-<target>.zip
+      - name: Package
+        shell: pwsh
+        run: Compress-Archive -Path target/release/SurvivorsForge.exe -DestinationPath "SurvivorsForge-$env:VERSION-x86_64-pc-windows-msvc.zip"
+
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "SurvivorsForge-$VERSION-x86_64-pc-windows-msvc.zip" --title "SurvivorsForge $VERSION" --generate-notes

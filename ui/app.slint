@@ -1,0 +1,490 @@
+import { LineEdit, ScrollView } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { AddonRow, ActionButton, LinkButton, NavItem, AddonRowView, Overlay, DialogCard, TitleBar, ResizeEdges } from "components.slint";
+
+export { AddonRow }
+
+component SetupView inherits Rectangle {
+    in-out property <string> path;
+    in property <string> error;
+    in property <string> warning;
+    callback browse();
+    callback confirm();
+
+    background: Theme.bg;
+
+    VerticalLayout {
+        alignment: center;
+        HorizontalLayout {
+            alignment: center;
+            Rectangle {
+                width: 560px;
+                border-radius: 8px;
+                background: Theme.surface-1;
+                VerticalLayout {
+                    padding: 32px;
+                    spacing: 16px;
+                    Text {
+                        text: "Welcome to SurvivorsForge";
+                        font-size: Theme.title;
+                        font-weight: 700;
+                        color: Theme.text;
+                    }
+                    Text {
+                        text: "Select the AddOns folder of Azeroth Survivors. It sits next to the game's executable, for example ...\\benilla-config\\AddOns.";
+                        font-size: Theme.body;
+                        color: Theme.text-muted;
+                        wrap: word-wrap;
+                    }
+                    HorizontalLayout {
+                        spacing: Theme.gap-tight;
+                        LineEdit {
+                            text <=> root.path;
+                            placeholder-text: "AddOns folder";
+                            accepted => { root.confirm(); }
+                        }
+                        ActionButton {
+                            text: "Browse...";
+                            clicked => { root.browse(); }
+                        }
+                    }
+                    if root.error != "" : Text {
+                        text: root.error;
+                        font-size: Theme.body;
+                        color: Theme.danger;
+                        wrap: word-wrap;
+                    }
+                    if root.warning != "" : Text {
+                        text: root.warning;
+                        font-size: Theme.body;
+                        color: Theme.accent;
+                        wrap: word-wrap;
+                    }
+                    HorizontalLayout {
+                        alignment: end;
+                        ActionButton {
+                            text: root.warning != "" ? "Use this folder anyway" : "Continue";
+                            primary: true;
+                            enabled: root.path != "";
+                            clicked => { root.confirm(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+component SettingsView inherits VerticalLayout {
+    in-out property <string> path;
+    in property <string> message;
+    in property <bool> message-error;
+    in property <string> version;
+    callback browse();
+    callback save();
+
+    padding-left: Theme.gap-loose;
+    padding-right: Theme.gap-loose;
+    spacing: Theme.gap-loose;
+    alignment: start;
+
+    VerticalLayout {
+        spacing: Theme.gap-tight;
+        Text { text: "AddOns folder"; font-size: Theme.body; font-weight: 700; color: Theme.text; }
+        HorizontalLayout {
+            spacing: Theme.gap-tight;
+            LineEdit { text <=> root.path; }
+            ActionButton { text: "Browse..."; clicked => { root.browse(); } }
+        }
+    }
+    HorizontalLayout {
+        spacing: 16px;
+        alignment: start;
+        ActionButton { text: "Save"; primary: true; clicked => { root.save(); } }
+        VerticalLayout {
+            alignment: center;
+            Text {
+                text: root.message;
+                font-size: Theme.body;
+                color: root.message-error ? Theme.danger : Theme.ok;
+            }
+        }
+    }
+    Text {
+        text: "SurvivorsForge " + root.version;
+        font-size: Theme.meta;
+        color: Theme.text-muted;
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "SurvivorsForge";
+    no-frame: true;
+    min-width: 960px;
+    min-height: 620px;
+    preferred-width: 1100px;
+    preferred-height: 720px;
+    background: Theme.bg;
+    default-font-family: "Segoe UI";
+
+    in property <string> app-version;
+
+    // Own window frame
+    callback start-drag();
+    callback start-resize(int);
+    callback minimize();
+    callback toggle-maximize();
+    callback close-window();
+    property <length> title-height: 36px;
+
+    // First start
+    in property <bool> needs-setup;
+    in-out property <string> setup-path;
+    in property <string> setup-error;
+    in property <string> setup-warning;
+    callback setup-browse();
+    callback setup-confirm();
+
+    // 0 installed, 1 browse, 2 settings
+    in-out property <int> page: 0;
+    in property <[AddonRow]> installed-rows;
+    in property <[AddonRow]> browse-rows;
+    in property <int> installed-total;
+    in-out property <string> search;
+    callback search-changed(string);
+    in property <string> addons-dir;
+    in property <int> update-count;
+    in property <bool> checking;
+    callback check-updates();
+    callback update-all();
+    callback install-zip();
+    callback add-repo();
+    callback row-action(string);
+    callback row-remove(string);
+    callback row-open(string);
+
+    in property <string> status-text;
+    in property <bool> status-error;
+
+    // Settings
+    in-out property <string> settings-path;
+    in property <string> settings-message;
+    in property <bool> settings-message-error;
+    callback settings-browse();
+    callback settings-save();
+
+    // Confirmation dialog
+    in property <bool> confirm-open;
+    in property <string> confirm-title;
+    in property <string> confirm-text;
+    in property <string> confirm-ok;
+    in property <bool> confirm-danger;
+    callback confirm-accept();
+    callback confirm-cancel();
+
+    // Add-repo dialog
+    in-out property <bool> repo-open;
+    in-out property <string> repo-input;
+    in property <string> repo-error;
+    in property <bool> repo-busy;
+    callback repo-submit();
+    callback repo-cancel();
+
+    // Self-update banner, empty version = hidden
+    in property <string> self-update-version;
+    in property <bool> self-update-busy;
+    callback self-update();
+
+    if root.needs-setup : SetupView {
+        y: root.title-height;
+        width: parent.width;
+        height: parent.height - root.title-height;
+        path <=> root.setup-path;
+        error: root.setup-error;
+        warning: root.setup-warning;
+        browse => { root.setup-browse(); }
+        confirm => { root.setup-confirm(); }
+    }
+
+    if !root.needs-setup : HorizontalLayout {
+        y: root.title-height;
+        width: parent.width;
+        height: parent.height - root.title-height;
+
+        Rectangle {
+            width: 220px;
+            background: Theme.surface-1;
+            VerticalLayout {
+                padding: 16px;
+                spacing: 4px;
+                Text {
+                    text: "SurvivorsForge";
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: Theme.text;
+                }
+                Text {
+                    text: "Azeroth Survivors addons";
+                    font-size: Theme.meta;
+                    color: Theme.text-muted;
+                }
+                Rectangle { height: Theme.gap-loose; }
+                NavItem {
+                    text: "Installed (" + root.installed-total + ")";
+                    active: root.page == 0;
+                    clicked => { root.page = 0; }
+                }
+                NavItem {
+                    text: "Browse";
+                    active: root.page == 1;
+                    clicked => { root.page = 1; }
+                }
+                NavItem {
+                    text: "Settings";
+                    active: root.page == 2;
+                    clicked => { root.page = 2; }
+                }
+                Rectangle { vertical-stretch: 1; }
+                Text {
+                    text: root.addons-dir;
+                    font-size: Theme.meta;
+                    color: Theme.text-muted;
+                    wrap: word-wrap;
+                }
+                Text {
+                    text: "v" + root.app-version;
+                    font-size: Theme.meta;
+                    color: Theme.text-muted;
+                }
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1;
+
+            if root.self-update-version != "" : Rectangle {
+                height: 44px;
+                background: Theme.surface-2;
+                HorizontalLayout {
+                    padding-left: Theme.gap-loose;
+                    padding-right: Theme.gap-loose;
+                    spacing: 16px;
+                    Text {
+                        text: "SurvivorsForge " + root.self-update-version + " is available.";
+                        font-size: Theme.body;
+                        color: Theme.text;
+                        vertical-alignment: center;
+                        horizontal-stretch: 1;
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        ActionButton {
+                            text: root.self-update-busy ? "Updating..." : "Update and restart";
+                            enabled: !root.self-update-busy;
+                            clicked => { root.self-update(); }
+                        }
+                    }
+                }
+            }
+
+            HorizontalLayout {
+                padding: Theme.gap-loose;
+                spacing: Theme.gap-tight;
+                Text {
+                    text: root.page == 0 ? "Installed" : root.page == 1 ? "Browse verified addons" : "Settings";
+                    font-size: Theme.title;
+                    font-weight: 700;
+                    color: Theme.text;
+                    vertical-alignment: center;
+                }
+                Rectangle { horizontal-stretch: 1; }
+                if root.page != 2 : LineEdit {
+                    width: 220px;
+                    placeholder-text: "Search name or author";
+                    text <=> root.search;
+                    edited(text) => { root.search-changed(text); }
+                }
+                if root.page == 0 : ActionButton {
+                    text: root.checking ? "Checking..." : "Check for updates";
+                    enabled: !root.checking;
+                    clicked => { root.check-updates(); }
+                }
+                if root.page == 0 : ActionButton {
+                    text: "Install zip";
+                    clicked => { root.install-zip(); }
+                }
+                if root.page == 0 : ActionButton {
+                    text: "Add repo";
+                    clicked => { root.add-repo(); }
+                }
+                if root.page == 0 : ActionButton {
+                    text: root.update-count > 0 ? "Update all (" + root.update-count + ")" : "All up to date";
+                    primary: root.update-count > 0;
+                    enabled: root.update-count > 0;
+                    clicked => { root.update-all(); }
+                }
+            }
+
+            if root.page == 0 : ScrollView {
+                vertical-stretch: 1;
+                VerticalLayout {
+                    padding-left: Theme.gap-loose;
+                    padding-right: Theme.gap-loose;
+                    padding-bottom: Theme.gap-loose;
+                    spacing: 4px;
+                    alignment: start;
+                    for row in root.installed-rows : AddonRowView {
+                        addon: row;
+                        action => { root.row-action(row.id); }
+                        remove => { root.row-remove(row.id); }
+                        open => { root.row-open(row.id); }
+                    }
+                    if root.installed-rows.length == 0 : Text {
+                        text: root.search != "" ? "No installed addon matches your search." : "No addons installed yet. Browse the verified addons, install a zip or add a GitHub repo.";
+                        font-size: Theme.body;
+                        color: Theme.text-muted;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+
+            if root.page == 1 : ScrollView {
+                vertical-stretch: 1;
+                VerticalLayout {
+                    padding-left: Theme.gap-loose;
+                    padding-right: Theme.gap-loose;
+                    padding-bottom: Theme.gap-loose;
+                    spacing: 4px;
+                    alignment: start;
+                    for row in root.browse-rows : AddonRowView {
+                        addon: row;
+                        action => { root.row-action(row.id); }
+                        open => { root.row-open(row.id); }
+                    }
+                    if root.browse-rows.length == 0 : Text {
+                        text: "No verified addon matches your search.";
+                        font-size: Theme.body;
+                        color: Theme.text-muted;
+                    }
+                }
+            }
+
+            if root.page == 2 : SettingsView {
+                vertical-stretch: 1;
+                path <=> root.settings-path;
+                message: root.settings-message;
+                message-error: root.settings-message-error;
+                version: root.app-version;
+                browse => { root.settings-browse(); }
+                save => { root.settings-save(); }
+            }
+
+            Rectangle {
+                height: 28px;
+                background: Theme.surface-1;
+                Text {
+                    x: Theme.gap-loose;
+                    width: parent.width - 2 * Theme.gap-loose;
+                    height: parent.height;
+                    text: root.status-text;
+                    font-size: Theme.meta;
+                    vertical-alignment: center;
+                    color: root.status-error ? Theme.danger : Theme.text-muted;
+                    overflow: elide;
+                }
+            }
+        }
+    }
+
+    if root.repo-open : Overlay {
+        y: root.title-height;
+        width: parent.width;
+        height: parent.height - root.title-height;
+        DialogCard {
+            title: "Add GitHub repo";
+            Text {
+                text: "SurvivorsForge checks the latest release, then the newest tag, then the default branch for an addon.";
+                font-size: Theme.body;
+                color: Theme.text-muted;
+                wrap: word-wrap;
+            }
+            LineEdit {
+                text <=> root.repo-input;
+                placeholder-text: "owner/repo or https://github.com/owner/repo";
+                enabled: !root.repo-busy;
+                init => { self.focus(); }
+                accepted => { root.repo-submit(); }
+            }
+            if root.repo-error != "" : Text {
+                text: root.repo-error;
+                font-size: Theme.body;
+                color: Theme.danger;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                alignment: end;
+                spacing: Theme.gap-tight;
+                ActionButton {
+                    text: "Cancel";
+                    enabled: !root.repo-busy;
+                    clicked => { root.repo-cancel(); }
+                }
+                ActionButton {
+                    text: root.repo-busy ? "Checking..." : "Check repo";
+                    primary: true;
+                    enabled: !root.repo-busy && root.repo-input != "";
+                    clicked => { root.repo-submit(); }
+                }
+            }
+        }
+    }
+
+    if root.confirm-open : Overlay {
+        y: root.title-height;
+        width: parent.width;
+        height: parent.height - root.title-height;
+        DialogCard {
+            title: root.confirm-title;
+            Text {
+                text: root.confirm-text;
+                font-size: Theme.body;
+                color: Theme.text;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                alignment: end;
+                spacing: Theme.gap-tight;
+                ActionButton {
+                    text: "Cancel";
+                    clicked => { root.confirm-cancel(); }
+                }
+                ActionButton {
+                    text: root.confirm-ok;
+                    primary: !root.confirm-danger;
+                    danger: root.confirm-danger;
+                    clicked => { root.confirm-accept(); }
+                }
+            }
+        }
+    }
+
+    TitleBar {
+        x: 0;
+        y: 0;
+        width: parent.width;
+        title: root.title;
+        maximized: root.maximized;
+        start-drag => { root.start-drag(); }
+        minimize => { root.minimize(); }
+        toggle-maximize => { root.toggle-maximize(); }
+        close => { root.close-window(); }
+    }
+
+    if !root.maximized : ResizeEdges {
+        x: 0;
+        y: 0;
+        width: parent.width;
+        height: parent.height;
+        start-resize(direction) => { root.start-resize(direction); }
+    }
+}

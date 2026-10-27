@@ -1,0 +1,424 @@
+import { Theme } from "theme.slint";
+
+export struct AddonRow {
+    id: string,
+    name: string,
+    initial: string,
+    author: string,
+    version: string,
+    badge: string,
+    description: string,
+    status: string,
+    // 0 neutral, 1 ok, 2 update available, 3 error
+    status-kind: int,
+    // Empty when the row offers no main action.
+    action: string,
+    busy: bool,
+    can-remove: bool,
+    can-open: bool,
+    warning: string,
+}
+
+export component ActionButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> primary;
+    in property <bool> danger;
+    in property <bool> enabled: true;
+    callback clicked;
+
+    accessible-role: button;
+    accessible-label: root.text;
+    height: 32px;
+    min-width: label.preferred-width + 28px;
+    border-radius: Theme.radius;
+    background: !root.enabled ? Theme.surface-2
+        : root.primary ? (touch.pressed ? Theme.accent : touch.has-hover ? Theme.accent-hover : Theme.accent)
+        : touch.pressed ? Theme.surface-2 : touch.has-hover ? Theme.surface-3 : Theme.surface-2;
+
+    label := Text {
+        width: parent.width;
+        height: parent.height;
+        text: root.text;
+        font-size: Theme.body;
+        font-weight: 600;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        color: !root.enabled ? Theme.text-muted : root.primary ? Theme.on-accent : root.danger ? Theme.danger : Theme.text;
+    }
+
+    touch := TouchArea {
+        width: parent.width;
+        height: parent.height;
+        enabled: root.enabled;
+        mouse-cursor: root.enabled ? pointer : default;
+        clicked => { root.clicked(); }
+    }
+}
+
+// Small text-only control for secondary row actions (open, remove).
+export component LinkButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> danger;
+    callback clicked;
+
+    accessible-role: button;
+    accessible-label: root.text;
+    height: 24px;
+    min-width: label.preferred-width + 12px;
+    border-radius: 4px;
+    background: touch.has-hover ? Theme.surface-3 : transparent;
+
+    label := Text {
+        width: parent.width;
+        height: parent.height;
+        text: root.text;
+        font-size: Theme.meta;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        color: root.danger && touch.has-hover ? Theme.danger : Theme.text-muted;
+    }
+
+    touch := TouchArea {
+        width: parent.width;
+        height: parent.height;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component NavItem inherits Rectangle {
+    in property <string> text;
+    in property <bool> active;
+    callback clicked;
+
+    accessible-role: button;
+    accessible-label: root.text;
+    height: 36px;
+    border-radius: Theme.radius;
+    background: root.active ? Theme.surface-3 : touch.has-hover ? Theme.surface-2 : transparent;
+
+    Text {
+        x: 12px;
+        height: parent.height;
+        text: root.text;
+        font-size: Theme.body;
+        font-weight: root.active ? 700 : 400;
+        vertical-alignment: center;
+        color: root.active ? Theme.text : Theme.text-muted;
+    }
+
+    touch := TouchArea {
+        width: parent.width;
+        height: parent.height;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component Badge inherits Rectangle {
+    in property <string> text;
+    height: 18px;
+    width: label.preferred-width + 12px;
+    border-radius: 4px;
+    background: Theme.surface-3;
+    label := Text {
+        width: parent.width;
+        height: parent.height;
+        text: root.text;
+        font-size: Theme.meta;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        color: Theme.text-muted;
+    }
+}
+
+export component AddonRowView inherits Rectangle {
+    in property <AddonRow> addon;
+    callback action();
+    callback remove();
+    callback open();
+
+    height: 76px;
+    background: hover.has-hover ? Theme.surface-2 : Theme.surface-1;
+    border-radius: Theme.radius;
+
+    hover := TouchArea {
+        width: parent.width;
+        height: parent.height;
+    }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        spacing: 16px;
+
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 44px;
+                height: 44px;
+                border-radius: Theme.radius;
+                background: Theme.surface-3;
+                Text {
+                    width: parent.width;
+                    height: parent.height;
+                    text: root.addon.initial;
+                    font-size: 20px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                    color: Theme.text-muted;
+                    overflow: clip;
+                    wrap: no-wrap;
+                }
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            horizontal-stretch: 1;
+
+            HorizontalLayout {
+                spacing: Theme.gap-tight;
+                Text {
+                    text: root.addon.name;
+                    font-size: Theme.heading;
+                    font-weight: 700;
+                    color: Theme.text;
+                    overflow: elide;
+                }
+                VerticalLayout {
+                    alignment: center;
+                    Badge { text: root.addon.badge; }
+                }
+                Rectangle { horizontal-stretch: 1; }
+            }
+            Text {
+                text: (root.addon.author != "" ? "by " + root.addon.author + "   " : "") + (root.addon.version != "" ? root.addon.version : "");
+                font-size: Theme.meta;
+                color: Theme.text-muted;
+                overflow: elide;
+            }
+            Text {
+                text: root.addon.warning != "" ? root.addon.warning : root.addon.description;
+                font-size: Theme.meta;
+                color: root.addon.warning != "" ? Theme.danger : Theme.text-muted;
+                overflow: elide;
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            Text {
+                text: root.addon.busy ? "Working..." : root.addon.status;
+                font-size: Theme.meta;
+                horizontal-alignment: right;
+                color: root.addon.busy ? Theme.text-muted
+                    : root.addon.status-kind == 1 ? Theme.ok
+                    : root.addon.status-kind == 2 ? Theme.accent
+                    : root.addon.status-kind == 3 ? Theme.danger
+                    : Theme.text-muted;
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 4px;
+            width: 120px;
+            if root.addon.action != "" : ActionButton {
+                text: root.addon.action;
+                primary: root.addon.status-kind == 2;
+                enabled: !root.addon.busy;
+                clicked => { root.action(); }
+            }
+            HorizontalLayout {
+                alignment: end;
+                spacing: 4px;
+                if root.addon.can-open : LinkButton {
+                    text: "GitHub";
+                    clicked => { root.open(); }
+                }
+                if root.addon.can-remove && !root.addon.busy : LinkButton {
+                    text: "Remove";
+                    danger: true;
+                    clicked => { root.remove(); }
+                }
+            }
+        }
+    }
+}
+
+// Full-window dim layer that swallows clicks to the UI below.
+export component Overlay inherits Rectangle {
+    background: Theme.overlay;
+    TouchArea {
+        width: parent.width;
+        height: parent.height;
+    }
+    VerticalLayout {
+        alignment: center;
+        HorizontalLayout {
+            alignment: center;
+            @children
+        }
+    }
+}
+
+export component DialogCard inherits Rectangle {
+    in property <string> title;
+    width: 480px;
+    height: layout.preferred-height;
+    border-radius: 8px;
+    background: Theme.surface-1;
+    layout := VerticalLayout {
+        padding: Theme.gap-loose;
+        spacing: 16px;
+        Text {
+            text: root.title;
+            font-size: Theme.heading + 4px;
+            font-weight: 700;
+            color: Theme.text;
+            wrap: word-wrap;
+        }
+        @children
+    }
+}
+
+// One caption button (minimize, maximize/restore, close), sized like the Windows ones.
+component CaptionButton inherits Rectangle {
+    in property <string> label;
+    // 0 minimize, 1 maximize, 2 restore, 3 close
+    in property <int> glyph;
+    callback clicked;
+
+    accessible-role: button;
+    accessible-label: root.label;
+    width: 46px;
+    background: !touch.has-hover ? transparent
+        : root.glyph == 3 ? (touch.pressed ? #C24B3D : Theme.danger)
+        : touch.pressed ? Theme.surface-2 : Theme.surface-3;
+
+    property <brush> stroke: touch.has-hover && root.glyph == 3 ? #FFFFFF : Theme.text-muted;
+
+    if root.glyph == 0 : Path {
+        width: 10px;
+        height: 10px;
+        viewbox-width: 10;
+        viewbox-height: 10;
+        commands: "M 0 5 L 10 5";
+        stroke: root.stroke;
+        stroke-width: 1px;
+    }
+    if root.glyph == 1 : Path {
+        width: 10px;
+        height: 10px;
+        viewbox-width: 10;
+        viewbox-height: 10;
+        commands: "M 0.5 0.5 L 9.5 0.5 L 9.5 9.5 L 0.5 9.5 Z";
+        stroke: root.stroke;
+        stroke-width: 1px;
+    }
+    if root.glyph == 2 : Path {
+        width: 10px;
+        height: 10px;
+        viewbox-width: 10;
+        viewbox-height: 10;
+        commands: "M 0.5 2.5 L 7.5 2.5 L 7.5 9.5 L 0.5 9.5 Z M 2.5 2.5 L 2.5 0.5 L 9.5 0.5 L 9.5 7.5 L 7.5 7.5";
+        stroke: root.stroke;
+        stroke-width: 1px;
+    }
+    if root.glyph == 3 : Path {
+        width: 10px;
+        height: 10px;
+        viewbox-width: 10;
+        viewbox-height: 10;
+        commands: "M 0 0 L 10 10 M 10 0 L 0 10";
+        stroke: root.stroke;
+        stroke-width: 1px;
+    }
+
+    touch := TouchArea {
+        width: parent.width;
+        height: parent.height;
+        clicked => { root.clicked(); }
+    }
+}
+
+// Replaces the system window frame: drag area, double-click to maximize, caption buttons.
+export component TitleBar inherits Rectangle {
+    in property <string> title;
+    in property <bool> maximized;
+    callback start-drag();
+    callback minimize();
+    callback toggle-maximize();
+    callback close();
+
+    height: 36px;
+    background: Theme.surface-1;
+
+    drag := TouchArea {
+        width: parent.width;
+        height: parent.height;
+        // Dragging starts on the first move, so a double-click still reaches us.
+        moved => {
+            if (self.pressed) {
+                root.start-drag();
+            }
+        }
+        double-clicked => { root.toggle-maximize(); }
+    }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        Text {
+            text: root.title;
+            font-size: Theme.meta;
+            font-weight: 600;
+            color: Theme.text-muted;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+        CaptionButton {
+            label: "Minimize";
+            glyph: 0;
+            clicked => { root.minimize(); }
+        }
+        CaptionButton {
+            label: root.maximized ? "Restore" : "Maximize";
+            glyph: root.maximized ? 2 : 1;
+            clicked => { root.toggle-maximize(); }
+        }
+        CaptionButton {
+            label: "Close";
+            glyph: 3;
+            clicked => { root.close(); }
+        }
+    }
+}
+
+component ResizeGrip inherits TouchArea {
+    in property <int> direction;
+    callback start(int);
+    pointer-event(event) => {
+        if (event.kind == PointerEventKind.down && event.button == PointerEventButton.left) {
+            root.start(root.direction);
+        }
+    }
+}
+
+// Invisible strips along the window edges that start a native resize, since a frameless
+// window has no system border to grab. Directions: 0 N, 1 S, 2 E, 3 W, 4 NE, 5 NW, 6 SE, 7 SW.
+export component ResizeEdges {
+    in property <length> grip: 5px;
+    callback start-resize(int);
+
+    ResizeGrip { x: root.grip; y: 0; width: root.width - 2 * root.grip; height: root.grip; direction: 0; mouse-cursor: ns-resize; start(d) => { root.start-resize(d); } }
+    ResizeGrip { x: root.grip; y: root.height - root.grip; width: root.width - 2 * root.grip; height: root.grip; direction: 1; mouse-cursor: ns-resize; start(d) => { root.start-resize(d); } }
+    ResizeGrip { x: root.width - root.grip; y: root.grip; width: root.grip; height: root.height - 2 * root.grip; direction: 2; mouse-cursor: ew-resize; start(d) => { root.start-resize(d); } }
+    ResizeGrip { x: 0; y: root.grip; width: root.grip; height: root.height - 2 * root.grip; direction: 3; mouse-cursor: ew-resize; start(d) => { root.start-resize(d); } }
+    ResizeGrip { x: root.width - root.grip; y: 0; width: root.grip; height: root.grip; direction: 4; mouse-cursor: nesw-resize; start(d) => { root.start-resize(d); } }
+    ResizeGrip { x: 0; y: 0; width: root.grip; height: root.grip; direction: 5; mouse-cursor: nwse-resize; start(d) => { root.start-resize(d); } }
+    ResizeGrip { x: root.width - root.grip; y: root.height - root.grip; width: root.grip; height: root.grip; direction: 6; mouse-cursor: nwse-resize; start(d) => { root.start-resize(d); } }
+    ResizeGrip { x: 0; y: root.height - root.grip; width: root.grip; height: root.grip; direction: 7; mouse-cursor: nesw-resize; start(d) => { root.start-resize(d); } }
+}

@@ -1,0 +1,34 @@
+[package]
+name = "survivorsforge"
+version = "0.1.0"
+edition = "2021"
+description = "Mod manager for Azeroth Survivors addons"
+repository = "https://github.com/Rezondes/SurvivorsForge"
+license = "MIT"
+
+[[bin]]
+name = "SurvivorsForge"
+path = "src/main.rs"
+
+[dependencies]
+slint = { version = "1.18", features = ["unstable-winit-030"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = "2.12"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+directories = "6"
+rfd = "0.17"
+trash = "5"
+semver = "1"
+self-replace = "1.5"
+open = "5"
+
+[build-dependencies]
+slint-build = "1.18"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+strip = true
+lto = "thin"

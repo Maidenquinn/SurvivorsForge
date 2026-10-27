@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "addons": [
+    {
+      "id": "survivor-ui",
+      "name": "Survivor UI",
+      "author": "morderous",
+      "repo": "morderous/survivor-ui",
+      "description": "Complete Survivor UI including Survivor Plates (nameplates).",
+      "category": "UI",
+      "folders": [
+        "SurvivorUI",
+        "SurvivorPlates"
+      ],
+      "source": {
+        "type": "release",
+        "asset": "SurvivorUI-v*.zip"
+      }
+    },
+    {
+      "id": "luckyodds",
+      "name": "LuckyOdds",
+      "author": "cadoky",
+      "repo": "cadoky/LuckyOdds",
+      "description": "Rarity odds from your luck, Battleground Caches and guardian lairs on the minimap.",
+      "category": "Info",
+      "folders": [
+        "LuckyOdds"
+      ],
+      "source": {
+        "type": "release",
+        "asset": "LuckyOdds-v*.zip"
+      }
+    },
+    {
+      "id": "asbuilder",
+      "name": "ASBuilder",
+      "author": "cadoky",
+      "repo": "cadoky/ASBuilder",
+      "description": "Build planner and tracker for Azeroth Survivors.",
+      "category": "Build",
+      "folders": [
+        "ASBuilder"
+      ],
+      "source": {
+        "type": "release",
+        "asset": "ASBuilder-v*.zip"
+      }
+    },
+    {
+      "id": "azerloot",
+      "name": "Azerloot",
+      "author": "Kindagrey",
+      "repo": "Kindagrey/Azerloot",
+      "description": "The loot book: every boss drop, ring, trinket and amulet, a build planner, a run chronicle and a wishlist.",
+      "category": "Loot",
+      "folders": [
+        "Azerloot"
+      ],
+      "source": {
+        "type": "release",
+        "asset": "Azerloot-*.zip"
+      }
+    },
+    {
+      "id": "keijinui",
+      "name": "KeijinUI",
+      "author": "KeijinDE",
+      "repo": "KeijinDE/KeijinUI_modern-as-ui",
+      "description": "A modern, Dragonflight-inspired UI.",
+      "category": "UI",
+      "folders": [
+        "KeijinUI"
+      ],
+      "source": {
+        "type": "release",
+        "asset": "KeijinUI-*.zip"
+      }
+    },
+    {
+      "id": "bordoui",
+      "name": "BordoUI",
+      "author": "threenox",
+      "repo": "threenox/BordoUI",
+      "description": "UI suite: centered unit frames, chest radar, boss timeline, damage stats and death recap.",
+      "category": "UI",
+      "folders": [
+        "BordoUI"
+      ],
+      "source": {
+        "type": "tag"
+      }
+    },
+    {
+      "id": "aetherhud",
+      "name": "AetherHUD",
+      "author": "NORehabRocket",
+      "repo": "NORehabRocket/AetherHUD",
+      "description": "Aion-style full UI replacement: run HUD, enemy plates, combat numbers, inventory, chat, minimap.",
+      "category": "UI",
+      "folders": [
+        "AetherHUD"
+      ],
+      "source": {
+        "type": "release",
+        "asset": "AetherHUD.zip"
+      }
+    },
+    {
+      "id": "blackwellui",
+      "name": "BlackwellUI",
+      "author": "Blackwellcode",
+      "repo": "Blackwellcode/BlackwellUI",
+      "description": "Cyberpunk-grade HUD and analytics for Azeroth Survivors.",
+      "category": "UI",
+      "folders": [
+        "BlackwellUI"
+      ],
+      "source": {
+        "type": "release",
+        "asset": "BlackwellUI.zip"
+      }
+    },
+    {
+      "id": "survivorsdragonui",
+      "name": "SurvivorsDragonUi",
+      "author": "migwynkriid13",
+      "repo": "migwynkriid13/SurvivorsDragonUi",
+      "description": "A fixed HUD with run and boss bars and combat text. Only the addon zip is installed, not its own updater.",
+      "category": "UI",
+      "folders": [
+        "SurvivorsDragonUi"
+      ],
+      "source": {
+        "type": "release",
+        "asset": "SurvivorsDragonUi.zip"
+      }
+    },
+    {
+      "id": "azsspellmeter",
+      "name": "AZS Spell Meter",
+      "author": "kex0",
+      "repo": "kex0/AZSSpellMeter",
+      "description": "Per-spell damage meter, including kills and the spell a proc actually casts.",
+      "category": "Meter",
+      "folders": [
+        "AZSSpellMeter"
+      ],
+      "source": {
+        "type": "release",
+        "asset": "AZSSpellMeter-*.zip"
+      }
+    }
+  ]
+}
