@@ -164,6 +164,21 @@
       "source": {
         "type": "tag"
       }
+    },
+    {
+      "id": "azerothfieldkit",
+      "name": "Azeroth FieldKit",
+      "author": "Maidenquinn",
+      "repo": "Maidenquinn/azeroth-fieldkit",
+      "description": "Combat and HUD toolkit: nameplates, boss frames, crits, damage meter, chests and lairs on the minimap. Fork of MASH by Malk.",
+      "category": "UI",
+      "folders": [
+        "AzerothFieldKit"
+      ],
+      "source": {
+        "type": "release",
+        "asset": "AzerothFieldKit-*.zip"
+      }
     }
   ]
 }
