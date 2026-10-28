@@ -4,18 +4,37 @@ import {
     Overlay, Panel, DialogCard, TitleBar, ResizeEdges
 } from "components.slint";
 
-export { AddonRow }
+export { AddonRow, Theme }
+
+// An AddOns folder found on this machine: short label for the button, full path to use.
+export struct Suggestion {
+    label: string,
+    path: string,
+}
+
+// Shown under a path field when there is no file dialog to browse with.
+component TypePathHint inherits Text {
+    in property <bool> game-mode;
+    text: "Type the full path to the AddOns folder." + (root.game-mode ? " Press STEAM + X for the on-screen keyboard." : "");
+    font-size: Theme.meta;
+    color: Theme.text-muted;
+    wrap: word-wrap;
+}
 
 component SetupView inherits Rectangle {
     in-out property <string> path;
     in property <string> error;
     in property <string> warning;
     in property <string> example;
+    in property <bool> file-dialog;
+    in property <bool> game-mode;
     // AddOns folders found on this machine, offered for one click.
-    in property <[string]> suggestions;
+    in property <[Suggestion]> suggestions;
+    in property <bool> searching;
     callback browse();
     callback confirm();
     callback pick(string);
+    callback quit();
 
     VerticalLayout {
         alignment: center;
@@ -50,13 +69,16 @@ component SetupView inherits Rectangle {
                             placeholder: "AddOns folder";
                             accepted => { root.confirm(); }
                         }
-                        ActionButton {
+                        if root.file-dialog : ActionButton {
                             text: "Browse...";
                             clicked => { root.browse(); }
                         }
                     }
+                    if !root.file-dialog : TypePathHint {
+                        game-mode: root.game-mode;
+                    }
                     if root.error != "" : Text {
-                        text: root.error;
+                        text: "Error: " + root.error;
                         font-size: Theme.body;
                         color: Theme.danger;
                         wrap: word-wrap;
@@ -67,20 +89,41 @@ component SetupView inherits Rectangle {
                         color: Theme.warn;
                         wrap: word-wrap;
                     }
-                    if root.suggestions.length > 0 : VerticalLayout {
+                    // One row tall from the start, so the list arriving doesn't move Continue much.
+                    VerticalLayout {
                         spacing: 6px;
-                        Text {
-                            text: "Found on this computer:";
+                        min-height: 34px;
+                        if root.searching : Text {
+                            text: "Searching this computer for the AddOns folder...";
+                            font-size: Theme.meta;
+                            color: Theme.text-muted;
+                        }
+                        if !root.searching && root.suggestions.length == 0 : Text {
+                            text: "No AddOns folder found automatically. If the game never ran yet, start it once so it creates the folder. Then "
+                                + (root.file-dialog ? "use Browse or type the path." : "type the path.");
+                            font-size: Theme.meta;
+                            color: Theme.text-muted;
+                            wrap: word-wrap;
+                        }
+                        if root.suggestions.length > 0 : Text {
+                            text: "Found on this computer. Select one to use it:";
                             font-size: Theme.meta;
                             color: Theme.text-muted;
                         }
                         for suggestion in root.suggestions : ActionButton {
-                            text: suggestion;
-                            clicked => { root.pick(suggestion); }
+                            text: "Use " + suggestion.label;
+                            min-width: 0;
+                            clicked => { root.pick(suggestion.path); }
                         }
                     }
                     HorizontalLayout {
                         alignment: center;
+                        spacing: Theme.gap-tight;
+                        if root.game-mode : ActionButton {
+                            text: "Quit";
+                            large: true;
+                            clicked => { root.quit(); }
+                        }
                         ActionButton {
                             text: root.warning != "" ? "Use This Folder Anyway" : "Continue";
                             primary: true;
@@ -113,6 +156,8 @@ component SettingsView inherits VerticalLayout {
     in property <string> message;
     in property <bool> message-error;
     in property <string> version;
+    in property <bool> file-dialog;
+    in property <bool> game-mode;
     callback browse();
     callback save();
 
@@ -125,9 +170,15 @@ component SettingsView inherits VerticalLayout {
             text <=> root.path;
             accepted => { root.save(); }
         }
-        ActionButton {
+        if root.file-dialog : ActionButton {
             text: "Browse...";
             clicked => { root.browse(); }
+        }
+    }
+    if !root.file-dialog : HorizontalLayout {
+        padding-left: 180px + Theme.gap-loose;
+        TypePathHint {
+            game-mode: root.game-mode;
         }
     }
     SettingRow {
@@ -144,10 +195,13 @@ component SettingsView inherits VerticalLayout {
         alignment: end;
         VerticalLayout {
             alignment: center;
+            horizontal-stretch: 1;
             Text {
-                text: root.message;
+                text: (root.message-error ? "Error: " : "") + root.message;
                 font-size: Theme.body;
                 color: root.message-error ? Theme.danger : Theme.ok;
+                horizontal-alignment: right;
+                wrap: word-wrap;
             }
         }
         ActionButton {
@@ -181,13 +235,16 @@ export component AppWindow inherits Window {
     // Steam Deck Game Mode / gamescope: fullscreen without window frame.
     in property <bool> game-mode;
     property <length> title-height: root.game-mode ? 0px : 34px;
+    // False without a usable file dialog (no portal, or Game Mode): Browse and Install zip hide.
+    in property <bool> file-dialog: true;
 
     // First start
     in property <bool> needs-setup;
     in-out property <string> setup-path;
     in property <string> setup-error;
     in property <string> setup-warning;
-    in property <[string]> setup-suggestions;
+    in property <[Suggestion]> setup-suggestions;
+    in property <bool> setup-searching: true;
     callback setup-browse();
     callback setup-confirm();
 
@@ -256,9 +313,13 @@ export component AppWindow inherits Window {
         warning: root.setup-warning;
         example: root.addons-example;
         suggestions: root.setup-suggestions;
+        searching: root.setup-searching;
+        file-dialog: root.file-dialog;
+        game-mode: root.game-mode;
         browse => { root.setup-browse(); }
         pick(path) => { root.setup-path = path; root.setup-confirm(); }
         confirm => { root.setup-confirm(); }
+        quit => { root.close-window(); }
     }
 
     if !root.needs-setup : VerticalLayout {
@@ -295,6 +356,11 @@ export component AppWindow inherits Window {
                 text: "Settings";
                 active: root.page == 2;
                 clicked => { root.page = 2; }
+            }
+            // Game Mode has no title bar, so give it its own way out.
+            if root.game-mode : TabButton {
+                text: "Quit";
+                clicked => { root.close-window(); }
             }
         }
 
@@ -350,7 +416,7 @@ export component AppWindow inherits Window {
                         enabled: !root.checking;
                         clicked => { root.check-updates(); }
                     }
-                    if root.page == 0 : ActionButton {
+                    if root.page == 0 && root.file-dialog : ActionButton {
                         text: "Install zip";
                         clicked => { root.install-zip(); }
                     }
@@ -404,6 +470,8 @@ export component AppWindow inherits Window {
                     message: root.settings-message;
                     message-error: root.settings-message-error;
                     version: root.app-version;
+                    file-dialog: root.file-dialog;
+                    game-mode: root.game-mode;
                     browse => { root.settings-browse(); }
                     save => { root.settings-save(); }
                 }

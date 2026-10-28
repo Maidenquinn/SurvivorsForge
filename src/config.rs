@@ -34,18 +34,45 @@ impl Config {
 
 #[derive(Debug, PartialEq)]
 pub enum DirError {
-    NotFound,
+    NotFound(PathBuf),
     NotADirectory,
     NotWritable,
 }
 
 impl fmt::Display for DirError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            DirError::NotFound => "The folder does not exist.",
-            DirError::NotADirectory => "The path is not a folder.",
-            DirError::NotWritable => "The folder is not writable.",
-        })
+        match self {
+            DirError::NotFound(path) => {
+                write!(f, "No folder at \"{}\". Check the spelling", path.display())?;
+                f.write_str(if cfg!(windows) { "." } else { "; paths on Linux are case-sensitive." })
+            }
+            DirError::NotADirectory => f.write_str("The path is not a folder."),
+            DirError::NotWritable => f.write_str("The folder is not writable."),
+        }
+    }
+}
+
+/// A typed path with a leading `~` resolved to the home folder, as a shell would.
+pub fn expand_home(input: &str, home: Option<&Path>) -> PathBuf {
+    let input = input.trim();
+    if let (Some(home), Some(rest)) = (home, input.strip_prefix('~')) {
+        if rest.is_empty() {
+            return home.to_path_buf();
+        }
+        if let Some(rest) = rest.strip_prefix(['/', '\\']) {
+            return home.join(rest);
+        }
+    }
+    PathBuf::from(input)
+}
+
+/// Button label for a found AddOns folder: the game folder above `benilla-config/AddOns`,
+/// with the home folder shortened to `~` on Linux.
+pub fn suggestion_label(addons: &Path, home: Option<&Path>) -> String {
+    let game = addons.parent().and_then(Path::parent).unwrap_or(addons);
+    match home.filter(|_| !cfg!(windows)).and_then(|h| game.strip_prefix(h).ok()) {
+        Some(rest) => format!("~/{}", rest.display()),
+        None => game.display().to_string(),
     }
 }
 
@@ -120,7 +147,7 @@ pub fn is_game_mode(xdg_current_desktop: Option<&str>, gamescope_display: bool) 
 
 pub fn validate_addons_dir(path: &Path) -> Result<Option<DirWarning>, DirError> {
     if !path.exists() {
-        return Err(DirError::NotFound);
+        return Err(DirError::NotFound(path.to_path_buf()));
     }
     if !path.is_dir() {
         return Err(DirError::NotADirectory);
@@ -167,7 +194,28 @@ mod tests {
     #[test]
     fn validate_rejects_missing_dir() {
         let dir = tempfile::tempdir().unwrap();
-        assert_eq!(validate_addons_dir(&dir.path().join("nope")), Err(DirError::NotFound));
+        let missing = dir.path().join("nope");
+        assert_eq!(validate_addons_dir(&missing), Err(DirError::NotFound(missing.clone())));
+    }
+
+    #[test]
+    fn expands_leading_tilde_only() {
+        let home = Path::new("/home/deck");
+        assert_eq!(expand_home(" ~ ", Some(home)), home);
+        assert_eq!(expand_home("~/Games/AddOns", Some(home)), home.join("Games/AddOns"));
+        assert_eq!(expand_home("~deck/AddOns", Some(home)), PathBuf::from("~deck/AddOns"));
+        assert_eq!(expand_home("/opt/~/AddOns", Some(home)), PathBuf::from("/opt/~/AddOns"));
+        assert_eq!(expand_home("~/AddOns", None), PathBuf::from("~/AddOns"));
+    }
+
+    #[test]
+    fn labels_suggestion_by_game_folder() {
+        let home = Path::new("/home/deck");
+        let addons = home.join("Games/AzerothSurvivors/benilla-config/AddOns");
+        let expected = if cfg!(windows) { home.join("Games/AzerothSurvivors").display().to_string() } else { "~/Games/AzerothSurvivors".into() };
+        assert_eq!(suggestion_label(&addons, Some(home)), expected);
+        let card = Path::new("/run/media/mmcblk0p1/AS/benilla-config/AddOns");
+        assert_eq!(suggestion_label(card, Some(home)), Path::new("/run/media/mmcblk0p1/AS").display().to_string());
     }
 
     #[test]

@@ -461,9 +461,9 @@ fn on_row_remove(ui: &AppWindow, shared: &Shared, id: String) {
 }
 
 fn on_install_zip(ui: &AppWindow, shared: &Shared) {
-    if !file_dialog_available() {
-        lock(shared).set_status("No file dialog is available here (it needs xdg-desktop-portal).".into(), true);
-        return refresh(ui, shared);
+    // The button is hidden then; this only guards against a stray call.
+    if !ui.get_file_dialog() {
+        return;
     }
     let Some(file) = rfd::FileDialog::new().add_filter("Zip archive", &["zip"]).pick_file() else { return };
     let detected = match archive::analyze(&file) {
@@ -593,8 +593,15 @@ fn show_detection(ui: &AppWindow, shared: &Shared, detection: repo_detect::Detec
     });
 }
 
+/// The path the user typed, with `~` resolved. Shown back in the field so they see what is used.
+fn typed_path(text: &str) -> PathBuf {
+    let home = directories::UserDirs::new();
+    config::expand_home(text, home.as_ref().map(|u| u.home_dir()))
+}
+
 fn on_settings_save(ui: &AppWindow, shared: &Shared) {
-    let path = PathBuf::from(ui.get_settings_path().trim());
+    let path = typed_path(&ui.get_settings_path());
+    ui.set_settings_path(path.to_string_lossy().into_owned().into());
     let warning = match config::validate_addons_dir(&path) {
         Ok(warning) => warning,
         Err(e) => {
@@ -633,7 +640,8 @@ fn on_settings_save(ui: &AppWindow, shared: &Shared) {
 }
 
 fn on_setup_confirm(ui: &AppWindow, shared: &Shared) {
-    let path = PathBuf::from(ui.get_setup_path().trim());
+    let path = typed_path(&ui.get_setup_path());
+    ui.set_setup_path(path.to_string_lossy().into_owned().into());
     match config::validate_addons_dir(&path) {
         Err(e) => {
             ui.set_setup_error(e.to_string().into());
@@ -670,8 +678,15 @@ fn fill_settings(ui: &AppWindow, shared: &Shared) {
 
 fn on_self_update(ui: &AppWindow, shared: &Shared) {
     if !self_update::can_replace_self() {
-        let _ = open::that(self_update::RELEASES_URL);
-        return;
+        // In Game Mode a browser can't open over the app, so name the address instead.
+        let opened = !ui.get_game_mode() && open::that(self_update::RELEASES_URL).is_ok();
+        let message = if opened {
+            "Opened the download page in your browser.".into()
+        } else {
+            format!("Download the new version from {}", self_update::RELEASES_URL)
+        };
+        lock(shared).set_status(message, false);
+        return refresh(ui, shared);
     }
     let (client, update, work) = {
         let mut core = lock(shared);
@@ -699,11 +714,8 @@ fn on_self_update(ui: &AppWindow, shared: &Shared) {
     });
 }
 
-const NO_FILE_DIALOG: &str =
-    "No file dialog is available here (it needs xdg-desktop-portal). Type the path into the field instead.";
-
 /// On Linux, rfd's dialogs go through xdg-desktop-portal over D-Bus. Without a session bus
-/// (some minimal or gamescope sessions) the dialog silently returns nothing, so say so instead.
+/// (some minimal sessions) the dialog silently returns nothing, so the UI hides Browse instead.
 fn file_dialog_available() -> bool {
     if !cfg!(target_os = "linux") {
         return true;
@@ -750,19 +762,40 @@ fn main() -> Result<(), slint::PlatformError> {
         std::env::var_os("GAMESCOPE_WAYLAND_DISPLAY").is_some(),
     );
     ui.set_game_mode(game_mode);
+    ui.global::<Theme>().set_touch(game_mode);
     if game_mode {
         ui.window().set_fullscreen(true);
     }
+    // The portal's file chooser may not show under gamescope, so Game Mode types paths.
+    ui.set_file_dialog(file_dialog_available() && !game_mode);
 
     if needs_setup {
         let weak = ui.as_weak();
         std::thread::spawn(move || {
-            let found: Vec<SharedString> = config::find_addons_dirs(&config::search_roots(), 3)
+            let home = directories::UserDirs::new();
+            let home = home.as_ref().map(|u| u.home_dir());
+            // ponytail: first five only; a scroll list if people really keep more game copies
+            let found: Vec<Suggestion> = config::find_addons_dirs(&config::search_roots(), 3)
                 .into_iter()
-                .map(|p| p.to_string_lossy().into_owned().into())
+                .take(5)
+                .map(|p| Suggestion {
+                    label: config::suggestion_label(&p, home).into(),
+                    path: p.to_string_lossy().into_owned().into(),
+                })
                 .collect();
-            let _ = weak.upgrade_in_event_loop(move |ui| ui.set_setup_suggestions(ModelRc::new(VecModel::from(found))));
+            let _ = weak.upgrade_in_event_loop(move |ui| {
+                // A single find goes straight into the field, so Continue is the one thing to press.
+                if let [only] = found.as_slice()
+                    && ui.get_setup_path().is_empty()
+                {
+                    ui.set_setup_path(only.path.clone());
+                }
+                ui.set_setup_suggestions(ModelRc::new(VecModel::from(found)));
+                ui.set_setup_searching(false);
+            });
         });
+    } else {
+        ui.set_setup_searching(false);
     }
     ui.set_addons_example(if cfg!(windows) { r"...\benilla-config\AddOns" } else { ".../benilla-config/AddOns" }.into());
     ui.set_needs_setup(needs_setup);
@@ -780,9 +813,7 @@ fn main() -> Result<(), slint::PlatformError> {
     }
 
     on!(on_setup_browse, |ui, _shared| {
-        if !file_dialog_available() {
-            ui.set_setup_error(NO_FILE_DIALOG.into());
-        } else if let Some(p) = pick_folder(&ui.get_setup_path()) {
+        if let Some(p) = pick_folder(&ui.get_setup_path()) {
             ui.set_setup_path(p.into());
             ui.set_setup_warning(SharedString::new());
         }
@@ -818,10 +849,7 @@ fn main() -> Result<(), slint::PlatformError> {
         PENDING.with(|p| p.borrow_mut().take());
     });
     on!(on_settings_browse, |ui, _shared| {
-        if !file_dialog_available() {
-            ui.set_settings_message(NO_FILE_DIALOG.into());
-            ui.set_settings_message_error(true);
-        } else if let Some(p) = pick_folder(&ui.get_settings_path()) {
+        if let Some(p) = pick_folder(&ui.get_settings_path()) {
             ui.set_settings_path(p.into());
         }
     });
@@ -845,8 +873,9 @@ fn main() -> Result<(), slint::PlatformError> {
     on!(on_toggle_maximize, |ui, _shared| {
         ui.window().set_maximized(!ui.window().is_maximized());
     });
-    on!(on_close_window, |ui, _shared| {
-        let _ = ui.hide();
+    // Quitting the loop instead of hiding: a hidden fullscreen window kept the app running.
+    on!(on_close_window, |_ui, _shared| {
+        let _ = slint::quit_event_loop();
     });
 
     refresh(&ui, &shared);

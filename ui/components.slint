@@ -31,11 +31,12 @@ export component ActionButton inherits Rectangle {
 
     accessible-role: button;
     accessible-label: root.text;
-    height: root.large ? 46px : 34px;
+    height: root.large ? 46px : Theme.touch ? 44px : 34px;
     min-width: label.preferred-width + (root.large ? 40px : 28px);
     border-radius: Theme.radius;
-    border-width: 1px;
-    border-color: !root.enabled ? Theme.line
+    border-width: focus.has-focus ? 2px : 1px;
+    border-color: focus.has-focus ? Theme.outline-active
+        : !root.enabled ? Theme.line
         : root.danger && touch.has-hover ? Theme.danger
         : root.primary ? (touch.has-hover ? Theme.outline-active : Theme.outline-hover)
         : touch.has-hover ? Theme.outline-hover : Theme.outline;
@@ -51,6 +52,7 @@ export component ActionButton inherits Rectangle {
         font-size: root.large ? 19px : Theme.body;
         horizontal-alignment: center;
         vertical-alignment: center;
+        overflow: elide;
         color: !root.enabled ? Theme.text-disabled
             : root.danger ? Theme.danger
             : root.primary ? Theme.gold-bright : Theme.gold;
@@ -63,6 +65,20 @@ export component ActionButton inherits Rectangle {
         mouse-cursor: root.enabled ? pointer : default;
         clicked => { root.clicked(); }
     }
+
+    // Tab reaches the button, Space or Return presses it.
+    focus := FocusScope {
+        width: 0;
+        height: 0;
+        enabled: root.enabled;
+        key-pressed(event) => {
+            if (event.text == " " || event.text == Key.Return) {
+                root.clicked();
+                return accept;
+            }
+            reject
+        }
+    }
 }
 
 // Small text-only control for secondary row actions (open, remove).
@@ -73,14 +89,14 @@ export component LinkButton inherits Rectangle {
 
     accessible-role: button;
     accessible-label: root.text;
-    height: 22px;
-    min-width: label.preferred-width + 10px;
+    height: Theme.touch ? 44px : 22px;
+    min-width: label.preferred-width + (Theme.touch ? 20px : 10px);
 
     label := Text {
         width: parent.width;
         height: parent.height;
         text: root.text;
-        font-size: Theme.meta;
+        font-size: Theme.touch ? Theme.body : Theme.meta;
         horizontal-alignment: center;
         vertical-alignment: center;
         color: !touch.has-hover ? Theme.text-muted : root.danger ? Theme.danger : Theme.gold;
@@ -102,7 +118,7 @@ export component TabButton inherits Rectangle {
 
     accessible-role: tab;
     accessible-label: root.text;
-    height: 40px;
+    height: Theme.touch ? 44px : 40px;
     min-width: label.preferred-width + 36px;
     border-radius: Theme.radius;
     border-width: 1px;
@@ -170,7 +186,7 @@ export component Field inherits Rectangle {
         input.focus();
     }
 
-    height: 38px;
+    height: Theme.touch ? 44px : 38px;
     border-radius: Theme.radius;
     border-width: 1px;
     border-color: input.has-focus ? Theme.outline-active : hover.has-hover ? Theme.outline-hover : Theme.outline;
@@ -295,7 +311,8 @@ export component AddonRowView inherits Rectangle {
     callback remove();
     callback open();
 
-    height: 84px;
+    // Touch: room for the 44px action button and 44px links stacked in the last column.
+    height: Theme.touch ? 104px : 84px;
     border-radius: Theme.radius;
     border-width: 1px;
     border-color: hover.has-hover ? Theme.outline : Theme.line;
@@ -382,7 +399,7 @@ export component AddonRowView inherits Rectangle {
         VerticalLayout {
             alignment: center;
             spacing: 4px;
-            width: 124px;
+            width: Theme.touch ? 160px : 124px;
             if root.addon.action != "" : ActionButton {
                 text: root.addon.action;
                 primary: root.addon.status-kind == 2;

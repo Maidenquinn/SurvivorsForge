@@ -47,6 +47,9 @@ export global Theme {
     out property <length> body: 15px;
     out property <length> meta: 13px;
 
+    // Steam Deck Game Mode: touch screen, so controls grow to at least 44px.
+    in-out property <bool> touch;
+
     out property <length> gap-tight: 8px;
     out property <length> gap-loose: 24px;
     out property <length> radius: 3px;
