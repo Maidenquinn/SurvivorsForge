@@ -36,6 +36,8 @@ pub struct Tag {
 pub trait GitHub {
     /// `None` when the repo has no release.
     fn latest_release(&self, repo: &str) -> Result<Option<Release>>;
+    /// The release of `tag`, also a pre-release; no assets when the tag has no release.
+    fn release(&self, repo: &str, tag: &str) -> Result<Release>;
     /// Newest first.
     fn tags(&self, repo: &str) -> Result<Vec<Tag>>;
     fn default_branch(&self, repo: &str) -> Result<String>;
@@ -252,8 +254,12 @@ impl GitHub for Client {
     fn latest_release(&self, repo: &str) -> Result<Option<Release>> {
         let resp = Self::call(self.no_redirect.get(&format!("{WEB}/{repo}/releases/latest")))?;
         let Some(tag) = resp.header("location").and_then(parse_latest_location) else { return Ok(None) };
+        self.release(repo, &tag).map(Some)
+    }
+
+    fn release(&self, repo: &str, tag: &str) -> Result<Release> {
         let html = self.get_text(&format!("{WEB}/{repo}/releases/expanded_assets/{tag}"))?;
-        Ok(Some(Release { assets: parse_assets(&html, repo, &tag), tag }))
+        Ok(Release { assets: parse_assets(&html, repo, tag), tag: tag.to_string() })
     }
 
     fn tags(&self, repo: &str) -> Result<Vec<Tag>> {
@@ -373,7 +379,10 @@ mod tests {
         assert_eq!(client.default_branch("cadoky/LuckyOdds").unwrap(), "main");
         assert_eq!(client.commit_sha("cadoky/LuckyOdds", "main").unwrap().len(), 40);
         assert!(client.tags("threenox/BordoUI").unwrap()[0].name.starts_with('v'));
-        assert_eq!(client.latest_release("Rezondes/SurvivorsForge").unwrap(), None);
+        let spec = crate::registry::SourceSpec::Release { asset: "AzerothFieldKit-*.zip".into() };
+        let pre = crate::updates::resolve_remote(&client, "Maidenquinn/azeroth-fieldkit", &spec).unwrap();
+        assert!(pre.id.starts_with('v') && pre.download.ends_with(".zip"));
+        assert_eq!(client.latest_release("Maidenquinn/azeroth-fieldkit").unwrap(), None);
         assert_eq!(client.latest_release("nope-xyz-123/nothing"), Err(Error::NotFound));
         assert_eq!(client.tags("nope-xyz-123/nothing"), Err(Error::NotFound));
     }

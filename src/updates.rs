@@ -3,7 +3,7 @@
 //! Tags are not uniform (`v3.0.36`, `v2.6.5-azs`, `build-<sha>`), so a remote id that differs
 //! from the installed one counts as an update. No semver comparison.
 
-use crate::github::{source_zip_url, GitHub};
+use crate::github::{source_zip_url, GitHub, Release};
 use crate::registry::{glob_match, Registry, SourceSpec};
 use crate::state::{Source, State, TOC_PREFIX};
 use crate::{Error, Result};
@@ -29,7 +29,10 @@ pub enum UpdateStatus {
 pub fn resolve_remote(gh: &dyn GitHub, repo: &str, spec: &SourceSpec) -> Result<RemoteVersion> {
     match spec {
         SourceSpec::Release { asset } => {
-            let release = gh.latest_release(repo)?.ok_or(Error::NoRelease)?;
+            let release = match gh.latest_release(repo)? {
+                Some(release) => release,
+                None => newest_pre_release(gh, repo, asset)?,
+            };
             let asset = release.assets.iter().find(|a| glob_match(asset, &a.name)).ok_or(Error::NoMatchingAsset)?;
             Ok(RemoteVersion { id: release.tag.clone(), label: release.tag.clone(), download: asset.url.clone() })
         }
@@ -43,6 +46,18 @@ pub fn resolve_remote(gh: &dyn GitHub, repo: &str, spec: &SourceSpec) -> Result<
             Ok(RemoteVersion { download: source_zip_url(repo, &sha), label: sha.chars().take(7).collect(), id: sha })
         }
     }
+}
+
+/// Without a "latest" release only pre-releases exist: the newest tag whose release has a
+/// matching asset. Tags without one (e.g. `upstream/...` snapshots) are skipped.
+fn newest_pre_release(gh: &dyn GitHub, repo: &str, asset: &str) -> Result<Release> {
+    for tag in gh.tags(repo)? {
+        let release = gh.release(repo, &tag.name)?;
+        if release.assets.iter().any(|a| glob_match(asset, &a.name)) {
+            return Ok(release);
+        }
+    }
+    Err(Error::NoRelease)
 }
 
 fn normalize(version: &str) -> String {
@@ -113,6 +128,7 @@ pub(crate) mod fake {
     #[derive(Default)]
     pub struct FakeGitHub {
         pub releases: HashMap<String, Release>,
+        pub pre_releases: HashMap<String, Vec<Release>>,
         pub tags: HashMap<String, Vec<Tag>>,
         pub branches: HashMap<String, (String, String)>,
         pub failing: HashMap<String, Error>,
@@ -126,6 +142,16 @@ pub(crate) mod fake {
                 .collect();
             self.releases.insert(repo.into(), Release { tag: tag.into(), assets });
             self.branch(repo, "main", "0000000000000000000000000000000000000000")
+        }
+
+        /// Also adds the tag, so call it newest first.
+        pub fn pre_release(mut self, repo: &str, tag: &str, assets: &[&str]) -> Self {
+            let assets = assets
+                .iter()
+                .map(|n| Asset { name: n.to_string(), url: format!("https://dl/{repo}/{tag}/{n}") })
+                .collect();
+            self.pre_releases.entry(repo.into()).or_default().push(Release { tag: tag.into(), assets });
+            self.tag(repo, tag)
         }
 
         pub fn tag(mut self, repo: &str, name: &str) -> Self {
@@ -159,6 +185,11 @@ pub(crate) mod fake {
         fn latest_release(&self, repo: &str) -> Result<Option<Release>> {
             self.exists(repo)?;
             Ok(self.releases.get(repo).cloned())
+        }
+        fn release(&self, repo: &str, tag: &str) -> Result<Release> {
+            self.exists(repo)?;
+            let found = self.pre_releases.get(repo).into_iter().flatten().chain(self.releases.get(repo)).find(|r| r.tag == tag);
+            Ok(found.cloned().unwrap_or(Release { tag: tag.into(), assets: vec![] }))
         }
         fn tags(&self, repo: &str) -> Result<Vec<Tag>> {
             self.exists(repo)?;
@@ -240,6 +271,19 @@ mod tests {
         let gh = FakeGitHub::default().release("cadoky/LuckyOdds", "v0.6.0", &["Something.zip"]);
         let spec = SourceSpec::Release { asset: "LuckyOdds-v*.zip".into() };
         assert_eq!(resolve_remote(&gh, "cadoky/LuckyOdds", &spec), Err(Error::NoMatchingAsset));
+    }
+
+    #[test]
+    fn release_source_without_latest_uses_newest_pre_release_with_asset() {
+        let gh = FakeGitHub::default()
+            .tag("o/r", "upstream/mash-1.3.9-inspected")
+            .pre_release("o/r", "v0.2.1-review.3", &["Kit-0.2.1-review.3.zip", "SHA256SUMS.txt"])
+            .pre_release("o/r", "v0.1.0-review.3", &["Kit-0.1.0-review.3.zip"]);
+        let r = resolve_remote(&gh, "o/r", &SourceSpec::Release { asset: "Kit-*.zip".into() }).unwrap();
+        assert_eq!(r.id, "v0.2.1-review.3");
+        assert_eq!(r.download, "https://dl/o/r/v0.2.1-review.3/Kit-0.2.1-review.3.zip");
+        let none = resolve_remote(&gh, "o/r", &SourceSpec::Release { asset: "Other-*.zip".into() });
+        assert_eq!(none, Err(Error::NoRelease));
     }
 
     #[test]

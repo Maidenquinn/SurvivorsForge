@@ -17,7 +17,8 @@ const CACHE_FILE: &str = "verified.json";
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SourceSpec {
-    /// The asset matching `asset` (`*` wildcard) of the release marked "latest".
+    /// The asset matching `asset` (`*` wildcard) of the release marked "latest", or of the
+    /// newest pre-release that has one when no release is marked "latest".
     Release { asset: String },
     /// The source zip of the newest tag.
     Tag,
