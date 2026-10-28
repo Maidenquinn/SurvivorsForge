@@ -145,6 +145,7 @@ mod tests {
             "Blackwellcode/BlackwellUI",
             "migwynkriid13/SurvivorsDragonUi",
             "kex0/AZSSpellMeter",
+            "Maidenquinn/AzerothStats",
         ]);
         assert_eq!(registry.get("survivor-ui").unwrap().folders, ["SurvivorUI", "SurvivorPlates"]);
         assert_eq!(registry.get("bordoui").unwrap().source, SourceSpec::Tag);

@@ -150,6 +150,20 @@
         "type": "release",
         "asset": "AZSSpellMeter-*.zip"
       }
+    },
+    {
+      "id": "azerothstats",
+      "name": "Azeroth Stats",
+      "author": "Maidenquinn",
+      "repo": "Maidenquinn/AzerothStats",
+      "description": "Persistent run history, build statistics and insights.",
+      "category": "Info",
+      "folders": [
+        "AzerothStats"
+      ],
+      "source": {
+        "type": "tag"
+      }
     }
   ]
 }
