@@ -99,7 +99,8 @@ pub fn parse_refs(body: &str) -> Refs {
     Refs { refs, head }
 }
 
-/// Tags newest first, compared by the numbers in their names (`v2.8.10` before `v2.8.9`).
+/// Tags newest first, compared by the numbers in their names (`v2.8.10` before `v2.8.9`,
+/// `v1.6.0` before `v1.6.0-beta.2`).
 /// Annotated tags point at their commit (the `^{}` line).
 pub fn tags_from_refs(refs: &[(String, String)]) -> Vec<Tag> {
     let mut tags: Vec<Tag> = Vec::new();
@@ -118,8 +119,15 @@ pub fn tags_from_refs(refs: &[(String, String)]) -> Vec<Tag> {
     tags
 }
 
-fn version_key(name: &str) -> Vec<u64> {
-    name.split(|c: char| !c.is_ascii_digit()).filter(|p| !p.is_empty()).map(|p| p.parse().unwrap_or(u64::MAX)).collect()
+/// The release numbers first, then a plain release above its pre-releases (`v1.6.0` before
+/// `v1.6.0-beta.2`), then the numbers in the suffix (`beta.2` before `beta.1`).
+fn version_key(name: &str) -> (Vec<u64>, bool, Vec<u64>) {
+    let numbers = |s: &str| -> Vec<u64> {
+        s.split(|c: char| !c.is_ascii_digit()).filter(|p| !p.is_empty()).map(|p| p.parse().unwrap_or(u64::MAX)).collect()
+    };
+    let rest = &name[name.find(|c: char| c.is_ascii_digit()).unwrap_or(name.len())..];
+    let (release, suffix) = rest.split_at(rest.find(|c: char| !c.is_ascii_digit() && c != '.').unwrap_or(rest.len()));
+    (numbers(release), suffix.is_empty(), numbers(suffix))
 }
 
 fn percent_decode(s: &str) -> String {
@@ -318,6 +326,14 @@ mod tests {
             Tag { name: "v2.8.10".into(), sha: "c".repeat(40) },
             Tag { name: "v2.8.9".into(), sha: "a".repeat(40) },
         ]);
+    }
+
+    #[test]
+    fn tags_rank_release_above_its_pre_releases() {
+        let names = ["v1.5.1-review.1", "v1.6.0-beta.2", "v1.6.0", "v1.6.0-beta.10", "v1.5.1"];
+        let refs: Vec<(String, String)> = names.iter().map(|n| ("a".repeat(40), format!("refs/tags/{n}"))).collect();
+        let sorted: Vec<String> = tags_from_refs(&refs).into_iter().map(|t| t.name).collect();
+        assert_eq!(sorted, ["v1.6.0", "v1.6.0-beta.10", "v1.6.0-beta.2", "v1.5.1", "v1.5.1-review.1"]);
     }
 
     #[test]
