@@ -6,7 +6,7 @@
       "name": "Survivor UI",
       "author": "morderous",
       "repo": "morderous/survivor-ui",
-      "description": "Complete Survivor UI including Survivor Plates (nameplates).",
+      "description": "Flat, dark interface in the style of EllesmereUI and Plater: Survivor UI plus Survivor Plates (nameplates).",
       "category": "UI",
       "folders": [
         "SurvivorUI",
@@ -22,7 +22,7 @@
       "name": "LuckyOdds",
       "author": "cadoky",
       "repo": "cadoky/LuckyOdds",
-      "description": "Rarity odds from your luck, Battleground Caches and guardian lairs on the minimap.",
+      "description": "Your odds for Rare, Epic and Legendary cards from luck, plus caches and guardian lairs on the minimap.",
       "category": "Info",
       "folders": [
         "LuckyOdds"
@@ -37,7 +37,7 @@
       "name": "ASBuilder",
       "author": "cadoky",
       "repo": "cadoky/ASBuilder",
-      "description": "Build planner and tracker for Azeroth Survivors.",
+      "description": "In-game build planner and tracker: shows what to take next and highlights your picks on the card screen.",
       "category": "Build",
       "folders": [
         "ASBuilder"
@@ -52,7 +52,7 @@
       "name": "Azerloot",
       "author": "Kindagrey",
       "repo": "Kindagrey/Azerloot",
-      "description": "The loot book: every boss drop, ring, trinket and amulet, a build planner, a run chronicle and a wishlist.",
+      "description": "Loot book of every boss drop, ring, trinket, amulet and spell, with wishlist, build planner, run chronicle and boss warnings.",
       "category": "Loot",
       "folders": [
         "Azerloot"
@@ -67,7 +67,7 @@
       "name": "KeijinUI",
       "author": "KeijinDE",
       "repo": "KeijinDE/KeijinUI_modern-as-ui",
-      "description": "A modern, Dragonflight-inspired UI.",
+      "description": "Customizable full UI: run overview, minimap guidance, meters, combat and party frames, run tracking, free layout.",
       "category": "UI",
       "folders": [
         "KeijinUI"
@@ -82,7 +82,7 @@
       "name": "BordoUI",
       "author": "threenox",
       "repo": "threenox/BordoUI",
-      "description": "UI suite: centered unit frames, chest radar, boss timeline, damage stats and death recap.",
+      "description": "UI suite: centered combat HUD, minimap cache radar, boss timeline, guardian tracker, clean nameplates, stats panel.",
       "category": "UI",
       "folders": [
         "BordoUI"
@@ -96,7 +96,7 @@
       "name": "AetherHUD",
       "author": "NORehabRocket",
       "repo": "NORehabRocket/AetherHUD",
-      "description": "Aion-style full UI replacement: run HUD, enemy plates, combat numbers, inventory, chat, minimap.",
+      "description": "Aion-style replacement of the whole UI: run HUD, boss timeline, frames, bags, chat, minimap and combat meter.",
       "category": "UI",
       "folders": [
         "AetherHUD"
@@ -111,7 +111,7 @@
       "name": "BlackwellUI",
       "author": "Blackwellcode",
       "repo": "Blackwellcode/BlackwellUI",
-      "description": "Cyberpunk-grade HUD and analytics for Azeroth Survivors.",
+      "description": "Lightweight cyberpunk HUD: cooldown and DoT hub, 5-mode meter, cache and lair radar, debuffs and nameplates.",
       "category": "UI",
       "folders": [
         "BlackwellUI"
@@ -126,7 +126,7 @@
       "name": "SurvivorsDragonUi",
       "author": "migwynkriid13",
       "repo": "migwynkriid13/SurvivorsDragonUi",
-      "description": "A fixed HUD with run and boss bars and combat text. Only the addon zip is installed, not its own updater.",
+      "description": "Dragonflight-style UI: jewelry above the action bar, unit frames, run timers, guardian tracking, loot alerts. Only the addon zip is installed, not its own updater.",
       "category": "UI",
       "folders": [
         "SurvivorsDragonUi"
@@ -141,7 +141,7 @@
       "name": "AZS Spell Meter",
       "author": "kex0",
       "repo": "kex0/AZSSpellMeter",
-      "description": "Per-spell damage meter, including kills and the spell a proc actually casts.",
+      "description": "Per-spell damage meter: several views at once, kills per spell, proc damage credited to the spell behind it.",
       "category": "Meter",
       "folders": [
         "AZSSpellMeter"
@@ -156,7 +156,7 @@
       "name": "Azeroth Stats",
       "author": "Maidenquinn",
       "repo": "Maidenquinn/AzerothStats",
-      "description": "Persistent run history, build statistics and insights.",
+      "description": "Run history, records and build stats per class, damage and healing breakdowns, run comparison, custom stats bar.",
       "category": "Info",
       "folders": [
         "AzerothStats"
@@ -170,7 +170,7 @@
       "name": "Azeroth FieldKit",
       "author": "Maidenquinn",
       "repo": "Maidenquinn/azeroth-fieldkit",
-      "description": "Combat and HUD toolkit: nameplates, boss frames, crits, damage meter, chests and lairs on the minimap. Fork of MASH by Malk.",
+      "description": "Combat text, health and boss frames, damage meter, next-chest price, chests and lairs on the minimap. Fork of MASH by Malk.",
       "category": "UI",
       "folders": [
         "AzerothFieldKit"
