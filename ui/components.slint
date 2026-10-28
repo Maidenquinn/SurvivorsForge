@@ -19,31 +19,41 @@ export struct AddonRow {
     warning: string,
 }
 
+// Outlined gold button; `primary` is the deep red one with the gold rim.
 export component ActionButton inherits Rectangle {
     in property <string> text;
     in property <bool> primary;
     in property <bool> danger;
     in property <bool> enabled: true;
+    // Display type and more height, for the one call to action of a screen.
+    in property <bool> large;
     callback clicked;
 
     accessible-role: button;
     accessible-label: root.text;
-    height: 32px;
-    min-width: label.preferred-width + 28px;
+    height: root.large ? 46px : 34px;
+    min-width: label.preferred-width + (root.large ? 40px : 28px);
     border-radius: Theme.radius;
-    background: !root.enabled ? Theme.surface-2
-        : root.primary ? (touch.pressed ? Theme.accent : touch.has-hover ? Theme.accent-hover : Theme.accent)
-        : touch.pressed ? Theme.surface-2 : touch.has-hover ? Theme.surface-3 : Theme.surface-2;
+    border-width: 1px;
+    border-color: !root.enabled ? Theme.line
+        : root.danger && touch.has-hover ? Theme.danger
+        : root.primary ? (touch.has-hover ? Theme.outline-active : Theme.outline-hover)
+        : touch.has-hover ? Theme.outline-hover : Theme.outline;
+    background: !root.enabled ? Theme.control
+        : root.primary ? (touch.has-hover && !touch.pressed ? Theme.crimson-hover : Theme.crimson)
+        : Theme.control;
 
     label := Text {
         width: parent.width;
         height: parent.height;
         text: root.text;
-        font-size: Theme.body;
-        font-weight: 600;
+        font-family: root.large ? Theme.font-display : Theme.font-body;
+        font-size: root.large ? 19px : Theme.body;
         horizontal-alignment: center;
         vertical-alignment: center;
-        color: !root.enabled ? Theme.text-muted : root.primary ? Theme.on-accent : root.danger ? Theme.danger : Theme.text;
+        color: !root.enabled ? Theme.text-disabled
+            : root.danger ? Theme.danger
+            : root.primary ? Theme.gold-bright : Theme.gold;
     }
 
     touch := TouchArea {
@@ -63,10 +73,8 @@ export component LinkButton inherits Rectangle {
 
     accessible-role: button;
     accessible-label: root.text;
-    height: 24px;
-    min-width: label.preferred-width + 12px;
-    border-radius: 4px;
-    background: touch.has-hover ? Theme.surface-3 : transparent;
+    height: 22px;
+    min-width: label.preferred-width + 10px;
 
     label := Text {
         width: parent.width;
@@ -75,7 +83,7 @@ export component LinkButton inherits Rectangle {
         font-size: Theme.meta;
         horizontal-alignment: center;
         vertical-alignment: center;
-        color: root.danger && touch.has-hover ? Theme.danger : Theme.text-muted;
+        color: !touch.has-hover ? Theme.text-muted : root.danger ? Theme.danger : Theme.gold;
     }
 
     touch := TouchArea {
@@ -86,25 +94,29 @@ export component LinkButton inherits Rectangle {
     }
 }
 
-export component NavItem inherits Rectangle {
+// Top-level page tab, like the game's menu tabs. The selected one turns deep red.
+export component TabButton inherits Rectangle {
     in property <string> text;
     in property <bool> active;
     callback clicked;
 
-    accessible-role: button;
+    accessible-role: tab;
     accessible-label: root.text;
-    height: 36px;
+    height: 40px;
+    min-width: label.preferred-width + 36px;
     border-radius: Theme.radius;
-    background: root.active ? Theme.surface-3 : touch.has-hover ? Theme.surface-2 : transparent;
+    border-width: 1px;
+    border-color: root.active ? Theme.outline-active : touch.has-hover ? Theme.outline-hover : Theme.outline;
+    background: root.active ? Theme.crimson : touch.has-hover ? Theme.control : Theme.bg;
 
-    Text {
-        x: 12px;
+    label := Text {
+        width: parent.width;
         height: parent.height;
         text: root.text;
-        font-size: Theme.body;
-        font-weight: root.active ? 700 : 400;
+        font-size: 17px;
+        horizontal-alignment: center;
         vertical-alignment: center;
-        color: root.active ? Theme.text : Theme.text-muted;
+        color: root.active ? Theme.gold-bright : Theme.gold;
     }
 
     touch := TouchArea {
@@ -115,20 +127,165 @@ export component NavItem inherits Rectangle {
     }
 }
 
-component Badge inherits Rectangle {
+// Uncial heading between two gold rules that fade out, like "Class" and "Zone" in the game.
+export component SectionHeading inherits HorizontalLayout {
     in property <string> text;
-    height: 18px;
-    width: label.preferred-width + 12px;
-    border-radius: 4px;
-    background: Theme.surface-3;
+    in property <length> size: Theme.title;
+    spacing: 16px;
+
+    VerticalLayout {
+        alignment: center;
+        horizontal-stretch: 1;
+        Rectangle {
+            height: 1px;
+            background: @linear-gradient(90deg, #00000000 0%, Theme.outline 100%);
+        }
+    }
+    Text {
+        text: root.text;
+        font-family: Theme.font-display;
+        font-size: root.size;
+        color: Theme.gold-heading;
+        vertical-alignment: center;
+    }
+    VerticalLayout {
+        alignment: center;
+        horizontal-stretch: 1;
+        Rectangle {
+            height: 1px;
+            background: @linear-gradient(90deg, Theme.outline 0%, #00000000 100%);
+        }
+    }
+}
+
+// Single-line text input with the game's gold-rimmed field look.
+export component Field inherits Rectangle {
+    in-out property <string> text;
+    in property <string> placeholder;
+    in property <bool> enabled: true;
+    callback accepted();
+    callback edited(string);
+
+    public function focus-input() {
+        input.focus();
+    }
+
+    height: 38px;
+    border-radius: Theme.radius;
+    border-width: 1px;
+    border-color: input.has-focus ? Theme.outline-active : hover.has-hover ? Theme.outline-hover : Theme.outline;
+    background: Theme.field;
+
+    hover := TouchArea {
+        width: parent.width;
+        height: parent.height;
+        mouse-cursor: MouseCursor.text;
+        clicked => { input.focus(); }
+    }
+
+    if root.text == "" : Text {
+        x: 12px;
+        width: parent.width - 24px;
+        height: parent.height;
+        text: root.placeholder;
+        font-size: Theme.body;
+        color: Theme.text-disabled;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+
+    input := TextInput {
+        x: 12px;
+        width: parent.width - 24px;
+        height: parent.height;
+        text <=> root.text;
+        enabled: root.enabled;
+        single-line: true;
+        font-size: Theme.body;
+        color: root.enabled ? Theme.text : Theme.text-muted;
+        selection-background-color: #8A6C3A;
+        selection-foreground-color: Theme.gold-bright;
+        vertical-alignment: center;
+        accepted => { root.accepted(); }
+        edited => { root.edited(self.text); }
+    }
+}
+
+// Scrollable column with a thin gold scrollbar instead of the platform one.
+export component ScrollPanel inherits Rectangle {
+    in property <length> spacing: 6px;
+    property <length> bar: 6px;
+    property <length> overflow: max(0px, flick.content-height - flick.height);
+    property <length> thumb: overflow == 0 ? root.height : max(32px, root.height * root.height / flick.content-height);
+
+    flick := Flickable {
+        x: 0;
+        y: 0;
+        width: root.width - root.bar - 10px;
+        height: root.height;
+        content-height: max(content.preferred-height, self.height);
+        content := VerticalLayout {
+            width: flick.width;
+            spacing: root.spacing;
+            alignment: start;
+            @children
+        }
+    }
+
+    if root.overflow > 0 : Rectangle {
+        x: root.width - root.bar;
+        y: 0;
+        width: root.bar;
+        height: root.height;
+        border-radius: root.bar / 2;
+        border-width: 1px;
+        border-color: Theme.line;
+
+        Rectangle {
+            x: 0;
+            y: (-flick.content-y / root.overflow) * (root.height - root.thumb);
+            width: root.bar;
+            height: root.thumb;
+            border-radius: root.bar / 2;
+            background: track.has-hover || track.pressed ? Theme.outline-hover : Theme.outline;
+        }
+
+        track := TouchArea {
+            width: parent.width + 8px;
+            x: -4px;
+            height: parent.height;
+            function jump() {
+                flick.content-y = -clamp((self.mouse-y - root.thumb / 2) / (root.height - root.thumb), 0, 1) * root.overflow;
+            }
+            pointer-event(event) => {
+                if (event.kind == PointerEventKind.down) {
+                    self.jump();
+                }
+            }
+            moved => {
+                if (self.pressed) {
+                    self.jump();
+                }
+            }
+        }
+    }
+}
+
+component Pill inherits Rectangle {
+    in property <string> text;
+    height: 20px;
+    width: label.preferred-width + 16px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: Theme.outline;
     label := Text {
         width: parent.width;
         height: parent.height;
         text: root.text;
-        font-size: Theme.meta;
+        font-size: 11px;
         horizontal-alignment: center;
         vertical-alignment: center;
-        color: Theme.text-muted;
+        color: Theme.gold;
     }
 }
 
@@ -138,9 +295,11 @@ export component AddonRowView inherits Rectangle {
     callback remove();
     callback open();
 
-    height: 76px;
-    background: hover.has-hover ? Theme.surface-2 : Theme.surface-1;
+    height: 84px;
     border-radius: Theme.radius;
+    border-width: 1px;
+    border-color: hover.has-hover ? Theme.outline : Theme.line;
+    background: hover.has-hover ? Theme.row-hover : Theme.row;
 
     hover := TouchArea {
         width: parent.width;
@@ -148,54 +307,52 @@ export component AddonRowView inherits Rectangle {
     }
 
     HorizontalLayout {
-        padding-left: 16px;
-        padding-right: 16px;
+        padding-left: 14px;
+        padding-right: 14px;
         spacing: 16px;
 
         VerticalLayout {
             alignment: center;
             Rectangle {
-                width: 44px;
-                height: 44px;
+                width: 50px;
+                height: 50px;
                 border-radius: Theme.radius;
-                background: Theme.surface-3;
+                border-width: 1px;
+                border-color: Theme.outline;
+                background: Theme.field;
                 Text {
                     width: parent.width;
                     height: parent.height;
                     text: root.addon.initial;
-                    font-size: 20px;
-                    font-weight: 700;
+                    font-size: 26px;
                     horizontal-alignment: center;
                     vertical-alignment: center;
-                    color: Theme.text-muted;
-                    overflow: clip;
-                    wrap: no-wrap;
+                    color: Theme.gold-heading;
                 }
             }
         }
 
         VerticalLayout {
             alignment: center;
-            spacing: 2px;
+            spacing: 3px;
             horizontal-stretch: 1;
 
             HorizontalLayout {
-                spacing: Theme.gap-tight;
+                spacing: 10px;
                 Text {
                     text: root.addon.name;
                     font-size: Theme.heading;
-                    font-weight: 700;
-                    color: Theme.text;
+                    color: Theme.gold-heading;
                     overflow: elide;
                 }
                 VerticalLayout {
                     alignment: center;
-                    Badge { text: root.addon.badge; }
+                    Pill { text: root.addon.badge; }
                 }
                 Rectangle { horizontal-stretch: 1; }
             }
             Text {
-                text: (root.addon.author != "" ? "by " + root.addon.author + "   " : "") + (root.addon.version != "" ? root.addon.version : "");
+                text: (root.addon.author != "" ? "by " + root.addon.author + "   " : "") + root.addon.version;
                 font-size: Theme.meta;
                 color: Theme.text-muted;
                 overflow: elide;
@@ -203,7 +360,7 @@ export component AddonRowView inherits Rectangle {
             Text {
                 text: root.addon.warning != "" ? root.addon.warning : root.addon.description;
                 font-size: Theme.meta;
-                color: root.addon.warning != "" ? Theme.danger : Theme.text-muted;
+                color: root.addon.warning != "" ? Theme.danger : Theme.text;
                 overflow: elide;
             }
         }
@@ -216,7 +373,7 @@ export component AddonRowView inherits Rectangle {
                 horizontal-alignment: right;
                 color: root.addon.busy ? Theme.text-muted
                     : root.addon.status-kind == 1 ? Theme.ok
-                    : root.addon.status-kind == 2 ? Theme.accent
+                    : root.addon.status-kind == 2 ? Theme.warn
                     : root.addon.status-kind == 3 ? Theme.danger
                     : Theme.text-muted;
             }
@@ -225,7 +382,7 @@ export component AddonRowView inherits Rectangle {
         VerticalLayout {
             alignment: center;
             spacing: 4px;
-            width: 120px;
+            width: 124px;
             if root.addon.action != "" : ActionButton {
                 text: root.addon.action;
                 primary: root.addon.status-kind == 2;
@@ -234,7 +391,7 @@ export component AddonRowView inherits Rectangle {
             }
             HorizontalLayout {
                 alignment: end;
-                spacing: 4px;
+                spacing: 6px;
                 if root.addon.can-open : LinkButton {
                     text: "GitHub";
                     clicked => { root.open(); }
@@ -249,7 +406,7 @@ export component AddonRowView inherits Rectangle {
     }
 }
 
-// Full-window dim layer that swallows clicks to the UI below.
+// Full-window dim layer that swallows clicks to the UI below and centers its child.
 export component Overlay inherits Rectangle {
     background: Theme.overlay;
     TouchArea {
@@ -265,21 +422,28 @@ export component Overlay inherits Rectangle {
     }
 }
 
+// Panel with a gold-brown rim, used for the main content area.
+export component Panel inherits Rectangle {
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: Theme.line;
+    background: Theme.panel;
+}
+
 export component DialogCard inherits Rectangle {
     in property <string> title;
-    width: 480px;
+    width: 500px;
     height: layout.preferred-height;
-    border-radius: 8px;
-    background: Theme.surface-1;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: Theme.outline;
+    background: Theme.panel;
     layout := VerticalLayout {
         padding: Theme.gap-loose;
-        spacing: 16px;
-        Text {
+        spacing: 18px;
+        SectionHeading {
             text: root.title;
-            font-size: Theme.heading + 4px;
-            font-weight: 700;
-            color: Theme.text;
-            wrap: word-wrap;
+            size: 24px;
         }
         @children
     }
@@ -296,10 +460,10 @@ component CaptionButton inherits Rectangle {
     accessible-label: root.label;
     width: 46px;
     background: !touch.has-hover ? transparent
-        : root.glyph == 3 ? (touch.pressed ? #C24B3D : Theme.danger)
-        : touch.pressed ? Theme.surface-2 : Theme.surface-3;
+        : root.glyph == 3 ? Theme.crimson-hover
+        : touch.pressed ? Theme.bg : Theme.control;
 
-    property <brush> stroke: touch.has-hover && root.glyph == 3 ? #FFFFFF : Theme.text-muted;
+    property <brush> stroke: touch.has-hover ? Theme.gold-bright : Theme.text-muted;
 
     if root.glyph == 0 : Path {
         width: 10px;
@@ -354,8 +518,8 @@ export component TitleBar inherits Rectangle {
     callback toggle-maximize();
     callback close();
 
-    height: 36px;
-    background: Theme.surface-1;
+    height: 34px;
+    background: Theme.bg;
 
     drag := TouchArea {
         width: parent.width;
@@ -370,12 +534,12 @@ export component TitleBar inherits Rectangle {
     }
 
     HorizontalLayout {
-        padding-left: 16px;
+        padding-left: 14px;
         Text {
             text: root.title;
-            font-size: Theme.meta;
-            font-weight: 600;
-            color: Theme.text-muted;
+            font-family: Theme.font-display;
+            font-size: 14px;
+            color: Theme.gold;
             vertical-alignment: center;
             horizontal-stretch: 1;
         }

@@ -1,29 +1,53 @@
-// Warm dark neutrals with WoW gold as the one signature colour.
-// Gold marks only the primary action and "update available".
-// Surfaces separate by flat colour steps; no borders, no shadows.
+// Matches the Azeroth Survivors menus: near-black warm ground, gold outlines and lettering,
+// deep red for the selected or primary element, uncial display type for headings.
+// Surfaces separate by thin gold-brown borders; no shadows.
+import "fonts/UncialAntiqua-Regular.ttf";
+import "fonts/Marcellus-Regular.ttf";
+
 export global Theme {
-    out property <color> bg: #16130F;
-    out property <color> surface-1: #1F1A14;
-    out property <color> surface-2: #2A241C;
-    out property <color> surface-3: #362E24;
-    out property <color> overlay: #000000B0;
+    out property <string> font-display: "Uncial Antiqua";
+    out property <string> font-body: "Marcellus";
 
-    out property <color> text: #EDE6DA;
-    out property <color> text-muted: #9C9284;
+    // Ground and surfaces
+    out property <color> bg: #0A0806;
+    out property <brush> bg-glow: @radial-gradient(circle, #1A130C 0%, #0A0806 75%);
+    out property <brush> panel: @linear-gradient(180deg, #14100B 0%, #0E0B08 100%);
+    out property <color> field: #0C0907;
+    out property <brush> row: @linear-gradient(90deg, #1B140D 0%, #120E09 100%);
+    out property <brush> row-hover: @linear-gradient(90deg, #241A10 0%, #16110B 100%);
+    out property <color> overlay: #000000C0;
 
-    out property <color> accent: #E8A33D;
-    out property <color> accent-hover: #F2B65A;
-    out property <color> on-accent: #1A1510;
+    // Lines: decorative panel edges, then interactive outlines (>= 3:1 on the ground)
+    out property <color> line: #3A2C18;
+    out property <color> outline: #8A6C3A;
+    out property <color> outline-hover: #C9A24E;
+    out property <color> outline-active: #F0CC6A;
 
-    out property <color> ok: #6FBF73;
-    out property <color> danger: #E5604F;
+    // Lettering
+    out property <color> gold: #E8C25A;
+    out property <color> gold-bright: #F6DD9A;
+    out property <brush> gold-heading: @linear-gradient(180deg, #FBE7A1 0%, #D9A93E 100%);
+    out property <color> text: #E9DCC0;
+    out property <color> text-muted: #A89679;
+    out property <color> text-disabled: #6E6250;
 
-    out property <length> title: 26px;
-    out property <length> heading: 16px;
-    out property <length> body: 13px;
-    out property <length> meta: 11px;
+    // Selected tab / primary action: deep red
+    out property <brush> crimson: @linear-gradient(180deg, #5A1913 0%, #2B0907 100%);
+    out property <brush> crimson-hover: @linear-gradient(180deg, #6E2018 0%, #36100B 100%);
+    out property <brush> control: @linear-gradient(180deg, #17110B 0%, #0E0A07 100%);
+
+    // Status, semantic only
+    out property <color> ok: #5BE36F;
+    out property <color> warn: #F0A030;
+    out property <color> danger: #E0574A;
+
+    out property <length> logo: 44px;
+    out property <length> title: 30px;
+    out property <length> heading: 21px;
+    out property <length> body: 15px;
+    out property <length> meta: 13px;
 
     out property <length> gap-tight: 8px;
     out property <length> gap-loose: 24px;
-    out property <length> radius: 6px;
+    out property <length> radius: 3px;
 }

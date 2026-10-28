@@ -70,6 +70,8 @@ SURVIVORSFORGE_DATA_DIR=/path/to/test-data cargo run
 | `src/controller.rs` | Pure view logic: rows, badges, filters, zip install plan |
 | `src/self_update.rs` | Updates SurvivorsForge itself from its GitHub releases |
 | `ui/*.slint` | Theme tokens, components (title bar, rows, dialogs), main window |
+| `assets/icon.png`, `assets/icon.ico` | App icon: window and taskbar (PNG via Slint), `.exe` icon (ICO via `winresource` in `build.rs`) |
+| `ui/fonts/` | Uncial Antiqua (headings) and Marcellus (text), embedded at build time; both under the SIL Open Font License (`OFL-*.txt`) |
 | `registry/verified.json` | The verified addon list |
 | `tests/` | Integration tests for zip analysis and installation |
 
