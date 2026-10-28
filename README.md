@@ -10,10 +10,13 @@ Addon sources:
 
 Built with Rust and [Slint](https://slint.dev).
 
+> **Linux and Steam Deck support is experimental.** 
+
 ## Requirements
 
-- Rust (stable, 2021 edition). Developed against 1.98.
-- Windows 10/11 (primary target). Linux builds should work, but nobody tests them.
+- Rust (stable, 2024 edition). Developed against 1.98.
+- Windows 10/11, or Linux x86_64 with glibc 2.35 or newer (SteamOS, Ubuntu 22.04+, Arch, Fedora, ...).
+- Linux build dependencies (Ubuntu names): `libfontconfig1-dev libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev libegl1-mesa-dev`. At runtime Linux needs at least one installed system font: Slint panics with `NoMatch` without any.
 
 ## Build and run
 
@@ -25,9 +28,19 @@ cargo run
 cargo build --release
 ```
 
-The release binary is `target/release/SurvivorsForge.exe`. It is a GUI app and opens no console window.
+The release binary is `target/release/SurvivorsForge.exe` (Linux: `target/release/SurvivorsForge`). On Windows it is a GUI app and opens no console window.
 
-On first start the app asks for the `AddOns` folder, e.g. `<game>\benilla-config\AddOns`.
+On first start the app asks for the `AddOns` folder, e.g. `<game>\benilla-config\AddOns`. It also searches the home, Games, Downloads and Desktop folders, removable media (Linux) and drive roots (Windows) up to three levels deep and offers what it finds.
+
+### Linux AppImage
+
+```bash
+packaging/linux/build-appimage.sh target/release/SurvivorsForge <version> dist
+```
+
+The AppImage holds only the binary, icon and `.desktop` file: the binary links nothing but glibc and fontconfig/freetype, and winit loads the window and GL libraries at runtime. On Wayland the taskbar icon comes from the `.desktop` file matching the app id `survivorsforge`.
+
+File dialogs go through xdg-desktop-portal. Where none runs, "Browse..." says so and the path can be typed in; "Install zip" is then unavailable.
 
 ## Tests
 
@@ -51,6 +64,27 @@ To try the app against a copy of an AddOns folder without touching your real set
 SURVIVORSFORGE_DATA_DIR=/path/to/test-data cargo run
 ```
 
+### Testing on Linux with Docker
+
+`docker/` holds two images. With Docker Desktop on WSL2, their windows appear on the Windows desktop through WSLg.
+
+| Image | Purpose |
+|---|---|
+| `docker/linux-dev.Dockerfile` | Ubuntu 22.04 with Rust: build, test, package the AppImage (same base as the release build) |
+| `docker/arch-run.Dockerfile` | Arch Linux (base of SteamOS) with only desktop runtime libraries: runs the AppImage |
+
+```bash
+docker build -t survivorsforge-dev -f docker/linux-dev.Dockerfile docker
+```
+
+```bash
+docker run --rm -v "$PWD:/src" -v survivorsforge-target:/target survivorsforge-dev cargo test
+```
+
+`docker/run-gui.ps1 -AddOns <copy of an AddOns folder>` starts the app from the container with the WSLg mounts. Never mount the real game folder: the container installs and removes addons in it.
+
+To approximate a Steam Deck in Game Mode, set `XDG_CURRENT_DESKTOP=gamescope` (fullscreen, no window frame) and `SLINT_SCALE_FACTOR` so the screen comes out near 1280x800. Game Mode itself, Steam Input and the on-screen keyboard need a real Deck.
+
 ## Project layout
 
 | Path | Purpose |
@@ -71,6 +105,9 @@ SURVIVORSFORGE_DATA_DIR=/path/to/test-data cargo run
 | `src/self_update.rs` | Updates SurvivorsForge itself from its GitHub releases |
 | `ui/*.slint` | Theme tokens, components (title bar, rows, dialogs), main window |
 | `assets/icon.png`, `assets/icon.ico` | App icon: window and taskbar (PNG via Slint), `.exe` icon (ICO via `winresource` in `build.rs`) |
+| `assets/survivorsforge.desktop` | Linux desktop entry: name, icon and app id for the AppImage |
+| `packaging/linux/` | `AppRun` and `build-appimage.sh` for the Linux AppImage |
+| `docker/` | Linux build and runtime containers for testing on Windows (see Tests) |
 | `ui/fonts/` | Uncial Antiqua (headings) and Marcellus (text), embedded at build time; both under the SIL Open Font License (`OFL-*.txt`) |
 | `registry/verified.json` | The verified addon list |
 | `tests/` | Integration tests for zip analysis and installation |
@@ -112,7 +149,7 @@ Addons found on disk that match a verified entry are adopted on startup with ver
 
 ### Installation
 
-1. The zip is extracted to `<AddOns parent>/.survivorsforge/staging/<id>/`. That folder is on the same drive, so `rename` is atomic, and outside AddOns, so the game never sees a half-extracted addon.
+1. The zip is extracted to `AddOns/.survivorsforge/staging/<id>/`. That folder is always on the same file system as the addons, even when AddOns is a mount or a link to another drive, so `rename` is atomic. The game ignores it, since it holds no matching `.toc`.
 2. Existing folders of the addon move to `.survivorsforge/backup/<id>/`.
 3. The new folders move into AddOns.
 4. On any error, everything is moved back. On success, backup and staging are deleted.
@@ -193,19 +230,21 @@ To change the list for all users, edit the file on `main`. No new release is nee
 | Settings (`config.json`) | `%APPDATA%\SurvivorsForge\` (Linux: `~/.config/SurvivorsForge/`) |
 | Install state (`state.json`) | Same folder, one section per AddOns folder |
 | Verified list cache | `cache/verified.json` in the same folder |
-| Staging, backup, downloads | `<AddOns parent>\.survivorsforge\` |
+| Staging, backup, downloads | `AddOns\.survivorsforge\` |
 
 `SURVIVORSFORGE_DATA_DIR` overrides the settings folder. A damaged `state.json` is moved to `state.json.bak` and the app starts with an empty state.
 
 ## Releases and self-update
 
-`.github/workflows/ci.yml` runs tests and Clippy on every push and pull request.
+`.github/workflows/ci.yml` runs tests and Clippy on Windows and Ubuntu 22.04 for every push and pull request.
 
 `.github/workflows/release.yml` runs on tags `v*`:
 
 1. Fails if the tag does not match the `Cargo.toml` version.
-2. Builds the release binary.
-3. Publishes `SurvivorsForge-<version>-x86_64-pc-windows-msvc.zip` as a GitHub release.
+2. Builds on Windows and on Ubuntu 22.04 in parallel.
+3. Publishes one GitHub release with both assets, only if both builds succeeded:
+   - `SurvivorsForge-<version>-x86_64-pc-windows-msvc.zip`
+   - `SurvivorsForge-<version>-x86_64.AppImage`
 
 To cut a release: bump `version` in `Cargo.toml`, commit, then tag and push:
 
@@ -217,7 +256,22 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-On startup the app checks the latest SurvivorsForge release. If its version is higher (semver), a banner offers "Update and restart". It downloads the zip, swaps the running executable with `self-replace` and starts the new one.
+On startup the app checks the latest SurvivorsForge release. If its version is higher (semver), a banner offers "Update and restart":
+
+- Windows downloads the zip, swaps the running executable with `self-replace` and starts the new one.
+- Linux downloads the new AppImage next to the running one (`$APPIMAGE`), makes it executable and renames it over the old file. A bare binary outside an AppImage can't replace itself; its banner opens the download page instead.
+
+## Steam Deck
+
+Experimental and not yet tested on a real Deck.
+
+Azeroth Survivors is not on Steam. The game creates its `benilla-config/AddOns` folder on first start, so start the game once before setting up SurvivorsForge. The folder is expected next to the game's executable wherever it was unpacked, whether the Linux build runs natively or the Windows build through Proton.
+
+1. In Desktop Mode, download the AppImage and make it executable (file properties, or `chmod +x`). Gear Lever can add it to the application menu.
+2. To use it in Game Mode, add it to Steam as a non-Steam game (right-click the AppImage, "Add to Steam").
+3. In Game Mode (gamescope) SurvivorsForge starts fullscreen without a window frame; quit it from the Steam menu. Touchscreen and trackpads work as a mouse, Steam + X opens the keyboard for the search and repo fields.
+
+"Install zip" needs a file dialog, which Game Mode may not provide: use Desktop Mode for zip installs.
 
 ## Window frame
 

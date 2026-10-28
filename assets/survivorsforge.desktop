@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=SurvivorsForge
+Comment=Mod manager for Azeroth Survivors addons
+Exec=SurvivorsForge
+Icon=survivorsforge
+Categories=Game;Utility;
+StartupWMClass=survivorsforge
+Terminal=false

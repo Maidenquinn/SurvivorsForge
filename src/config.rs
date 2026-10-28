@@ -60,6 +60,64 @@ impl fmt::Display for DirWarning {
     }
 }
 
+/// Where the game is usually unpacked: the home folder and its Games, Downloads and Desktop
+/// folders, removable media on Linux (Steam Deck SD card), every drive root on Windows.
+pub fn search_roots() -> Vec<PathBuf> {
+    let mut roots = Vec::new();
+    if let Some(user) = directories::UserDirs::new() {
+        roots.push(user.home_dir().join("Games"));
+        roots.extend(user.download_dir().map(Path::to_path_buf));
+        roots.extend(user.desktop_dir().map(Path::to_path_buf));
+        roots.push(user.home_dir().to_path_buf());
+    }
+    if cfg!(windows) {
+        roots.extend((b'C'..=b'Z').map(|d| PathBuf::from(format!("{}:\\", d as char))).filter(|p| p.is_dir()));
+    } else {
+        // `/run/media/<user>/<label>` on most distros, `/run/media/<device>` on SteamOS
+        roots.push(PathBuf::from("/run/media"));
+    }
+    roots.into_iter().filter(|p| p.is_dir()).collect()
+}
+
+/// Folders that look like the game's AddOns folder (`<game>/benilla-config/AddOns`), found by a
+/// short walk below each root. Hidden folders and symlinks are skipped, and each root has a budget
+/// of directory entries, so a huge drive can't stall the setup.
+pub fn find_addons_dirs(roots: &[PathBuf], max_depth: usize) -> Vec<PathBuf> {
+    const BUDGET_PER_ROOT: usize = 20_000;
+    let mut found: Vec<PathBuf> = Vec::new();
+    for root in roots {
+        let mut budget = BUDGET_PER_ROOT;
+        let mut stack = vec![(root.clone(), 0usize)];
+        while let Some((dir, depth)) = stack.pop() {
+            let candidate = dir.join("benilla-config").join("AddOns");
+            if candidate.is_dir() && !found.contains(&candidate) {
+                found.push(candidate);
+            }
+            if depth >= max_depth {
+                continue;
+            }
+            let Ok(entries) = std::fs::read_dir(&dir) else { continue };
+            for entry in entries.flatten() {
+                if budget == 0 {
+                    break;
+                }
+                budget -= 1;
+                let hidden = entry.file_name().to_string_lossy().starts_with(['.', '$']);
+                if !hidden && entry.file_type().is_ok_and(|t| t.is_dir()) {
+                    stack.push((entry.path(), depth + 1));
+                }
+            }
+        }
+    }
+    found.sort();
+    found
+}
+
+/// Steam Deck Game Mode (and any gamescope session): the app runs fullscreen there.
+pub fn is_game_mode(xdg_current_desktop: Option<&str>, gamescope_display: bool) -> bool {
+    gamescope_display || xdg_current_desktop.is_some_and(|d| d.eq_ignore_ascii_case("gamescope"))
+}
+
 pub fn validate_addons_dir(path: &Path) -> Result<Option<DirWarning>, DirError> {
     if !path.exists() {
         return Err(DirError::NotFound);
@@ -79,6 +137,26 @@ pub fn validate_addons_dir(path: &Path) -> Result<Option<DirWarning>, DirError> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn suggests_existing_addon_dirs() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let game = root.join("Games/AzerothSurvivors/benilla-config/AddOns");
+        std::fs::create_dir_all(&game).unwrap();
+        std::fs::create_dir_all(root.join(".hidden/AzerothSurvivors/benilla-config/AddOns")).unwrap();
+        std::fs::create_dir_all(root.join("a/b/c/d/benilla-config/AddOns")).unwrap();
+        assert_eq!(find_addons_dirs(&[root.to_path_buf()], 3), std::slice::from_ref(&game));
+        assert_eq!(find_addons_dirs(&[root.to_path_buf(), root.join("Games")], 3), [game], "no duplicates");
+    }
+
+    #[test]
+    fn detects_game_mode_from_env() {
+        assert!(is_game_mode(Some("gamescope"), false));
+        assert!(is_game_mode(None, true));
+        assert!(!is_game_mode(Some("KDE"), false));
+        assert!(!is_game_mode(None, false));
+    }
 
     #[test]
     fn load_returns_none_without_file() {

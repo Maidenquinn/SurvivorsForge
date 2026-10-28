@@ -1,7 +1,8 @@
 //! Installs, replaces and removes addon folders without leaving half-written states behind.
 //!
-//! Work happens in `<parent of AddOns>/.survivorsforge/` (same drive, so `rename` is atomic,
-//! and outside AddOns, so the game never sees a half-extracted folder).
+//! Work happens in `AddOns/.survivorsforge/`: always the same file system as the addon folders,
+//! even when AddOns is a mount or a link to another drive, so `rename` is atomic. The game only
+//! loads folders holding a matching `.toc`, so it ignores this one.
 
 use crate::archive;
 use crate::state::{Entry, Source, State};
@@ -19,7 +20,7 @@ pub struct Request<'a> {
 }
 
 pub fn work_dir(addons_dir: &Path) -> PathBuf {
-    addons_dir.parent().unwrap_or(addons_dir).join(".survivorsforge")
+    addons_dir.join(".survivorsforge")
 }
 
 pub fn install_zip(addons_dir: &Path, state: &mut State, request: Request) -> Result<Entry> {
@@ -73,10 +74,9 @@ fn swap(addons_dir: &Path, staging: &Path, backup: &Path, new: &[String], replac
     let mut moved_in = Vec::new();
     let outcome = (|| -> std::io::Result<()> {
         for folder in replaced {
-            let path = addons_dir.join(folder);
-            if path.exists() {
-                mv(&path, &backup.join(folder))?;
-                backed_up.push(folder.clone());
+            if let Some(actual) = existing_folder(addons_dir, folder) {
+                mv(&addons_dir.join(&actual), &backup.join(&actual))?;
+                backed_up.push(actual);
             }
         }
         for folder in new {
@@ -100,12 +100,24 @@ fn swap(addons_dir: &Path, staging: &Path, backup: &Path, new: &[String], replac
 /// Removes folders from AddOns with `delete` (the recycle bin in the app).
 pub fn remove_folders(addons_dir: &Path, folders: &[String], delete: &mut dyn FnMut(&Path) -> Result<()>) -> Result<()> {
     for folder in folders {
-        let path = addons_dir.join(folder);
-        if path.exists() {
-            delete(&path)?;
+        if let Some(actual) = existing_folder(addons_dir, folder) {
+            delete(&addons_dir.join(actual))?;
         }
     }
     Ok(())
+}
+
+/// The folder's name as it exists on disk, matched regardless of case. Linux file systems keep
+/// `luckyodds/` and `LuckyOdds/` apart, but for an addon they are the same folder.
+fn existing_folder(addons_dir: &Path, name: &str) -> Option<String> {
+    if addons_dir.join(name).exists() {
+        return Some(name.to_string());
+    }
+    std::fs::read_dir(addons_dir)
+        .ok()?
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .find(|n| n.eq_ignore_ascii_case(name))
 }
 
 pub fn uninstall(addons_dir: &Path, state: &mut State, id: &str, delete: &mut dyn FnMut(&Path) -> Result<()>) -> Result<()> {

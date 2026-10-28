@@ -4,37 +4,80 @@ on:
   push:
     tags: ["v*"]
 
-permissions:
-  contents: write
-
 jobs:
-  release:
+  version:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check tag matches Cargo.toml version
+        id: check
+        run: |
+          version=$(grep -m1 '^version = ' Cargo.toml | cut -d '"' -f2)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match Cargo.toml version $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  # Asset names are what the self-update looks for, see src/self_update.rs.
+  windows:
+    needs: version
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-
-      - name: Check tag matches Cargo.toml version
-        shell: bash
-        run: |
-          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match Cargo.toml version $version"
-            exit 1
-          fi
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-
       - run: cargo test
       - run: cargo build --release
-
-      # The asset name is what the self-update looks for: SurvivorsForge-<version>-<target>.zip
       - name: Package
         shell: pwsh
-        run: Compress-Archive -Path target/release/SurvivorsForge.exe -DestinationPath "SurvivorsForge-$env:VERSION-x86_64-pc-windows-msvc.zip"
+        run: Compress-Archive -Path target/release/SurvivorsForge.exe -DestinationPath "SurvivorsForge-${{ needs.version.outputs.version }}-x86_64-pc-windows-msvc.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: SurvivorsForge-*.zip
 
+  linux:
+    needs: version
+    # Oldest glibc we support (2.35), so the AppImage runs on SteamOS and current distros.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libfontconfig1-dev libxkbcommon-dev libwayland-dev libx11-dev \
+            libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev libegl1-mesa-dev file
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test
+      - run: cargo build --release
+      - name: Package AppImage
+        run: bash packaging/linux/build-appimage.sh target/release/SurvivorsForge "${{ needs.version.outputs.version }}" dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/SurvivorsForge-*.AppImage
+
+  # Runs only when both builds succeeded, so a release never ships with one platform missing.
+  publish:
+    needs: [version, windows, linux]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
       - name: Publish release
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "SurvivorsForge-$VERSION-x86_64-pc-windows-msvc.zip" --title "SurvivorsForge $VERSION" --generate-notes
+        run: |
+          gh release create "$GITHUB_REF_NAME" assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "SurvivorsForge ${{ needs.version.outputs.version }}" \
+            --generate-notes

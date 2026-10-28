@@ -461,6 +461,10 @@ fn on_row_remove(ui: &AppWindow, shared: &Shared, id: String) {
 }
 
 fn on_install_zip(ui: &AppWindow, shared: &Shared) {
+    if !file_dialog_available() {
+        lock(shared).set_status("No file dialog is available here (it needs xdg-desktop-portal).".into(), true);
+        return refresh(ui, shared);
+    }
     let Some(file) = rfd::FileDialog::new().add_filter("Zip archive", &["zip"]).pick_file() else { return };
     let detected = match archive::analyze(&file) {
         Ok(detected) => detected,
@@ -665,6 +669,10 @@ fn fill_settings(ui: &AppWindow, shared: &Shared) {
 }
 
 fn on_self_update(ui: &AppWindow, shared: &Shared) {
+    if !self_update::can_replace_self() {
+        let _ = open::that(self_update::RELEASES_URL);
+        return;
+    }
     let (client, update, work) = {
         let mut core = lock(shared);
         if !core.busy.is_empty() {
@@ -691,6 +699,19 @@ fn on_self_update(ui: &AppWindow, shared: &Shared) {
     });
 }
 
+const NO_FILE_DIALOG: &str =
+    "No file dialog is available here (it needs xdg-desktop-portal). Type the path into the field instead.";
+
+/// On Linux, rfd's dialogs go through xdg-desktop-portal over D-Bus. Without a session bus
+/// (some minimal or gamescope sessions) the dialog silently returns nothing, so say so instead.
+fn file_dialog_available() -> bool {
+    if !cfg!(target_os = "linux") {
+        return true;
+    }
+    std::env::var_os("DBUS_SESSION_BUS_ADDRESS").is_some()
+        || std::env::var_os("XDG_RUNTIME_DIR").is_some_and(|dir| Path::new(&dir).join("bus").exists())
+}
+
 fn pick_folder(start: &str) -> Option<String> {
     let mut dialog = rfd::FileDialog::new();
     if Path::new(start).is_dir() {
@@ -699,7 +720,22 @@ fn pick_folder(start: &str) -> Option<String> {
     dialog.pick_folder().map(|p| p.to_string_lossy().into_owned())
 }
 
+/// Wayland and X11 take the taskbar icon from the `.desktop` file whose name matches this id.
+#[cfg(target_os = "linux")]
+fn select_backend() -> Result<(), slint::PlatformError> {
+    use slint::winit_030::winit::platform::{wayland::WindowAttributesExtWayland, x11::WindowAttributesExtX11};
+    const APP_ID: &str = "survivorsforge";
+    slint::BackendSelector::new()
+        .with_winit_window_attributes_hook(|attrs| {
+            let attrs = WindowAttributesExtWayland::with_name(attrs, APP_ID, APP_ID);
+            WindowAttributesExtX11::with_name(attrs, APP_ID, APP_ID)
+        })
+        .select()
+}
+
 fn main() -> Result<(), slint::PlatformError> {
+    #[cfg(target_os = "linux")]
+    select_backend()?;
     let data_dir = config::data_dir();
     let config = Config::load(&data_dir);
     let needs_setup = config.is_none();
@@ -707,6 +743,28 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let ui = AppWindow::new()?;
     ui.set_app_version(APP_VERSION.into());
+    ui.set_self_update_in_place(self_update::can_replace_self());
+
+    let game_mode = config::is_game_mode(
+        std::env::var("XDG_CURRENT_DESKTOP").ok().as_deref(),
+        std::env::var_os("GAMESCOPE_WAYLAND_DISPLAY").is_some(),
+    );
+    ui.set_game_mode(game_mode);
+    if game_mode {
+        ui.window().set_fullscreen(true);
+    }
+
+    if needs_setup {
+        let weak = ui.as_weak();
+        std::thread::spawn(move || {
+            let found: Vec<SharedString> = config::find_addons_dirs(&config::search_roots(), 3)
+                .into_iter()
+                .map(|p| p.to_string_lossy().into_owned().into())
+                .collect();
+            let _ = weak.upgrade_in_event_loop(move |ui| ui.set_setup_suggestions(ModelRc::new(VecModel::from(found))));
+        });
+    }
+    ui.set_addons_example(if cfg!(windows) { r"...\benilla-config\AddOns" } else { ".../benilla-config/AddOns" }.into());
     ui.set_needs_setup(needs_setup);
     fill_settings(&ui, &shared);
 
@@ -721,9 +779,13 @@ fn main() -> Result<(), slint::PlatformError> {
         }};
     }
 
-    on!(on_setup_browse, |ui, _shared| if let Some(p) = pick_folder(&ui.get_setup_path()) {
-        ui.set_setup_path(p.into());
-        ui.set_setup_warning(SharedString::new());
+    on!(on_setup_browse, |ui, _shared| {
+        if !file_dialog_available() {
+            ui.set_setup_error(NO_FILE_DIALOG.into());
+        } else if let Some(p) = pick_folder(&ui.get_setup_path()) {
+            ui.set_setup_path(p.into());
+            ui.set_setup_warning(SharedString::new());
+        }
     });
     on!(on_setup_confirm, |ui, shared| on_setup_confirm(&ui, shared));
     on!(on_search_changed, |ui, shared, text| {
@@ -755,8 +817,13 @@ fn main() -> Result<(), slint::PlatformError> {
         ui.set_confirm_open(false);
         PENDING.with(|p| p.borrow_mut().take());
     });
-    on!(on_settings_browse, |ui, _shared| if let Some(p) = pick_folder(&ui.get_settings_path()) {
-        ui.set_settings_path(p.into());
+    on!(on_settings_browse, |ui, _shared| {
+        if !file_dialog_available() {
+            ui.set_settings_message(NO_FILE_DIALOG.into());
+            ui.set_settings_message_error(true);
+        } else if let Some(p) = pick_folder(&ui.get_settings_path()) {
+            ui.set_settings_path(p.into());
+        }
     });
     on!(on_settings_save, |ui, shared| on_settings_save(&ui, shared));
     on!(on_self_update, |ui, shared| on_self_update(&ui, shared));

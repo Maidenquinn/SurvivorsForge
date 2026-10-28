@@ -1,15 +1,37 @@
 //! Updates SurvivorsForge itself from the releases of `APP_REPO`.
-//! Release asset: `SurvivorsForge-<version>-<target>.zip` holding the executable.
+//!
+//! Release assets per platform:
+//! - Windows: `SurvivorsForge-<version>-x86_64-pc-windows-msvc.zip` holding the `.exe`, which
+//!   replaces the running executable.
+//! - Linux: `SurvivorsForge-<version>-x86_64.AppImage`, which replaces the AppImage file itself
+//!   (`$APPIMAGE`). A bare binary outside an AppImage is not updated in place.
 
 use crate::github::{Client, Release};
 use crate::{Error, Result};
-use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-pub const TARGET: &str = if cfg!(windows) { "x86_64-pc-windows-msvc" } else { "x86_64-unknown-linux-gnu" };
+pub const RELEASES_URL: &str = concat!("https://github.com/", "Rezondes/SurvivorsForge", "/releases/latest");
+
+pub fn asset_name_for(windows: bool, version: &str) -> String {
+    if windows {
+        format!("{}-{version}-x86_64-pc-windows-msvc.zip", crate::APP_NAME)
+    } else {
+        format!("{}-{version}-x86_64.AppImage", crate::APP_NAME)
+    }
+}
 
 pub fn asset_name(version: &str) -> String {
-    format!("{}-{version}-{TARGET}.zip", crate::APP_NAME)
+    asset_name_for(cfg!(windows), version)
+}
+
+/// The AppImage file to replace: `$APPIMAGE`, set by the AppImage runtime, if it points at a file.
+pub fn appimage_path(appimage_env: Option<std::ffi::OsString>) -> Option<PathBuf> {
+    appimage_env.map(PathBuf::from).filter(|p| p.is_file())
+}
+
+/// Whether this process can replace itself; otherwise the update banner links to the release.
+pub fn can_replace_self() -> bool {
+    cfg!(windows) || appimage_path(std::env::var_os("APPIMAGE")).is_some()
 }
 
 fn parse(version: &str) -> Option<semver::Version> {
@@ -37,11 +59,13 @@ pub fn available(current: &str, release: &Release) -> Option<Available> {
     Some(Available { version, url: asset.url.clone() })
 }
 
-/// Downloads the release zip, swaps the running executable and returns once the new one is in place.
+/// Downloads the release zip and swaps the running executable.
+#[cfg(windows)]
 pub fn apply(client: &Client, update: &Available, work_dir: &Path) -> Result<()> {
+    use std::io::Read;
     let zip_path = work_dir.join(asset_name(&update.version));
     client.download(&update.url, &zip_path)?;
-    let exe_name = if cfg!(windows) { format!("{}.exe", crate::APP_NAME) } else { crate::APP_NAME.to_string() };
+    let exe_name = format!("{}.exe", crate::APP_NAME);
     let new_exe = work_dir.join(format!("new-{exe_name}"));
     let result = (|| -> Result<()> {
         let mut zip = zip::ZipArchive::new(std::fs::File::open(&zip_path)?).map_err(|e| Error::Zip(e.to_string()))?;
@@ -57,10 +81,30 @@ pub fn apply(client: &Client, update: &Available, work_dir: &Path) -> Result<()>
     result
 }
 
-/// Starts the (now replaced) executable and ends this process.
+/// Downloads the new AppImage next to the running one and renames it over it (same folder, so
+/// the swap is atomic; the running process keeps its already opened file).
+#[cfg(not(windows))]
+pub fn apply(client: &Client, update: &Available, _work_dir: &Path) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    let target = appimage_path(std::env::var_os("APPIMAGE"))
+        .ok_or_else(|| Error::Io("SurvivorsForge only updates itself when it runs as an AppImage".into()))?;
+    let new = target.with_extension("AppImage.new");
+    let result = (|| -> Result<()> {
+        client.download(&update.url, &new)?;
+        std::fs::set_permissions(&new, std::fs::Permissions::from_mode(0o755))?;
+        std::fs::rename(&new, &target)?;
+        Ok(())
+    })();
+    let _ = std::fs::remove_file(&new);
+    result
+}
+
+/// Starts the (now replaced) program and ends this process. An AppImage restarts from its file:
+/// `current_exe` points into the AppImage's temporary mount, which goes away with this process.
 pub fn restart() -> ! {
-    if let Ok(exe) = std::env::current_exe() {
-        let _ = std::process::Command::new(exe).spawn();
+    let program = appimage_path(std::env::var_os("APPIMAGE")).or_else(|| std::env::current_exe().ok());
+    if let Some(program) = program {
+        let _ = std::process::Command::new(program).spawn();
     }
     std::process::exit(0)
 }
@@ -86,8 +130,19 @@ mod tests {
     }
 
     #[test]
-    fn asset_name_for_target() {
-        assert_eq!(asset_name("0.2.0"), format!("SurvivorsForge-0.2.0-{TARGET}.zip"));
+    fn asset_name_per_platform() {
+        assert_eq!(asset_name_for(true, "0.2.0"), "SurvivorsForge-0.2.0-x86_64-pc-windows-msvc.zip");
+        assert_eq!(asset_name_for(false, "0.2.0"), "SurvivorsForge-0.2.0-x86_64.AppImage");
+    }
+
+    #[test]
+    fn appimage_target_from_env() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("SurvivorsForge.AppImage");
+        std::fs::write(&file, b"").unwrap();
+        assert_eq!(appimage_path(Some(file.clone().into())), Some(file));
+        assert_eq!(appimage_path(Some(dir.path().join("missing").into())), None);
+        assert_eq!(appimage_path(None), None);
     }
 
     #[test]

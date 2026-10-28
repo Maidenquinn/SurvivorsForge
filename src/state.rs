@@ -50,7 +50,9 @@ pub enum LoadNote {
 }
 
 fn key(addons_dir: &Path) -> String {
-    addons_dir.to_string_lossy().trim_end_matches(['/', '\\']).to_lowercase()
+    let key = addons_dir.to_string_lossy().trim_end_matches(['/', '\\']).to_string();
+    // Windows paths ignore case, Linux paths don't.
+    if cfg!(windows) { key.to_lowercase() } else { key }
 }
 
 fn read_all(data_dir: &Path) -> std::result::Result<BTreeMap<String, State>, ()> {

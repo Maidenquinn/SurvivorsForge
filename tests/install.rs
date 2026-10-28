@@ -44,6 +44,30 @@ fn fresh_install_creates_folders_and_state() {
 }
 
 #[test]
+fn replaces_folder_with_different_case() {
+    let e = env();
+    std::fs::create_dir_all(e.addons.join("luckyodds")).unwrap();
+    std::fs::write(e.addons.join("luckyodds/luckyodds.toc"), "old").unwrap();
+    std::fs::write(e.addons.join("luckyodds/old.lua"), "x").unwrap();
+    let zip = make_zip(&e.zips, "a.zip", &[("LuckyOdds/LuckyOdds.toc", "new")]);
+    install_zip(&e.addons, &mut State::default(), request(&zip, "lucky")).unwrap();
+    let folders: Vec<String> = survivorsforge::scan::scan_addons(&e.addons).unwrap().into_iter().map(|a| a.folder).collect();
+    assert_eq!(folders, ["LuckyOdds"], "no second folder next to the old one");
+    assert!(!e.addons.join("LuckyOdds/old.lua").exists());
+}
+
+#[test]
+fn work_dir_lives_in_addons_and_is_never_listed() {
+    let e = env();
+    assert!(work_dir(&e.addons).starts_with(&e.addons), "same file system as the addons");
+    let zip = make_zip(&e.zips, "a.zip", &[("A/A.toc", "")]);
+    install_zip(&e.addons, &mut State::default(), request(&zip, "a")).unwrap();
+    std::fs::create_dir_all(work_dir(&e.addons).join("downloads")).unwrap();
+    let folders: Vec<String> = survivorsforge::scan::scan_addons(&e.addons).unwrap().into_iter().map(|a| a.folder).collect();
+    assert_eq!(folders, ["A"]);
+}
+
+#[test]
 fn update_removes_stale_files() {
     let e = env();
     let mut state = State::default();
