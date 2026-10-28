@@ -390,11 +390,12 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
         // Keep versions learned from adopted addons, but never undo an install that ran meanwhile.
         let mut changed = false;
         for checked in &state.entries {
-            if let Some(real) = core.state.entries.iter_mut().find(|e| e.id == checked.id) {
-                if real.version != checked.version && real.version.starts_with(survivorsforge::state::TOC_PREFIX) {
-                    real.version = checked.version.clone();
-                    changed = true;
-                }
+            if let Some(real) = core.state.entries.iter_mut().find(|e| e.id == checked.id)
+                && real.version != checked.version
+                && real.version.starts_with(survivorsforge::state::TOC_PREFIX)
+            {
+                real.version = checked.version.clone();
+                changed = true;
             }
         }
         if changed {

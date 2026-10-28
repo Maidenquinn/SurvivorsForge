@@ -92,11 +92,11 @@ impl Registry {
 /// Picks the first usable registry. A valid remote copy also refreshes the cache.
 pub fn load(remote: Result<String>, cache_dir: &Path) -> (Registry, Origin) {
     let cache = cache_dir.join(CACHE_FILE);
-    if let Ok(text) = remote {
-        if let Ok(registry) = Registry::parse(&text) {
-            let _ = crate::write_atomic(&cache, text.as_bytes());
-            return (registry, Origin::Remote);
-        }
+    if let Ok(text) = remote
+        && let Ok(registry) = Registry::parse(&text)
+    {
+        let _ = crate::write_atomic(&cache, text.as_bytes());
+        return (registry, Origin::Remote);
     }
     if let Some(registry) = std::fs::read_to_string(&cache).ok().and_then(|t| Registry::parse(&t).ok()) {
         return (registry, Origin::Cache);
