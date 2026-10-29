@@ -3,24 +3,24 @@
 {% block content %}
 <div class="issues-shell addon-comments" data-dynamic-comments aria-live="polite">
   <p class="back"><a href="/addons/{{ slug }}">← {{ name }}</a></p>
-  <div class="issues-heading"><div><h1 data-i18n="comments">Community comments</h1><p class="muted">Discuss this addon with its creator and community.</p></div></div>
+  <div class="issues-heading"><div><h1 data-i18n="comments">Community comments</h1><p class="muted" data-i18n="comments_intro">Discuss this addon with its creator and community.</p></div></div>
   {% if user.is_some() %}
   <form class="panel issue-reply" method="post" action="/addons/{{ slug }}/comments">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <label for="new-comment" data-i18n="your_comment">Your comment</label>
-    <textarea id="new-comment" name="body" required minlength="1" maxlength="10000" rows="4" placeholder="Share your feedback..."></textarea>
+    <textarea id="new-comment" name="body" required minlength="1" maxlength="10000" rows="4" placeholder="Share your feedback..." data-i18n-placeholder="comment_placeholder"></textarea>
     <div class="issues-form-footer"><button type="submit" data-i18n="post">Post comment</button></div>
   </form>
-  {% else %}<p class="panel">You can read comments without signing in. <a href="/login">Log in to participate</a>.</p>{% endif %}
+  {% else %}<p class="panel"><span data-i18n="anonymous_read">You can read comments without signing in.</span> <a href="/login" data-i18n="login_participate">Log in to participate</a>.</p>{% endif %}
   <section aria-label="Comments" class="issue-discussion">
     {% for comment in comments %}
     <article class="issue-message" data-inline-editor>
       <header class="issue-message-head">
         {% if !comment.avatar.is_empty() %}<img class="issue-avatar" src="{{ comment.avatar }}" alt="" width="32" height="32">{% endif %}
-        <strong>{{ comment.author }}</strong><span class="muted">{{ comment.created }}{% if comment.edited %} · edited{% endif %}</span>
+        <strong>{{ comment.author }}</strong><span class="muted">{{ comment.created }}{% if comment.edited %} · <span data-i18n="edited">edited</span>{% endif %}</span>
         <span class="issue-action-spacer"></span>
         {% if comment.can_edit %}<button type="button" class="issue-action" data-edit-toggle data-i18n="edit">Edit</button>{% endif %}
-        {% if comment.can_delete %}<form method="post" action="/addons/{{ slug }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="issue-action issue-danger" type="submit" data-i18n="delete">Delete</button></form>{% endif %}
+        {% if comment.can_delete %}<form method="post" action="/addons/{{ slug }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?" data-i18n-confirm="confirm_delete"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="issue-action issue-danger" type="submit" data-i18n="delete">Delete</button></form>{% endif %}
       </header>
       <div class="issue-message-body" data-edit-view>{{ comment.body }}</div>
       {% if comment.can_edit %}<form class="issue-inline-form" data-edit-form hidden method="post" action="/addons/{{ slug }}/comments/{{ comment.id }}/edit">
@@ -29,8 +29,8 @@
         <div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel data-i18n="cancel">Cancel</button><button type="submit" data-i18n="save">Save changes</button></div>
       </form>{% endif %}
     </article>
-    {% else %}<p class="panel muted">No comments yet. Start the discussion!</p>{% endfor %}
+    {% else %}<p class="panel muted" data-i18n="empty_comments">No comments yet. Start the discussion!</p>{% endfor %}
   </section>
-  {% if let Some(id) = next %}<p><a class="button secondary" href="/addons/{{ slug }}/comments?before={{ id }}">Older comments →</a></p>{% endif %}
+  {% if let Some(id) = next %}<p><a class="button secondary" href="/addons/{{ slug }}/comments?before={{ id }}" data-i18n="older_comments">Older comments →</a></p>{% endif %}
 </div>
 {% endblock %>
