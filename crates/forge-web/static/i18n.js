@@ -450,7 +450,11 @@
     "js_gallery_screenshot": "Screenshot",
     "js_enter_fullscreen": "Enter fullscreen",
     "js_exit_fullscreen": "Exit fullscreen",
-    "js_fullscreen": "Fullscreen"
+    "js_fullscreen": "Fullscreen",
+    "security_critical": "critical",
+    "security_warning": "warning",
+    "admin_remove_verification": "Remove verification",
+    "my_findings_count": "findings"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -900,7 +904,11 @@
     "js_gallery_screenshot": "Capture d'écran",
     "js_enter_fullscreen": "Passer en plein écran",
     "js_exit_fullscreen": "Quitter le plein écran",
-    "js_fullscreen": "Plein écran"
+    "js_fullscreen": "Plein écran",
+    "security_critical": "critique",
+    "security_warning": "avertissement",
+    "admin_remove_verification": "Retirer la vérification",
+    "my_findings_count": "résultats d'analyse"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1350,7 +1358,11 @@
     "js_gallery_screenshot": "Zrzut ekranu",
     "js_enter_fullscreen": "Przejdź na pełny ekran",
     "js_exit_fullscreen": "Wyjdź z pełnego ekranu",
-    "js_fullscreen": "Pełny ekran"
+    "js_fullscreen": "Pełny ekran",
+    "security_critical": "krytyczne",
+    "security_warning": "ostrzeżenie",
+    "admin_remove_verification": "Cofnij weryfikację",
+    "my_findings_count": "wyniki kontroli"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1800,7 +1812,11 @@
     "js_gallery_screenshot": "Snímek obrazovky",
     "js_enter_fullscreen": "Přejít na celou obrazovku",
     "js_exit_fullscreen": "Opustit celou obrazovku",
-    "js_fullscreen": "Celá obrazovka"
+    "js_fullscreen": "Celá obrazovka",
+    "security_critical": "kritické",
+    "security_warning": "varování",
+    "admin_remove_verification": "Odebrat ověření",
+    "my_findings_count": "nálezy"
   },
   "de": {
     "tiles": "Tiles",
@@ -2250,7 +2266,11 @@
     "js_gallery_screenshot": "Screenshot",
     "js_enter_fullscreen": "Vollbild einschalten",
     "js_exit_fullscreen": "Vollbild verlassen",
-    "js_fullscreen": "Vollbild"
+    "js_fullscreen": "Vollbild",
+    "security_critical": "kritisch",
+    "security_warning": "Warnung",
+    "admin_remove_verification": "Verifizierung entfernen",
+    "my_findings_count": "Prüfergebnisse"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2700,7 +2720,11 @@
     "js_gallery_screenshot": "Captura de tela",
     "js_enter_fullscreen": "Entrar em tela cheia",
     "js_exit_fullscreen": "Sair da tela cheia",
-    "js_fullscreen": "Tela cheia"
+    "js_fullscreen": "Tela cheia",
+    "security_critical": "crítico",
+    "security_warning": "aviso",
+    "admin_remove_verification": "Remover verificação",
+    "my_findings_count": "resultados da análise"
   },
   "es": {
     "tiles": "Tiles",
@@ -3150,7 +3174,11 @@
     "js_gallery_screenshot": "Captura de pantalla",
     "js_enter_fullscreen": "Entrar en pantalla completa",
     "js_exit_fullscreen": "Salir de pantalla completa",
-    "js_fullscreen": "Pantalla completa"
+    "js_fullscreen": "Pantalla completa",
+    "security_critical": "crítico",
+    "security_warning": "advertencia",
+    "admin_remove_verification": "Quitar verificación",
+    "my_findings_count": "resultados del análisis"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3600,7 +3628,11 @@
     "js_gallery_screenshot": "Captură de ecran",
     "js_enter_fullscreen": "Intră în ecran complet",
     "js_exit_fullscreen": "Ieși din ecran complet",
-    "js_fullscreen": "Ecran complet"
+    "js_fullscreen": "Ecran complet",
+    "security_critical": "critic",
+    "security_warning": "avertisment",
+    "admin_remove_verification": "Elimină verificarea",
+    "my_findings_count": "rezultatele verificării"
   },
   "tr": {
     "tiles": "Tiles",
@@ -4050,7 +4082,11 @@
     "js_gallery_screenshot": "Ekran görüntüsü",
     "js_enter_fullscreen": "Tam ekrana geç",
     "js_exit_fullscreen": "Tam ekrandan çık",
-    "js_fullscreen": "Tam ekran"
+    "js_fullscreen": "Tam ekran",
+    "security_critical": "kritik",
+    "security_warning": "uyarı",
+    "admin_remove_verification": "Doğrulamayı kaldır",
+    "my_findings_count": "tarama bulguları"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4500,7 +4536,11 @@
     "js_gallery_screenshot": "Снимок экрана",
     "js_enter_fullscreen": "Включить полноэкранный режим",
     "js_exit_fullscreen": "Выйти из полноэкранного режима",
-    "js_fullscreen": "Полный экран"
+    "js_fullscreen": "Полный экран",
+    "security_critical": "критично",
+    "security_warning": "предупреждение",
+    "admin_remove_verification": "Снять проверку",
+    "my_findings_count": "результаты проверки"
   },
   "uk": {
     "tiles": "Tiles",
@@ -4950,7 +4990,11 @@
     "js_gallery_screenshot": "Знімок екрана",
     "js_enter_fullscreen": "Увімкнути повноекранний режим",
     "js_exit_fullscreen": "Вийти з повноекранного режиму",
-    "js_fullscreen": "Повний екран"
+    "js_fullscreen": "Повний екран",
+    "security_critical": "критично",
+    "security_warning": "попередження",
+    "admin_remove_verification": "Зняти перевірку",
+    "my_findings_count": "результати перевірки"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -5400,7 +5444,11 @@
     "js_gallery_screenshot": "截图",
     "js_enter_fullscreen": "进入全屏",
     "js_exit_fullscreen": "退出全屏",
-    "js_fullscreen": "全屏"
+    "js_fullscreen": "全屏",
+    "security_critical": "严重",
+    "security_warning": "警告",
+    "admin_remove_verification": "撤销验证",
+    "my_findings_count": "检查结果"
   },
   "ja": {
     "tiles": "Tiles",
@@ -5850,7 +5898,11 @@
     "js_gallery_screenshot": "スクリーンショット",
     "js_enter_fullscreen": "全画面表示にする",
     "js_exit_fullscreen": "全画面表示を終了",
-    "js_fullscreen": "全画面表示"
+    "js_fullscreen": "全画面表示",
+    "security_critical": "重大",
+    "security_warning": "警告",
+    "admin_remove_verification": "検証を取り消す",
+    "my_findings_count": "検査結果"
   },
   "ko": {
     "tiles": "Tiles",
@@ -6300,7 +6352,11 @@
     "js_gallery_screenshot": "스크린샷",
     "js_enter_fullscreen": "전체 화면 켜기",
     "js_exit_fullscreen": "전체 화면 종료",
-    "js_fullscreen": "전체 화면"
+    "js_fullscreen": "전체 화면",
+    "security_critical": "치명적",
+    "security_warning": "경고",
+    "admin_remove_verification": "검증 제거",
+    "my_findings_count": "검사 결과"
   }
 };
   var supported = Object.keys(translations);
