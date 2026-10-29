@@ -1,0 +1,82 @@
+//! `forge-api worker`: takes jobs from the queue and runs the handler of their kind.
+
+use crate::jobs::{self, Job};
+use chrono::{Duration, Utc};
+use sqlx::PgPool;
+use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
+use tokio_util::sync::CancellationToken;
+
+pub type HandlerFuture = Pin<Box<dyn Future<Output = Result<(), String>> + Send>>;
+pub type Handler = Arc<dyn Fn(Job) -> HandlerFuture + Send + Sync>;
+
+/// How long the worker sleeps when the queue is empty.
+const IDLE: std::time::Duration = std::time::Duration::from_secs(2);
+
+#[derive(Clone, Default)]
+pub struct Worker {
+    handlers: HashMap<&'static str, Handler>,
+    periodic: Vec<(&'static str, Duration)>,
+}
+
+impl Worker {
+    pub fn handle<F, Fut>(mut self, kind: &'static str, handler: F) -> Worker
+    where
+        F: Fn(Job) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<(), String>> + Send + 'static,
+    {
+        self.handlers.insert(kind, Arc::new(move |job| Box::pin(handler(job))));
+        self
+    }
+
+    /// Runs a job of `kind` once per `every`, no matter how many workers run.
+    pub fn every(mut self, kind: &'static str, every: Duration) -> Worker {
+        self.periodic.push((kind, every));
+        self
+    }
+
+    pub async fn schedule_periodic(&self, pool: &PgPool) -> sqlx::Result<()> {
+        for (kind, every) in &self.periodic {
+            jobs::enqueue_periodic(pool, kind, *every, Utc::now()).await?;
+        }
+        Ok(())
+    }
+
+    /// Runs one job if there is one. `false` when the queue is empty.
+    pub async fn run_once(&self, pool: &PgPool) -> sqlx::Result<bool> {
+        let Some(job) = jobs::claim_next(pool, Utc::now()).await? else { return Ok(false) };
+        let result = match self.handlers.get(job.kind.as_str()) {
+            Some(handler) => handler(job.clone()).await,
+            None => Err(format!("no handler for job kind {}", job.kind)),
+        };
+        match result {
+            Ok(()) => jobs::complete(pool, job.id, Utc::now()).await?,
+            Err(e) => {
+                tracing::warn!(job = job.id, kind = %job.kind, error = %e, "job failed");
+                jobs::fail(pool, &job, &e, Utc::now()).await?;
+            }
+        }
+        Ok(true)
+    }
+
+    /// Works until `shutdown` is cancelled. A running job always finishes first.
+    pub async fn run(&self, pool: &PgPool, shutdown: CancellationToken) {
+        while !shutdown.is_cancelled() {
+            if let Err(e) = self.schedule_periodic(pool).await {
+                tracing::error!(error = %e, "cannot schedule periodic jobs");
+            }
+            let worked = self.run_once(pool).await.unwrap_or_else(|e| {
+                tracing::error!(error = %e, "cannot take a job");
+                false
+            });
+            if !worked {
+                tokio::select! {
+                    _ = shutdown.cancelled() => {}
+                    _ = tokio::time::sleep(IDLE) => {}
+                }
+            }
+        }
+    }
+}

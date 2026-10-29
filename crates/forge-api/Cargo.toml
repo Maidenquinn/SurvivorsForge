@@ -11,6 +11,7 @@ forge-core = { path = "../forge-core" }
 axum = "0.8"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "time"] }
 tower = "0.5"
+tokio-util = "0.7"
 tower-http = { version = "0.6", features = ["catch-panic", "set-header"] }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate", "chrono", "json"] }
 serde = { version = "1", features = ["derive"] }

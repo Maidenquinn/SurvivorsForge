@@ -3,6 +3,8 @@
 pub mod app;
 pub mod config;
 pub mod error;
+pub mod jobs;
 pub mod rate_limit;
+pub mod worker;
 
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
