@@ -408,6 +408,24 @@ document.addEventListener("DOMContentLoaded", function () {
       dialog.showModal();
     });
   });
+  var fullscreenButton = dialog.querySelector("[data-gallery-fullscreen]");
+  function syncFullscreenButton() {
+    var active = document.fullscreenElement === dialog;
+    fullscreenButton.textContent = active ? "⛶" : "⛶";
+    fullscreenButton.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
+    fullscreenButton.title = active ? "Exit fullscreen" : "Fullscreen";
+  }
+  fullscreenButton.addEventListener("click", function () {
+    if (document.fullscreenElement === dialog) {
+      if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
+    } else if (dialog.requestFullscreen) {
+      dialog.requestFullscreen().catch(function () {});
+    }
+  });
+  document.addEventListener("fullscreenchange", syncFullscreenButton);
+  dialog.addEventListener("close", function () {
+    if (document.fullscreenElement === dialog && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+  });
   dialog.querySelector("[data-gallery-prev]").addEventListener("click", function () { display(index - 1); });
   dialog.querySelector("[data-gallery-next]").addEventListener("click", function () { display(index + 1); });
   dialog.querySelector("[data-gallery-close]").addEventListener("click", function () { dialog.close(); });
