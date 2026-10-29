@@ -23,10 +23,10 @@
       <select id="category" name="category">
         <option value="" {% if category == "" %}selected{% endif %} data-i18n="all_categories">All categories</option>
         {% for (top, children) in categories %}
-        {% if children.is_empty() %}<option value="{{ top.name }}"{% if top.name.eq_ignore_ascii_case(category) %} selected{% endif %}>{{ top.name }}</option>
-        {% else %}<optgroup label="{{ top.name }}">
-          <option value="{{ top.name }}"{% if top.name.eq_ignore_ascii_case(category) %} selected{% endif %}>All {{ top.name }}</option>
-          {% for c in children %}<option value="{{ c.name }}"{% if c.name.eq_ignore_ascii_case(category) %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        {% if children.is_empty() %}<option value="{{ top.name }}"{% if top.name.eq_ignore_ascii_case(category) %} selected{% endif %} data-category-label="{{ top.name }}">{{ top.name }}</option>
+        {% else %}<optgroup label="{{ top.name }}" data-category-label="{{ top.name }}">
+          <option value="{{ top.name }}"{% if top.name.eq_ignore_ascii_case(category) %} selected{% endif %} data-category-all="{{ top.name }}">All {{ top.name }}</option>
+          {% for c in children %}<option value="{{ c.name }}"{% if c.name.eq_ignore_ascii_case(category) %} selected{% endif %} data-category-label="{{ c.name }}">{{ c.name }}</option>{% endfor %}
         </optgroup>{% endif %}
         {% endfor %}
       </select>
