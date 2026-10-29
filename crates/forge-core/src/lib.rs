@@ -4,6 +4,7 @@ pub mod archive;
 pub mod compat;
 pub mod deps;
 pub mod markdown;
+pub mod rate_limit;
 pub mod registry;
 pub mod toc;
 pub mod trust;

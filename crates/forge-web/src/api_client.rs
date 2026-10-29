@@ -39,6 +39,14 @@ pub struct ApiClient {
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
+/// Names the visitor for the API's rate limit; outside a request (healthcheck) nothing is added.
+fn forwarded(request: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
+    match crate::rate_limit::CLIENT_IP.try_with(|ip| *ip) {
+        Ok(ip) => request.header("x-forwarded-for", ip.to_string()),
+        Err(_) => request,
+    }
+}
+
 impl ApiClient {
     pub fn new(base: &str) -> ApiClient {
         ApiClient {
@@ -53,7 +61,7 @@ impl ApiClient {
 
     /// Calls the API; a `2xx` answer comes back as JSON (`Null` for an empty body).
     pub async fn call(&self, method: Method, path: &str, token: Option<&str>, body: Option<&Value>) -> ApiResult<Value> {
-        let mut request = self.http.request(method, format!("{}{path}", self.base));
+        let mut request = forwarded(self.http.request(method, format!("{}{path}", self.base)));
         if let Some(token) = token {
             request = request.bearer_auth(token);
         }
@@ -87,9 +95,7 @@ impl ApiClient {
 
     /// Sends a multipart form, for image uploads.
     pub async fn post_multipart(&self, path: &str, token: &str, form: reqwest::multipart::Form) -> ApiResult<Value> {
-        let response = self
-            .http
-            .post(format!("{}{path}", self.base))
+        let response = forwarded(self.http.post(format!("{}{path}", self.base)))
             .bearer_auth(token)
             .multipart(form)
             .send()

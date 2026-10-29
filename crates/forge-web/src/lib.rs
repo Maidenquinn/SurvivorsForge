@@ -8,6 +8,7 @@ pub mod creator;
 pub mod csrf;
 pub mod error;
 pub mod public;
+pub mod rate_limit;
 pub mod session;
 pub mod templates;
 pub mod trust;

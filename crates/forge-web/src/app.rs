@@ -13,6 +13,7 @@ use axum::routing::{get, post};
 use axum::{Extension, Json, Router, middleware};
 use axum_extra::extract::PrivateCookieJar;
 use axum_extra::extract::cookie::Key;
+use forge_core::rate_limit::RateLimiter;
 use serde::Deserialize;
 use serde_json::json;
 use sha2::Digest;
@@ -109,10 +110,14 @@ pub fn router(state: AppState) -> Router {
         .route("/static/app.css", get(|| async { asset("text/css", include_str!("../static/app.css")) }))
         .fallback(|| async { WebError::NotFound })
         .layer(middleware::from_fn_with_state(state.clone(), csrf::middleware));
+    let limiter = Arc::new(RateLimiter::new(state.config.rate_limit_per_minute, state.config.trusted_proxies.clone()));
     Router::new()
         .route("/healthz", get(healthz))
         .merge(pages)
         .with_state(state)
+        .layer(middleware::from_fn_with_state(limiter, crate::rate_limit::middleware))
+        // Pages may show a logged-in visitor's data: no browser or proxy keeps them.
+        .layer(SetResponseHeaderLayer::if_not_present(header::CACHE_CONTROL, HeaderValue::from_static("no-store")))
         .layer(SetResponseHeaderLayer::if_not_present(header::CONTENT_SECURITY_POLICY, HeaderValue::from_static(CSP)))
         .layer(SetResponseHeaderLayer::overriding(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY")))
         .layer(SetResponseHeaderLayer::overriding(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff")))

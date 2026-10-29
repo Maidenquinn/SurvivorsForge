@@ -74,6 +74,7 @@ Your own GitHub user ID for `ADMIN_GITHUB_IDS` is the `id` field of
 | `ACME_EMAIL` | yes | Contact for Let's Encrypt | `admin@example.com` |
 | `FORGE_EDGE_SUBNET` | no | Subnet of the internal edge network; change it if it clashes with another Docker network | `10.213.17.0/24` |
 | `FORGE_CADDY_IP` | no | Caddy's fixed address inside that subnet; the API trusts its `X-Forwarded-For` | `10.213.17.10` |
+| `FORGE_WEB_IP` | no | The website's fixed address inside that subnet; the API trusts the client IP it forwards | `10.213.17.11` |
 | `GITHUB_APP_PRIVATE_KEY_PATH` | no | Path of the App's `.pem` on the host | `./secrets/github-app.pem` |
 
 **API (`forge-api`)**
@@ -86,8 +87,8 @@ Your own GitHub user ID for `ADMIN_GITHUB_IDS` is the `id` field of
 | `IMAGE_DIR` | no, set by Compose | Folder the API stores images in | `/data/images` |
 | `BIND_ADDR` | no | Address the API listens on in its container | `0.0.0.0:8080` |
 | `MIGRATE_ON_START` | no | Apply database migrations when the API starts | `true` |
-| `RATE_LIMIT_PER_MINUTE` | no | Requests per minute and client IP | `120` |
-| `TRUSTED_PROXIES` | no, set by Compose | Proxies whose `X-Forwarded-For` counts | set from `FORGE_CADDY_IP` |
+| `RATE_LIMIT_PER_MINUTE` | no | Requests per minute and client IP, for the API and the website each | `120` |
+| `TRUSTED_PROXIES` | no, set by Compose | Proxies whose `X-Forwarded-For` counts | API: `FORGE_CADDY_IP` and `FORGE_WEB_IP`; website: `FORGE_CADDY_IP` |
 | `SOURCE_CHECK_BATCH` | no | Versions compared with GitHub per 6-hourly run | `200` |
 | `GITHUB_API_URL` | no | GitHub REST API | `https://api.github.com` |
 | `GITHUB_APP_ID` | yes | App ID from step 1 | `123456` |

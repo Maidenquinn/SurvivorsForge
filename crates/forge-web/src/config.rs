@@ -1,7 +1,7 @@
 //! Configuration of the website, from environment variables only.
 
 use std::collections::HashMap;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -16,11 +16,15 @@ pub struct Config {
     pub bind_addr: SocketAddr,
     /// The GitHub App's URL name, for the "install the App" link.
     pub github_app_slug: String,
+    /// Requests per minute and client IP, static files included.
+    pub rate_limit_per_minute: u32,
+    /// Proxies whose `X-Forwarded-For` names the client, e.g. Caddy.
+    pub trusted_proxies: Vec<IpAddr>,
 }
 
 impl Config {
     /// Every variable `from_map` reads. `.env.example` must list each of them.
-    pub const VARIABLES: &[&str] = &["API_INTERNAL_URL", "PUBLIC_API_URL", "PUBLIC_WEB_URL", "COOKIE_KEY", "WEB_BIND_ADDR", "GITHUB_APP_SLUG"];
+    pub const VARIABLES: &[&str] = &["API_INTERNAL_URL", "PUBLIC_API_URL", "PUBLIC_WEB_URL", "COOKIE_KEY", "WEB_BIND_ADDR", "GITHUB_APP_SLUG", "RATE_LIMIT_PER_MINUTE", "TRUSTED_PROXIES"];
 
     pub fn from_env() -> Result<Config, String> {
         Config::from_map(&std::env::vars().collect())
@@ -34,6 +38,14 @@ impl Config {
             return Err("COOKIE_KEY must be at least 32 characters".into());
         }
         let bind = get("WEB_BIND_ADDR").unwrap_or("0.0.0.0:8080");
+        let limit = get("RATE_LIMIT_PER_MINUTE").unwrap_or("120");
+        let trusted_proxies = get("TRUSTED_PROXIES")
+            .unwrap_or_default()
+            .split(',')
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+            .map(|p| p.parse().map_err(|_| format!("TRUSTED_PROXIES has an invalid value: {p}")))
+            .collect::<Result<_, _>>()?;
         Ok(Config {
             api_internal_url: required("API_INTERNAL_URL")?,
             public_api_url: required("PUBLIC_API_URL")?,
@@ -41,6 +53,8 @@ impl Config {
             cookie_key,
             bind_addr: bind.parse().map_err(|_| format!("WEB_BIND_ADDR has an invalid value: {bind}"))?,
             github_app_slug: required("GITHUB_APP_SLUG")?,
+            rate_limit_per_minute: limit.parse().map_err(|_| format!("RATE_LIMIT_PER_MINUTE has an invalid value: {limit}"))?,
+            trusted_proxies,
         })
     }
 
@@ -57,6 +71,8 @@ impl Config {
             cookie_key: "test-cookie-key-that-is-long-enough-0123456789".into(),
             bind_addr: "127.0.0.1:0".parse().unwrap(),
             github_app_slug: "survivorsforge-test".into(),
+            rate_limit_per_minute: 10_000,
+            trusted_proxies: Vec::new(),
         }
     }
 }
@@ -77,7 +93,17 @@ mod tests {
         assert!(Config::from_map(&short).unwrap_err().contains("32"));
         let mut ok = env;
         ok.insert("COOKIE_KEY".into(), "k".repeat(40));
-        assert_eq!(Config::from_map(&ok).unwrap().callback_url(), "https://w/auth/callback");
+        let config = Config::from_map(&ok).unwrap();
+        assert_eq!(config.callback_url(), "https://w/auth/callback");
+        assert_eq!((config.rate_limit_per_minute, config.trusted_proxies.len()), (120, 0));
+        let mut proxies = ok.clone();
+        proxies.insert("TRUSTED_PROXIES".into(), "10.0.0.1, 10.0.0.2".into());
+        assert_eq!(Config::from_map(&proxies).unwrap().trusted_proxies.len(), 2);
+        proxies.insert("TRUSTED_PROXIES".into(), "10.0.0.1, nope".into());
+        assert!(Config::from_map(&proxies).unwrap_err().contains("TRUSTED_PROXIES"));
+        let mut limit = ok;
+        limit.insert("RATE_LIMIT_PER_MINUTE".into(), "many".into());
+        assert!(Config::from_map(&limit).unwrap_err().contains("RATE_LIMIT_PER_MINUTE"));
     }
 
     #[test]

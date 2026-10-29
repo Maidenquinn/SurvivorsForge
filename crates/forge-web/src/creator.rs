@@ -247,8 +247,9 @@ pub struct PreviewForm {
 }
 
 /// The rendered description for the editor's preview; the same sanitizer as the API.
-pub async fn preview(State(state): State<AppState>, Form(form): Form<PreviewForm>) -> Html<String> {
-    Html(forge_core::markdown::render(&form.description_md, &state.image_base()))
+pub async fn preview(State(state): State<AppState>, jar: PrivateCookieJar, Form(form): Form<PreviewForm>) -> WebResult<Html<String>> {
+    me(&state, &jar).await?;
+    Ok(Html(forge_core::markdown::render(&form.description_md, &state.image_base())))
 }
 
 async fn images_page(state: &AppState, user: Visitor, csrf: String, slug: &str, message: Option<String>, error: Option<String>) -> WebResult<Html<String>> {

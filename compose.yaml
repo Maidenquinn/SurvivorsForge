@@ -14,8 +14,8 @@ x-api: &api
     DATABASE_URL: postgres://${POSTGRES_USER:-forge}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-forge}
     IMAGE_DIR: /data/images
     GITHUB_APP_PRIVATE_KEY_FILE: /run/secrets/github-app.pem
-    # Caddy's fixed address on the edge network; its X-Forwarded-For is trusted.
-    TRUSTED_PROXIES: ${FORGE_CADDY_IP:-10.213.17.10}
+    # Fixed addresses of Caddy and the website on the edge network; their X-Forwarded-For is trusted.
+    TRUSTED_PROXIES: ${FORGE_CADDY_IP:-10.213.17.10},${FORGE_WEB_IP:-10.213.17.11}
   secrets:
     - github-app.pem
   depends_on:
@@ -91,8 +91,11 @@ services:
       required: false
     environment:
       API_INTERNAL_URL: http://api:8080
+      TRUSTED_PROXIES: ${FORGE_CADDY_IP:-10.213.17.10}
     networks:
-      - edge
+      edge:
+        # Fixed, so the API can trust the client IP the website forwards.
+        ipv4_address: ${FORGE_WEB_IP:-10.213.17.11}
     read_only: true
     security_opt:
       - no-new-privileges:true

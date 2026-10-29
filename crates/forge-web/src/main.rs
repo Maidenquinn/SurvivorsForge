@@ -31,7 +31,7 @@ async fn main() -> ExitCode {
         }
     };
     tracing::info!(addr = %bind, "forge-web listening");
-    let served = axum::serve(listener, router(AppState::new(config))).with_graceful_shutdown(shutdown_signal()).await;
+    let served = axum::serve(listener, router(AppState::new(config)).into_make_service_with_connect_info::<std::net::SocketAddr>()).with_graceful_shutdown(shutdown_signal()).await;
     match served {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
