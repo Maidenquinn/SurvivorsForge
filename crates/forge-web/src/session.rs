@@ -5,6 +5,9 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 
 pub const SESSION_COOKIE: &str = "forge_session";
 pub const CSRF_COOKIE: &str = "forge_csrf";
+/// Set when a login starts here; the callback counts only with it, so nobody can log a visitor
+/// in with a login code of their own.
+pub const LOGIN_COOKIE: &str = "forge_login";
 
 pub fn cookie(name: &'static str, value: String, secure: bool) -> Cookie<'static> {
     Cookie::build((name, value)).path("/").http_only(true).secure(secure).same_site(SameSite::Lax).build()

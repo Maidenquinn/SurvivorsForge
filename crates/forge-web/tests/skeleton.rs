@@ -38,6 +38,7 @@ async fn callback_sets_cookie_or_shows_error() {
         .respond_with(ResponseTemplate::new(400).set_body_json(json!({ "error": "invalid_code", "message": "The login code is invalid or expired" })))
         .mount(&web.api)
         .await;
+    web.get("/login").await;
     let page = web.get("/auth/callback?code=bad").await;
     assert_eq!(page.status, StatusCode::BAD_REQUEST);
     assert!(page.body.contains("The login code is invalid or expired"));
@@ -54,6 +55,16 @@ async fn callback_sets_cookie_or_shows_error() {
 }
 
 #[tokio::test]
+async fn a_callback_counts_only_after_a_login_started_here() {
+    // Someone sends a visitor their own login code: without a login begun in this browser it is refused.
+    let mut web = TestWeb::new().await;
+    Mock::given(method("POST")).and(path("/v1/auth/exchange")).respond_with(ResponseTemplate::new(200).set_body_json(json!({ "token": "t" }))).expect(0).mount(&web.api).await;
+    let page = web.get("/auth/callback?code=attacker").await;
+    assert_eq!(page.status, StatusCode::BAD_REQUEST);
+    assert!(!web.cookies.contains_key("forge_session"));
+}
+
+#[tokio::test]
 async fn session_cookie_flags() {
     let mut web = TestWeb::new().await;
     Mock::given(method("POST"))
@@ -61,6 +72,7 @@ async fn session_cookie_flags() {
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "token": "t" })))
         .mount(&web.api)
         .await;
+    web.get("/login").await;
     let page = web.get("/auth/callback?code=x").await;
     let session = page.set_cookies().into_iter().find(|c| c.starts_with("forge_session=")).unwrap();
     for flag in ["HttpOnly", "Secure", "SameSite=Lax", "Path=/"] {
@@ -150,6 +162,7 @@ async fn api_401_forces_relogin() {
         .mount(&web.api)
         .await;
     Mock::given(method("GET")).and(path("/v1/me")).respond_with(ResponseTemplate::new(401)).mount(&web.api).await;
+    web.get("/login").await;
     web.get("/auth/callback?code=x").await;
     assert!(web.cookies.contains_key("forge_session"));
     let page = web.get("/").await;

@@ -139,6 +139,7 @@ impl TestWeb {
             .respond_with(ResponseTemplate::new(200).set_body_json(me))
             .mount(&self.api)
             .await;
+        self.get("/login").await;
         let page = self.get("/auth/callback?code=abc").await;
         assert_eq!(page.status, StatusCode::SEE_OTHER, "{}", page.body);
     }

@@ -180,13 +180,15 @@ async fn index(State(state): State<AppState>, jar: PrivateCookieJar, Extension(c
     Ok(render(&IndexPage { user, csrf: csrf.0 }))
 }
 
-async fn login(State(state): State<AppState>) -> Redirect {
+async fn login(State(state): State<AppState>, jar: PrivateCookieJar) -> Response {
     let url = reqwest::Url::parse_with_params(
         &format!("{}/v1/auth/github/start", state.config.public_api_url),
         &[("return_to", state.config.callback_url())],
     )
     .expect("valid API URL");
-    Redirect::to(url.as_str())
+    // Lives until the callback removes it or the browser closes.
+    let started = session::cookie(session::LOGIN_COOKIE, "1".into(), state.secure_cookies());
+    (jar.add(started), Redirect::to(url.as_str())).into_response()
 }
 
 #[derive(Deserialize)]
@@ -195,10 +197,12 @@ struct CallbackQuery {
     error: Option<String>,
 }
 
-// ponytail: no own login state, so a forged callback could log a visitor in as someone else; add a
-// nonce cookie bound into return_to if that ever matters.
+/// The end of a GitHub login. Counts only when the login started in this browser (`LOGIN_COOKIE`).
 async fn callback(State(state): State<AppState>, jar: PrivateCookieJar, Query(query): Query<CallbackQuery>) -> Response {
+    let started = jar.get(session::LOGIN_COOKIE).is_some();
+    let jar = jar.remove(session::removal(session::LOGIN_COOKIE));
     let message = match (query.code, query.error.as_deref()) {
+        (Some(_), None) if !started => "This login was not started here. Please log in again.".into(),
         (Some(code), None) => {
             let body = json!({ "code": code, "return_to": state.config.callback_url() });
             match state.api.post("/v1/auth/exchange", None, &body).await {
@@ -214,7 +218,7 @@ async fn callback(State(state): State<AppState>, jar: PrivateCookieJar, Query(qu
         (_, Some("denied")) => "The login was cancelled on GitHub.".into(),
         _ => "The login did not work. Please try again.".into(),
     };
-    error_page(StatusCode::BAD_REQUEST, "Login failed", &message)
+    (jar, error_page(StatusCode::BAD_REQUEST, "Login failed", &message)).into_response()
 }
 
 async fn logout(State(state): State<AppState>, jar: PrivateCookieJar) -> Response {
