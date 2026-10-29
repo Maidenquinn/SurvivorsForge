@@ -123,12 +123,12 @@
     <div class="panel issue-history"><h3 data-i18n="activity">Activity</h3>
       {% for event in issue.events %}
       <p class="issue-event"><span class="issue-event-dot">•</span><strong>{{ event.actor }}</strong>
-      {% if event.action == "status" %}changed status from <strong>{{ event.old_value }}</strong> to <strong>{{ event.new_value }}</strong>
-      {% else if event.action == "issue_edited" %}updated the issue description
-      {% else if event.action == "comment_edited" %}edited a comment
-      {% else if event.action == "comment_deleted" %}removed a comment
-      {% else if event.action == "issue_deleted" %}deleted the issue
-      {% else %}updated the issue{% endif %}</p>
+      {% if event.action == "status" %}<span data-i18n="addon_event_status">changed status from</span> <strong data-i18n-enum="issue_status" data-i18n-value="{{ event.old_value }}">{{ event.old_value }}</strong> <span data-i18n="addon_event_to">to</span> <strong data-i18n-enum="issue_status" data-i18n-value="{{ event.new_value }}">{{ event.new_value }}</strong>
+      {% else if event.action == "issue_edited" %}<span data-i18n="addon_event_issue_edited">updated the issue description</span>
+      {% else if event.action == "comment_edited" %}<span data-i18n="addon_event_comment_edited">edited a comment</span>
+      {% else if event.action == "comment_deleted" %}<span data-i18n="addon_event_comment_deleted">removed a comment</span>
+      {% else if event.action == "issue_deleted" %}<span data-i18n="addon_event_issue_deleted">deleted the issue</span>
+      {% else %}<span data-i18n="addon_event_updated">updated the issue</span>{% endif %}</p>
       {% endfor %}
     </div>
     {% endif %}
