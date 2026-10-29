@@ -7,6 +7,7 @@ pub mod auth;
 pub mod config;
 pub mod error;
 pub mod github;
+pub mod images;
 pub mod jobs;
 pub mod rate_limit;
 pub mod routes;

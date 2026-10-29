@@ -29,6 +29,8 @@ pub struct Config {
     pub github_webhook_secret: String,
     /// Versions the source check looks at per run.
     pub source_check_batch: i64,
+    /// Where uploaded images are stored; the reverse proxy serves it as `public_image_url`.
+    pub image_dir: String,
 }
 
 #[derive(Debug, PartialEq)]
@@ -61,6 +63,7 @@ impl Config {
         "PUBLIC_IMAGE_URL",
         "GITHUB_WEBHOOK_SECRET",
         "SOURCE_CHECK_BATCH",
+        "IMAGE_DIR",
     ];
 
     pub fn from_env() -> Result<Config, ConfigError> {
@@ -103,6 +106,7 @@ impl Config {
                 let batch = parse("SOURCE_CHECK_BATCH", "200")?;
                 batch.parse().map_err(|_| invalid("SOURCE_CHECK_BATCH", &batch))?
             },
+            image_dir: parse("IMAGE_DIR", "/data/images")?,
         })
     }
 
@@ -127,6 +131,7 @@ impl Config {
             public_image_url: "https://web.test/img".into(),
             github_webhook_secret: "webhook-secret".into(),
             source_check_batch: 200,
+            image_dir: std::env::temp_dir().join("forge-test-images").to_string_lossy().into_owned(),
         }
     }
 }

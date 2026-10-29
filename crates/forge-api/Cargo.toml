@@ -9,7 +9,7 @@ publish = false
 [dependencies]
 forge-core = { path = "../forge-core" }
 forge-scan = { path = "../forge-scan" }
-axum = "0.8"
+axum = { version = "0.8", features = ["multipart"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "time"] }
 tower = "0.5"
 tokio-util = "0.7"
@@ -28,6 +28,8 @@ base64 = "0.23.1"
 sha2 = "0.11.1"
 hex = "0.4.3"
 hmac = "0.13.0"
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "webp"] }
+webp = { version = "0.3.1", default-features = false }
 
 [dev-dependencies]
 zip = { version = "2", default-features = false, features = ["deflate"] }
@@ -35,3 +37,4 @@ http-body-util = "0.1"
 rsa = "0.9"
 tempfile = "3.27.0"
 wiremock = "0.6"
+image = { version = "0.25.10", default-features = false, features = ["png"] }

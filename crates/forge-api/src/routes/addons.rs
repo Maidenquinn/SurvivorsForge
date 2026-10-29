@@ -150,6 +150,11 @@ pub async fn addon_view(state: &AppState, id: i64) -> ApiResult<Value> {
                                    'available', b.deleted_at IS NULL AND b.blocked_at IS NULL)
                                ORDER BY d.required DESC, b.slug), '[]')
                               FROM addon_dependencies d JOIN addons b ON b.id = d.depends_on_id WHERE d.addon_id = a.id),
+             'images', (SELECT coalesce(json_agg(json_build_object(
+                             'id', i.id, 'url', $2 || '/' || i.file, 'width', i.width, 'height', i.height, 'caption', i.caption,
+                             'position', i.position) ORDER BY i.position, i.id), '[]')
+                        FROM images i WHERE i.addon_id = a.id AND i.kind = 'screenshot'),
+             'icon_url', (SELECT $2 || '/' || i.file FROM images i WHERE i.addon_id = a.id AND i.kind = 'icon'),
              'verified_author', EXISTS (SELECT 1 FROM verifications w JOIN versions wv ON wv.id = w.version_id WHERE wv.addon_id = a.id),
              'created_at', a.created_at, 'updated_at', a.updated_at)
          FROM addons a JOIN users u ON u.id = a.owner_id
@@ -157,6 +162,7 @@ pub async fn addon_view(state: &AppState, id: i64) -> ApiResult<Value> {
          WHERE a.id = $1",
     )
     .bind(id)
+    .bind(&state.config.public_image_url)
     .fetch_one(&state.pool)
     .await?;
     let html = forge_core::markdown::render(view["description_md"].as_str().unwrap_or_default(), &state.config.public_image_url);

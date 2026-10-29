@@ -39,6 +39,14 @@ pub fn router(state: AppState) -> Router {
             get(routes::addons::show).patch(routes::addons::update).delete(routes::addons::delete),
         )
         .route("/v1/addons/{slug}/versions", get(routes::versions::list))
+        .route(
+            "/v1/addons/{slug}/images",
+            post(routes::images::upload).layer(axum::extract::DefaultBodyLimit::max(crate::images::MAX_UPLOAD + 64 * 1024)),
+        )
+        .route(
+            "/v1/addons/{slug}/images/{id}",
+            axum::routing::patch(routes::images::update).delete(routes::images::delete),
+        )
         .route("/v1/addons/{slug}/dependencies", axum::routing::put(routes::dependencies::put))
         .route("/v1/addons/{slug}/versions/{tag}/findings", get(routes::versions::findings))
         .route("/v1/addons/{slug}/versions/{tag}", axum::routing::patch(routes::game_versions::set_range))
