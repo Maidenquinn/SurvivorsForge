@@ -144,6 +144,12 @@ pub async fn addon_view(state: &AppState, id: i64) -> ApiResult<Value> {
              'latest_tag', (SELECT tag FROM versions WHERE id = t.version_id),
              'findings', CASE WHEN t.version_id IS NULL THEN NULL
                               ELSE json_build_object('critical', t.critical, 'warn', t.warn, 'info', t.info) END,
+             'dependencies', (SELECT coalesce(json_agg(json_build_object(
+                                   'slug', b.slug, 'name', b.name, 'required', d.required,
+                                   'trust', (SELECT trust FROM version_trust WHERE version_id = relevant_version(b.id)),
+                                   'available', b.deleted_at IS NULL AND b.blocked_at IS NULL)
+                               ORDER BY d.required DESC, b.slug), '[]')
+                              FROM addon_dependencies d JOIN addons b ON b.id = d.depends_on_id WHERE d.addon_id = a.id),
              'verified_author', EXISTS (SELECT 1 FROM verifications w JOIN versions wv ON wv.id = w.version_id WHERE wv.addon_id = a.id),
              'created_at', a.created_at, 'updated_at', a.updated_at)
          FROM addons a JOIN users u ON u.id = a.owner_id
@@ -155,6 +161,7 @@ pub async fn addon_view(state: &AppState, id: i64) -> ApiResult<Value> {
     .await?;
     let html = forge_core::markdown::render(view["description_md"].as_str().unwrap_or_default(), &state.config.public_image_url);
     view["description_html"] = Value::String(html);
+    view["install_order"] = json!(super::dependencies::required_order(&state.pool, id).await?);
     Ok(view)
 }
 

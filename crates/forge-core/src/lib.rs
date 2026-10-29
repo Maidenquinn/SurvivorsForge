@@ -2,6 +2,7 @@
 
 pub mod archive;
 pub mod compat;
+pub mod deps;
 pub mod markdown;
 pub mod registry;
 pub mod toc;
