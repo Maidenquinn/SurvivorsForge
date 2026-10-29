@@ -3,6 +3,7 @@
 pub mod archive;
 pub mod compat;
 pub mod deps;
+pub mod github_web;
 pub mod markdown;
 pub mod rate_limit;
 pub mod registry;

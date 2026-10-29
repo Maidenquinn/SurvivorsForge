@@ -19,6 +19,8 @@ pub struct Config {
     pub github_app_private_key: Option<String>,
     pub github_app_private_key_file: Option<String>,
     pub github_oauth_url: String,
+    /// github.com itself, for release and tag metadata; only tests change it.
+    pub github_web_url: String,
     pub github_client_id: String,
     pub github_client_secret: String,
     /// Exact client URLs a login may return to.
@@ -99,6 +101,7 @@ impl Config {
             github_app_private_key: get("GITHUB_APP_PRIVATE_KEY").map(str::to_string),
             github_app_private_key_file: get("GITHUB_APP_PRIVATE_KEY_FILE").map(str::to_string),
             github_oauth_url: parse("GITHUB_OAUTH_URL", "https://github.com")?.trim_end_matches('/').to_string(),
+            github_web_url: "https://github.com".into(),
             github_client_id: required("GITHUB_CLIENT_ID")?,
             github_client_secret: required("GITHUB_CLIENT_SECRET")?,
             auth_return_urls: list(&parse("AUTH_RETURN_URLS", "")?).map(str::to_string).collect(),
@@ -131,6 +134,7 @@ impl Config {
             github_app_private_key: None,
             github_app_private_key_file: None,
             github_oauth_url: "http://github-oauth.test".into(),
+            github_web_url: "http://github-web.test".into(),
             github_client_id: "client-id".into(),
             github_client_secret: "client-secret".into(),
             auth_return_urls: vec!["https://web.test/auth/callback".into()],

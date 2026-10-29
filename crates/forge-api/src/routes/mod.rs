@@ -7,6 +7,7 @@ pub mod admin_verify;
 pub mod creator;
 pub mod dependencies;
 pub mod game_versions;
+pub mod github_meta;
 pub mod images;
 pub mod me;
 pub mod members;

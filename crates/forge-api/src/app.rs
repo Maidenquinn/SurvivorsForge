@@ -90,6 +90,9 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/admin/addons", post(routes::addons::admin_create))
         .route("/v1/admin/addons/{slug}/owner", post(routes::admin_moderation::transfer_owner))
         .route("/v1/registry", get(routes::registry::registry))
+        .route("/v1/github/{owner}/{repo}/releases/latest", get(routes::github_meta::latest_release))
+        .route("/v1/github/{owner}/{repo}/releases/{tag}", get(routes::github_meta::release))
+        .route("/v1/github/{owner}/{repo}/refs", get(routes::github_meta::refs))
         .route("/v1/addons/{slug}/members", get(routes::members::list).post(routes::members::add))
         .route(
             "/v1/addons/{slug}/members/{github_id}",
