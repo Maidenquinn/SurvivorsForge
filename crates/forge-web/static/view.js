@@ -556,7 +556,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!form.reportValidity()) return;
     var submit = form.querySelector('button[type="submit"]');
     if (submit) submit.disabled = true;
-    load(form.action, {method: "POST", body: new FormData(form)}, false).finally(function () {
+    load(form.action, {method: "POST", body: new URLSearchParams(new FormData(form)), headers: {"Accept": "text/html", "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"}}, false).finally(function () {
       if (submit && submit.isConnected) submit.disabled = false;
     });
   });
