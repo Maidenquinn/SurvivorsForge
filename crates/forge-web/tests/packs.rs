@@ -107,7 +107,22 @@ async fn download_follows_the_api_or_waits_for_the_build() {
         .await;
     let building = web.get("/packs/Building12/download").await;
     assert_eq!(building.status, StatusCode::OK);
-    assert!(building.body.contains(r#"http-equiv="refresh""#) && building.body.contains("Building the pack"));
+    assert!(building.body.contains(r#"content="3;url=/packs/Building12/download?try=1""#) && building.body.contains("Building the pack"));
+    let later = web.get("/packs/Building12/download?try=7").await;
+    assert!(later.body.contains("download?try=8"), "counts the tries");
+    let long = web.get("/packs/Building12/download?try=40").await;
+    assert!(!long.body.contains(r#"http-equiv="refresh""#) && long.body.contains("longer than usual"), "stops asking after two minutes");
+    assert!(long.body.contains(r#"href="/packs/Building12/download""#), "can check again");
+
+    Mock::given(method("GET"))
+        .and(path("/v1/packs/Failed1234/download"))
+        .respond_with(ResponseTemplate::new(422).set_body_json(json!({ "error": "build_failed", "message": "GitHub did not answer" })))
+        .mount(&web.api)
+        .await;
+    let failed = web.get("/packs/Failed1234/download").await;
+    assert_eq!(failed.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert!(!failed.body.contains(r#"http-equiv="refresh""#) && failed.body.contains("could not be built") && failed.body.contains("GitHub did not answer"));
+    assert!(failed.body.contains(r#"href="/packs/Failed1234""#), "leads back to the pack");
 }
 
 #[tokio::test]

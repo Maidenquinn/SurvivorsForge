@@ -8,6 +8,7 @@ use crate::error::{WebError, WebResult};
 use crate::templates::{NewPackPage, PackBuildingPage, PackChoice, PackEntry, PackListRow, PackPage, PacksPage, render};
 use crate::trust::notice;
 use axum::extract::{Path, RawQuery, State};
+use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::Extension;
 use axum_extra::extract::PrivateCookieJar;
@@ -156,14 +157,27 @@ pub async fn pack(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
     }))
 }
 
-/// `GET /packs/{id}/download`: to the zip when it is built, else a page that asks again.
-pub async fn download(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(id): Path<String>) -> WebResult<Response> {
+/// How often the building page asks again (every 3 seconds) before it stops: about two minutes.
+const MAX_TRIES: u32 = 40;
+
+/// `GET /packs/{id}/download?try=`: to the zip when it is built, else a page that asks again, until
+/// the build fails or takes longer than `MAX_TRIES`.
+pub async fn download(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Extension(csrf): Extension<CsrfToken>,
+    Path(id): Path<String>,
+    RawQuery(raw): RawQuery,
+) -> WebResult<Response> {
     valid_id(&id)?;
-    match state.api.get_or_redirect(&format!("/v1/packs/{id}/download")).await? {
-        Err(location) => Ok(Redirect::to(&location).into_response()),
-        Ok(_) => {
-            let user = visitor(&state, &jar).await?.map(|(v, _)| v);
-            Ok(render(&PackBuildingPage { user, csrf: csrf.0, id }).into_response())
-        }
-    }
+    let tries: u32 = values(raw.as_deref(), "try").first().and_then(|t| t.parse().ok()).unwrap_or(0);
+    let (status, failed) = match state.api.get_or_redirect(&format!("/v1/packs/{id}/download")).await {
+        Ok(Err(location)) => return Ok(Redirect::to(&location).into_response()),
+        Ok(Ok(_)) => (StatusCode::OK, None),
+        Err(ApiError::Api { code, message, .. }) if code == "build_failed" => (StatusCode::UNPROCESSABLE_ENTITY, Some(message)),
+        Err(e) => return Err(e.into()),
+    };
+    let user = visitor(&state, &jar).await?.map(|(v, _)| v);
+    let next_try = (failed.is_none() && tries < MAX_TRIES).then_some(tries + 1);
+    Ok((status, render(&PackBuildingPage { user, csrf: csrf.0, id, failed, next_try })).into_response())
 }

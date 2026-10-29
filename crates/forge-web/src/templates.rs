@@ -682,4 +682,8 @@ pub struct PackBuildingPage {
     pub user: Option<Visitor>,
     pub csrf: String,
     pub id: String,
+    /// Why the build failed; the page then stops asking.
+    pub failed: Option<String>,
+    /// The try the page asks for next; `None` once it gave up waiting.
+    pub next_try: Option<u32>,
 }
