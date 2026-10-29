@@ -1,10 +1,25 @@
-# The whole platform on this machine over plain HTTP, for testing (docs/local-setup.md):
+# The whole platform on this machine over plain HTTP, built from this repository, for testing
+# (docs/local-setup.md):
 #   docker compose --env-file .env.local -f compose.yaml -f compose.local.yaml up -d --build
 # Website http://localhost:3080, API http://localhost:3081. Own project name, so its database and
 # volumes stay apart from the Postgres that `cargo test` uses.
 name: survivorsforge-local
 
 services:
+  api:
+    image: survivorsforge/forge-api:local
+    # The worker runs the same image; only this service builds it.
+    build:
+      context: .
+      dockerfile: docker/forge-api.Dockerfile
+  worker:
+    image: survivorsforge/forge-api:local
+    pull_policy: never
+  web:
+    image: survivorsforge/forge-web:local
+    build:
+      context: .
+      dockerfile: docker/forge-web.Dockerfile
   caddy:
     # The same ports as compose.yaml, but reachable from this machine only.
     ports: !override

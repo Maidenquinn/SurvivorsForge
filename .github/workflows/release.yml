@@ -62,17 +62,61 @@ jobs:
           name: linux
           path: dist/SurvivorsForge-*.AppImage
 
-  # Runs only when both builds succeeded, so a release never ships with one platform missing.
-  publish:
+  # The platform images that compose.yaml pulls. Pushed once both launcher builds succeeded, so
+  # `latest` never points at a version without a release.
+  images:
     needs: [version, windows, linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        image: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Image name
+        id: name
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/survivorsforge-${{ matrix.image }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ steps.name.outputs.name }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/forge-${{ matrix.image }}.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  # Runs only when both builds and the images succeeded, so a release never ships with a part missing.
+  publish:
+    needs: [version, windows, linux, images]
     runs-on: ubuntu-22.04
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: assets
           merge-multiple: true
+      # What a server needs besides the images (docs/self-hosting.md).
+      - name: Add the server files
+        run: cp compose.yaml assets/ && cp .env.example assets/env.example
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}

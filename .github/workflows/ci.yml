@@ -73,7 +73,7 @@ jobs:
       - name: Compose file is valid
         run: POSTGRES_PASSWORD=ci docker compose config --quiet
       - name: Build the website image
-        run: POSTGRES_PASSWORD=ci docker compose build web
+        run: POSTGRES_PASSWORD=ci docker compose -f compose.yaml -f compose.local.yaml build web
       - name: Build and smoke-test the API stack
         run: bash scripts/compose-smoke.sh
 

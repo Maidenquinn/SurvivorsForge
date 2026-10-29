@@ -7,12 +7,14 @@ cd "$(dirname "$0")/.."
 
 work="$(mktemp -d)"
 project="forge-smoke-$$"
+# compose.local.yaml builds the images from this checkout instead of pulling them.
+compose() { docker compose -p "$project" -f compose.yaml -f compose.local.yaml "$@"; }
 cleanup() {
   status=$?
   if [ "$status" -ne 0 ]; then
-    docker compose -p "$project" logs --tail 40 api worker || true
+    compose logs --tail 40 api worker || true
   fi
-  docker compose -p "$project" down -v --remove-orphans >/dev/null 2>&1 || true
+  compose down -v --remove-orphans >/dev/null 2>&1 || true
   rm -rf "$work"
 }
 trap cleanup EXIT
@@ -25,6 +27,7 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$(host_path "$work"):/out" --entrypoint s
 cat > "$work/smoke.env" <<EOF
 PUBLIC_API_URL=http://api.smoke.test
 PUBLIC_IMAGE_URL=http://web.smoke.test/img
+PUBLIC_PACK_URL=http://web.smoke.test/packs-files
 MIGRATE_ON_START=true
 GITHUB_APP_ID=1
 GITHUB_CLIENT_ID=smoke
@@ -36,7 +39,7 @@ export FORGE_ENV_FILE="$(host_path "$work/smoke.env")"
 export GITHUB_APP_PRIVATE_KEY_PATH="$(host_path "$work/app.pem")"
 export POSTGRES_PASSWORD="smoke-$$"
 
-docker compose -p "$project" up -d --build --wait postgres api worker
-MSYS_NO_PATHCONV=1 docker compose -p "$project" exec -T api /usr/local/bin/forge-api healthcheck http://127.0.0.1:8080/healthz
-MSYS_NO_PATHCONV=1 docker compose -p "$project" exec -T worker /usr/local/bin/forge-api healthcheck db
+compose up -d --build --wait postgres api worker
+MSYS_NO_PATHCONV=1 compose exec -T api /usr/local/bin/forge-api healthcheck http://127.0.0.1:8080/healthz
+MSYS_NO_PATHCONV=1 compose exec -T worker /usr/local/bin/forge-api healthcheck db
 echo "smoke test passed"

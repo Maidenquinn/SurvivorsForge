@@ -51,10 +51,14 @@ After saving, note from the App's settings page:
 
 ## 2. Configure
 
+The server needs no copy of the repository: `compose.yaml` pulls the images
+`ghcr.io/rezondes/survivorsforge-api` and `ghcr.io/rezondes/survivorsforge-web` and holds Caddy's
+configuration. Both files come with every release.
+
 ```bash
-git clone https://github.com/Rezondes/SurvivorsForge.git
-cd SurvivorsForge
-cp .env.example .env
+mkdir survivorsforge && cd survivorsforge
+curl -fLO https://github.com/Rezondes/SurvivorsForge/releases/latest/download/compose.yaml
+curl -fL -o .env https://github.com/Rezondes/SurvivorsForge/releases/latest/download/env.example
 mkdir -p secrets
 cp ~/Downloads/your-app.private-key.pem secrets/github-app.pem
 chmod 644 secrets/github-app.pem
@@ -73,6 +77,7 @@ Your own GitHub user ID for `ADMIN_GITHUB_IDS` is the `id` field of
 
 | Variable | Required | Meaning | Example |
 |---|---|---|---|
+| `FORGE_VERSION` | no | Release of the images to run, e.g. `0.3.2`; without it `latest` | `0.3.2` |
 | `POSTGRES_PASSWORD` | yes | Database password; Compose builds the database URL from it | output of `openssl rand -hex 24` |
 | `DOMAIN_WEB` | yes | Site of the website as Caddy serves it | `http://forge.example.com:3080` |
 | `DOMAIN_API` | yes | Site of the API as Caddy serves it | `http://api.forge.example.com:3081` |
@@ -127,7 +132,7 @@ Your own GitHub user ID for `ADMIN_GITHUB_IDS` is the `id` field of
 ## 3. First start
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 docker compose ps
 ```
 
@@ -138,7 +143,8 @@ Carry over the old verified list. The addons are created without an owner; their
 them later on the website by proving admin rights on the repo:
 
 ```bash
-docker compose cp registry/verified.json api:/tmp/verified.json
+curl -fLO https://raw.githubusercontent.com/Rezondes/SurvivorsForge/main/registry/verified.json
+docker compose cp verified.json api:/tmp/verified.json
 docker compose exec api forge-api import-verified /tmp/verified.json
 ```
 
@@ -153,10 +159,16 @@ docker compose exec api forge-api export-verified > registry/verified.json
 
 ## 4. Updates
 
+Get the `compose.yaml` of the new release (it may add services or settings), then the images:
+
 ```bash
-git pull
-docker compose up -d --build
+curl -fLO https://github.com/Rezondes/SurvivorsForge/releases/latest/download/compose.yaml
+docker compose pull
+docker compose up -d
 ```
+
+With `FORGE_VERSION` set, raise it first; without it `docker compose pull` fetches `latest`.
+Compare `.env` with the release's `env.example` for new variables.
 
 After a release with new scanner rules, scan all versions again:
 

@@ -1,12 +1,16 @@
-# SurvivorsForge platform. Values come from `.env` (see `.env.example`).
+# SurvivorsForge platform. Values come from `.env` (see `.env.example`). This file and `.env` are
+# all a server needs: the images come from ghcr.io, Caddy's configuration is below.
 #
 #   docker compose up -d                        everything
 #   docker compose up -d postgres api worker    the API alone, without website and proxy
+#   docker compose pull && docker compose up -d update to the newest release
 #
-# For local development, compose.dev.yaml publishes Postgres on 127.0.0.1.
+# FORGE_VERSION pins a release (e.g. 0.3.2); without it `latest` runs. To build the images from
+# this repository instead, add compose.local.yaml (docs/local-setup.md). For local development,
+# compose.dev.yaml publishes Postgres on 127.0.0.1.
 
 x-api: &api
-  image: survivorsforge/forge-api:local
+  image: ghcr.io/rezondes/survivorsforge-api:${FORGE_VERSION:-latest}
   env_file:
     - path: ${FORGE_ENV_FILE:-.env}
       required: false
@@ -47,10 +51,6 @@ services:
 
   api:
     <<: *api
-    # The worker runs the same image; only this service builds it.
-    build:
-      context: .
-      dockerfile: docker/forge-api.Dockerfile
     command: ["serve"]
     volumes:
       - images:/data/images
@@ -65,7 +65,6 @@ services:
 
   worker:
     <<: *api
-    pull_policy: never
     command: ["worker"]
     # The API applies the migrations; the worker starts once they are in.
     depends_on:
@@ -89,10 +88,7 @@ services:
       retries: 3
 
   web:
-    image: survivorsforge/forge-web:local
-    build:
-      context: .
-      dockerfile: docker/forge-web.Dockerfile
+    image: ghcr.io/rezondes/survivorsforge-web:${FORGE_VERSION:-latest}
     env_file:
     - path: ${FORGE_ENV_FILE:-.env}
       required: false
@@ -125,8 +121,10 @@ services:
     ports:
       - "3080:3080"
       - "3081:3081"
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
     volumes:
-      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - images:/srv/img:ro
       - packs:/srv/packs:ro
       - caddy-data:/data
@@ -159,6 +157,39 @@ volumes:
   packs:
   caddy-data:
   caddy-config:
+
+# Caddy reads DOMAIN_WEB, DOMAIN_API and ACME_EMAIL from its environment (`$$` keeps Compose off them).
+configs:
+  caddyfile:
+    content: |
+      {
+        email {$$ACME_EMAIL}
+      }
+
+      {$$DOMAIN_WEB} {
+        # Uploaded images straight from the volume; nothing outside /img/ is ever served from it.
+        handle_path /img/* {
+          root * /srv/img
+          header Cache-Control "public, max-age=31536000, immutable"
+          header X-Content-Type-Options nosniff
+          file_server
+        }
+        # Built addon packs; the name is the SHA-256 of the pack's versions, so the file never changes.
+        handle_path /packs-files/* {
+          root * /srv/packs
+          header Cache-Control "public, max-age=86400"
+          header X-Content-Type-Options nosniff
+          header Content-Disposition "attachment; filename=\"SurvivorsForge-pack.zip\""
+          file_server
+        }
+        handle {
+          reverse_proxy web:8080
+        }
+      }
+
+      {$$DOMAIN_API} {
+        reverse_proxy api:8080
+      }
 
 secrets:
   github-app.pem:
