@@ -14,7 +14,7 @@
   {% else %}<p class="panel">You can read comments without signing in. <a href="/login">Log in to participate</a>.</p>{% endif %}
   <section aria-label="Comments" class="issue-discussion">
     {% for comment in comments %}
-    <article class="issue-message">
+    <article class="issue-message" data-inline-editor>
       <header class="issue-message-head">
         {% if !comment.avatar.is_empty() %}<img class="issue-avatar" src="{{ comment.avatar }}" alt="" width="32" height="32">{% endif %}
         <strong>{{ comment.author }}</strong><span class="muted">{{ comment.created }}{% if comment.edited %} · edited{% endif %}</span>
