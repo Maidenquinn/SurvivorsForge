@@ -9,7 +9,7 @@
   <input id="q" type="search" name="q" value="{{ q }}" placeholder="Name or what it does" autocomplete="off">
   <div class="filters">
     <div>
-      <label for="trust">Check</label>
+      <label for="trust">Safety check</label>
       <select id="trust" name="trust">
         <option value="" {% if trust == "" %}selected{% endif %}>Any</option>
         <option value="verified" {% if trust == "verified" %}selected{% endif %}>Verified</option>

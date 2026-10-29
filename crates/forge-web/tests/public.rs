@@ -329,3 +329,11 @@ async fn the_whole_card_opens_the_addon() {
     let css = web.get("/static/app.css").await.body;
     assert!(css.contains(".card h2 a::after") && css.contains(".card p a { position: relative; z-index: 1; }"), "no card-wide link");
 }
+
+#[tokio::test]
+async fn the_trust_filter_says_what_it_filters() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
+    mock(&web, "/v1/addons", json!({ "total": 0, "addons": [] })).await;
+    assert!(web.get("/addons").await.body.contains(r#"<label for="trust">Safety check</label>"#));
+}
