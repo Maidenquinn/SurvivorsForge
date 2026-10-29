@@ -174,11 +174,23 @@ pub struct LatestBlock {
     pub findings: Vec<FindingRow>,
 }
 
+pub struct InlineIssue {
+    pub id: i64,
+    pub title: String,
+    pub body: String,
+    pub kind: String,
+    pub status: String,
+    pub author: String,
+    pub comments: Vec<IssueComment>,
+}
+
 #[derive(Template)]
 #[template(path = "addon.html")]
 pub struct AddonPage {
     pub tab: String,
     pub issues: Vec<IssueItem>,
+    pub selected_issue: Option<InlineIssue>,
+    pub can_manage_issues: bool,
     pub version_rows: Vec<(String, VersionRow)>,
     pub user: Option<Visitor>,
     pub csrf: String,
