@@ -168,7 +168,8 @@ pub async fn addon(
     Path(slug): Path<String>,
     Query(claim): Query<ClaimError>,
 ) -> WebResult<Response> {
-    let user = visitor(&state, &jar).await?.map(|(v, _)| v);
+    let session = visitor(&state, &jar).await?;
+    let user = session.as_ref().map(|(v, _)| v.clone());
     let a = state.api.get(&format!("/v1/addons/{}", seg(&slug)), None).await?;
     if a["blocked"] == true {
         let page = BlockedPage { user, csrf: csrf.0, name: s(&a["name"]), reason: s(&a["block_reason"]) };
@@ -195,6 +196,7 @@ pub async fn addon(
     let can_claim = a["claimed"] == false && user.as_ref().is_some_and(|u| u.login.eq_ignore_ascii_case(&repo_owner));
     let tab = match claim.tab.as_deref() {
         Some("issues") => "issues",
+        Some("comments") => "comments",
         Some("gallery") => "gallery",
         Some("versions") => "versions",
         _ => "overview",
@@ -240,8 +242,14 @@ pub async fn addon(
                 .unwrap_or(false)
         } else { false }
     } else { false };
+    let (comments, comments_next, comments_moderator) = if tab == "comments" {
+        crate::comments::feed(&state, &slug, &session, None).await?
+    } else { (Vec::new(), None, false) };
     let page = AddonPage {
         tab,
+        comments,
+        comments_next,
+        comments_moderator,
         issues,
         selected_issue,
         can_manage_issues,
