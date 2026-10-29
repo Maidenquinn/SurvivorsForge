@@ -396,7 +396,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Log out",
     "pub_by": "by",
-    "pub_downloads": "downloads"
+    "pub_downloads": "downloads",
+    "addon_claim_prefix": "This AddOn comes from your repository",
+    "addon_claim_middle": "and has no owner here yet. GitHub checks that you administer the repository and that the",
+    "addon_claim_installed": "is installed on it.",
+    "addon_launcher_explain": "The launcher installs this AddOn, its libraries and updates. No launcher yet?",
+    "addon_launcher_free": "free for Windows, Linux and Steam Deck.",
+    "addon_without_launcher": "Without the launcher: extract the download into the game's",
+    "addon_folder": "folder.",
+    "addon_check_game": "Game version:"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -792,7 +800,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Déconnexion",
     "pub_by": "par",
-    "pub_downloads": "téléchargements"
+    "pub_downloads": "téléchargements",
+    "addon_claim_prefix": "Cet AddOn provient de votre dépôt",
+    "addon_claim_middle": "et n'a pas encore de propriétaire ici. GitHub vérifie que vous administrez ce dépôt et que",
+    "addon_claim_installed": "y est installée.",
+    "addon_launcher_explain": "Le lanceur installe cet AddOn, ses dépendances et ses mises à jour. Pas encore de lanceur ?",
+    "addon_launcher_free": "gratuit sur Windows, Linux et Steam Deck.",
+    "addon_without_launcher": "Sans le lanceur : décompressez l'archive dans le dossier",
+    "addon_folder": "du jeu.",
+    "addon_check_game": "Version du jeu :"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1188,7 +1204,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Wyloguj",
     "pub_by": "autor:",
-    "pub_downloads": "pobrań"
+    "pub_downloads": "pobrań",
+    "addon_claim_prefix": "Ten AddOn pochodzi z Twojego repozytorium",
+    "addon_claim_middle": "i nie ma tu jeszcze właściciela. GitHub sprawdza, czy zarządzasz repozytorium oraz czy",
+    "addon_claim_installed": "jest w nim zainstalowana.",
+    "addon_launcher_explain": "Launcher instaluje AddOn, jego biblioteki i aktualizacje. Nie masz jeszcze launchera?",
+    "addon_launcher_free": "bezpłatny na Windows, Linux i Steam Deck.",
+    "addon_without_launcher": "Bez launchera: rozpakuj pobrane pliki do folderu",
+    "addon_folder": "w grze.",
+    "addon_check_game": "Wersja gry:"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1584,7 +1608,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Odhlásit se",
     "pub_by": "od",
-    "pub_downloads": "stažení"
+    "pub_downloads": "stažení",
+    "addon_claim_prefix": "Tento AddOn pochází z vašeho repozitáře",
+    "addon_claim_middle": "a zatím zde nemá vlastníka. GitHub ověří, že repozitář spravujete a že",
+    "addon_claim_installed": "je v něm nainstalovaná.",
+    "addon_launcher_explain": "Spouštěč instaluje AddOn, knihovny a aktualizace. Ještě nemáte spouštěč?",
+    "addon_launcher_free": "zdarma pro Windows, Linux a Steam Deck.",
+    "addon_without_launcher": "Bez spouštěče rozbalte archiv do složky",
+    "addon_folder": "ve hře.",
+    "addon_check_game": "Verze hry:"
   },
   "de": {
     "tiles": "Tiles",
@@ -1980,7 +2012,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Abmelden",
     "pub_by": "von",
-    "pub_downloads": "Downloads"
+    "pub_downloads": "Downloads",
+    "addon_claim_prefix": "Dieses AddOn stammt aus deinem Repository",
+    "addon_claim_middle": "und hat hier noch keinen Besitzer. GitHub prüft, ob du das Repository verwaltest und ob",
+    "addon_claim_installed": "darin installiert ist.",
+    "addon_launcher_explain": "Der Launcher installiert das AddOn, seine Bibliotheken und Updates. Noch keinen Launcher?",
+    "addon_launcher_free": "kostenlos für Windows, Linux und Steam Deck.",
+    "addon_without_launcher": "Ohne Launcher: Entpacke den Download in den Ordner",
+    "addon_folder": "des Spiels.",
+    "addon_check_game": "Spielversion:"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2376,7 +2416,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Sair",
     "pub_by": "por",
-    "pub_downloads": "downloads"
+    "pub_downloads": "downloads",
+    "addon_claim_prefix": "Este AddOn vem do seu repositório",
+    "addon_claim_middle": "e ainda não tem proprietário aqui. O GitHub verifica se você administra o repositório e se o",
+    "addon_claim_installed": "está instalado nele.",
+    "addon_launcher_explain": "O launcher instala o AddOn, suas bibliotecas e atualizações. Ainda não tem launcher?",
+    "addon_launcher_free": "gratuito para Windows, Linux e Steam Deck.",
+    "addon_without_launcher": "Sem o launcher: extraia o arquivo para a pasta",
+    "addon_folder": "do jogo.",
+    "addon_check_game": "Versão do jogo:"
   },
   "es": {
     "tiles": "Tiles",
@@ -2772,7 +2820,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Cerrar sesión",
     "pub_by": "por",
-    "pub_downloads": "descargas"
+    "pub_downloads": "descargas",
+    "addon_claim_prefix": "Este AddOn procede de tu repositorio",
+    "addon_claim_middle": "y aún no tiene propietario aquí. GitHub verifica que administras el repositorio y que la",
+    "addon_claim_installed": "está instalada en él.",
+    "addon_launcher_explain": "El lanzador instala el AddOn, sus bibliotecas y actualizaciones. ¿Aún no tienes lanzador?",
+    "addon_launcher_free": "gratis para Windows, Linux y Steam Deck.",
+    "addon_without_launcher": "Sin el lanzador: descomprime el archivo en la carpeta",
+    "addon_folder": "del juego.",
+    "addon_check_game": "Versión del juego:"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3168,7 +3224,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Deconectare",
     "pub_by": "de",
-    "pub_downloads": "descărcări"
+    "pub_downloads": "descărcări",
+    "addon_claim_prefix": "Acest AddOn provine din depozitul tău",
+    "addon_claim_middle": "și nu are încă proprietar aici. GitHub verifică dacă administrezi depozitul și dacă",
+    "addon_claim_installed": "este instalată în el.",
+    "addon_launcher_explain": "Lansatorul instalează AddOn, bibliotecile și actualizările sale. Nu ai încă lansatorul?",
+    "addon_launcher_free": "gratuit pentru Windows, Linux și Steam Deck.",
+    "addon_without_launcher": "Fără lansator: dezarhivează descărcarea în dosarul",
+    "addon_folder": "al jocului.",
+    "addon_check_game": "Versiunea jocului:"
   },
   "tr": {
     "tiles": "Tiles",
@@ -3564,7 +3628,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Çıkış yap",
     "pub_by": "hazırlayan",
-    "pub_downloads": "indirme"
+    "pub_downloads": "indirme",
+    "addon_claim_prefix": "Bu AddOn deponuzdan geliyor",
+    "addon_claim_middle": "ve burada henüz sahibi yok. GitHub, depoyu yönettiğinizi ve",
+    "addon_claim_installed": "uygulamasının orada kurulu olduğunu doğrular.",
+    "addon_launcher_explain": "Başlatıcı AddOn'u, kitaplıkları ve güncellemeleri yükler. Henüz başlatıcınız yok mu?",
+    "addon_launcher_free": "Windows, Linux ve Steam Deck için ücretsiz.",
+    "addon_without_launcher": "Başlatıcı olmadan arşivi oyunun",
+    "addon_folder": "klasörüne çıkarın.",
+    "addon_check_game": "Oyun sürümü:"
   },
   "ru": {
     "tiles": "Tiles",
@@ -3960,7 +4032,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Выйти",
     "pub_by": "автор",
-    "pub_downloads": "загрузок"
+    "pub_downloads": "загрузок",
+    "addon_claim_prefix": "Этот AddOn взят из вашего репозитория",
+    "addon_claim_middle": "и пока не имеет владельца на сайте. GitHub проверяет ваши права администратора и то, что",
+    "addon_claim_installed": "установлено в репозитории.",
+    "addon_launcher_explain": "Лаунчер устанавливает AddOn, его библиотеки и обновления. Ещё нет лаунчера?",
+    "addon_launcher_free": "бесплатно для Windows, Linux и Steam Deck.",
+    "addon_without_launcher": "Без лаунчера распакуйте архив в папку",
+    "addon_folder": "игры.",
+    "addon_check_game": "Версия игры:"
   },
   "uk": {
     "tiles": "Tiles",
@@ -4356,7 +4436,15 @@
     "my_addon": "AddOn",
     "auth_logout": "Вийти",
     "pub_by": "автор",
-    "pub_downloads": "завантажень"
+    "pub_downloads": "завантажень",
+    "addon_claim_prefix": "Цей AddOn походить із вашого репозиторію",
+    "addon_claim_middle": "і поки не має власника на сайті. GitHub перевіряє ваші права адміністратора й те, що",
+    "addon_claim_installed": "встановлено в репозиторії.",
+    "addon_launcher_explain": "Лаунчер встановлює AddOn, його бібліотеки та оновлення. Ще немає лаунчера?",
+    "addon_launcher_free": "безкоштовно для Windows, Linux і Steam Deck.",
+    "addon_without_launcher": "Без лаунчера розпакуйте архів до теки",
+    "addon_folder": "гри.",
+    "addon_check_game": "Версія гри:"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -4752,7 +4840,15 @@
     "my_addon": "AddOn",
     "auth_logout": "退出登录",
     "pub_by": "作者",
-    "pub_downloads": "次下载"
+    "pub_downloads": "次下载",
+    "addon_claim_prefix": "此 AddOn 来自你的仓库",
+    "addon_claim_middle": "，目前在本站还没有所有者。GitHub 会验证你的管理员权限，以及",
+    "addon_claim_installed": "是否已安装在该仓库中。",
+    "addon_launcher_explain": "启动器会安装 AddOn、依赖库和更新。还没有启动器？",
+    "addon_launcher_free": "支持 Windows、Linux 和 Steam Deck，免费使用。",
+    "addon_without_launcher": "不使用启动器时，请将下载文件解压到游戏的",
+    "addon_folder": "文件夹。",
+    "addon_check_game": "游戏版本："
   },
   "ja": {
     "tiles": "Tiles",
@@ -5148,7 +5244,15 @@
     "my_addon": "AddOn",
     "auth_logout": "ログアウト",
     "pub_by": "作成者",
-    "pub_downloads": "ダウンロード"
+    "pub_downloads": "ダウンロード",
+    "addon_claim_prefix": "この AddOn はあなたのリポジトリに由来します",
+    "addon_claim_middle": "が、このサイトではまだ所有者がいません。GitHub は管理者権限と、",
+    "addon_claim_installed": "がリポジトリにインストールされていることを確認します。",
+    "addon_launcher_explain": "ランチャーは AddOn、ライブラリ、更新をインストールします。まだランチャーがありませんか？",
+    "addon_launcher_free": "Windows、Linux、Steam Deck 向けに無料で提供。",
+    "addon_without_launcher": "ランチャーを使わない場合、ファイルをゲームの",
+    "addon_folder": "フォルダーへ展開してください。",
+    "addon_check_game": "ゲームバージョン："
   },
   "ko": {
     "tiles": "Tiles",
@@ -5544,7 +5648,15 @@
     "my_addon": "AddOn",
     "auth_logout": "로그아웃",
     "pub_by": "제작자",
-    "pub_downloads": "다운로드"
+    "pub_downloads": "다운로드",
+    "addon_claim_prefix": "이 AddOn은 회원님의 저장소에서 가져왔습니다",
+    "addon_claim_middle": "만, 이 사이트에는 아직 소유자가 없습니다. GitHub가 관리자 권한과",
+    "addon_claim_installed": "설치 여부를 확인합니다.",
+    "addon_launcher_explain": "런처는 AddOn과 라이브러리, 업데이트를 설치합니다. 런처가 없으신가요?",
+    "addon_launcher_free": "Windows, Linux, Steam Deck에서 무료입니다.",
+    "addon_without_launcher": "런처 없이 설치하려면 파일을 게임의",
+    "addon_folder": "폴더에 압축 해제하세요.",
+    "addon_check_game": "게임 버전:"
   }
 };
   var supported = Object.keys(translations);
