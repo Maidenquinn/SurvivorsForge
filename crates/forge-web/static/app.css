@@ -414,3 +414,17 @@ button.suggestion:hover { border-color: var(--outline-hover); background: var(--
   .issues-toolbar { align-items: stretch; }
   .issues-search { max-width: none; }
 }
+
+/* Addon tab navigation: server-rendered, works without JavaScript. */
+.addon-tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--outline); margin: 24px 0 20px; }
+.addon-tabs a, .addon-tabs-future { padding: 11px 17px; color: var(--muted); text-decoration: none; border-bottom: 3px solid transparent; }
+.addon-tabs a:hover { color: var(--gold); background: var(--control); }
+.addon-tabs a[aria-current="page"] { color: var(--gold-bright); border-bottom-color: var(--gold); background: var(--row); }
+.addon-tabs-future { color: var(--disabled); cursor: not-allowed; }
+.addon-tab-section { min-height: 160px; }
+.addon-tab-section .issues-heading h2 { margin: 0 0 6px; }
+.addon-tab-section .issues-heading p { margin: 0; }
+.issues-compose summary { color: var(--gold); cursor: pointer; font-size: 17px; }
+.issues-compose summary:hover { color: var(--gold-bright); }
+.issues-compose form { margin-top: 20px; }
+@media (max-width: 640px) { .addon-tabs a, .addon-tabs-future { padding: 10px; font-size: 13px; } }
