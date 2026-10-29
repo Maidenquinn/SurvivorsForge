@@ -456,58 +456,99 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-/* Progressive enhancement for addon discussions. Ordinary forms and links remain functional. */
+/* Progressive enhancement for addon discussions. Forms work without JavaScript. */
 (function () {
   "use strict";
   var busy = false;
+  var controller = null;
   function root() { return document.querySelector("[data-dynamic-comments]"); }
+  function t(key, fallback) {
+    return window.ForgeI18n ? window.ForgeI18n.t(key) : fallback;
+  }
+  function errorMessage(container, key, fallback) {
+    var notice = container.querySelector("[data-comment-error]");
+    if (!notice) {
+      notice = document.createElement("p");
+      notice.className = "notice bad";
+      notice.setAttribute("role", "alert");
+      notice.dataset.commentError = "";
+      container.prepend(notice);
+    }
+    notice.textContent = t(key, fallback);
+  }
   async function load(url, options, push) {
-    if (busy || !root()) return;
-    busy = true;
     var old = root();
+    if (!old) return;
+    // A browser Back action may supersede an in-flight request.
+    if (busy && !options) {
+      if (controller) controller.abort();
+      busy = false;
+    }
+    if (busy) return;
+    busy = true;
+    controller = new AbortController();
     old.setAttribute("aria-busy", "true");
     try {
-      var response = await fetch(url, Object.assign({credentials: "same-origin", headers: {"Accept": "text/html"}}, options || {}));
-      if (!response.ok) throw new Error("Request failed (" + response.status + ")");
+      var response = await fetch(url, Object.assign({
+        credentials: "same-origin",
+        redirect: "follow",
+        headers: {"Accept": "text/html"},
+        signal: controller.signal
+      }, options || {}));
+      // A redirected login/error page is not a successful comment update.
+      if (!response.ok || new URL(response.url).pathname === "/login") {
+        if (new URL(response.url).pathname === "/login") {
+          window.location.assign("/login");
+          return;
+        }
+        throw new Error("Comment request rejected");
+      }
       var html = new DOMParser().parseFromString(await response.text(), "text/html");
       var next = html.querySelector("[data-dynamic-comments]");
-      if (!next) { window.location.assign(response.url); return; }
+      if (!next) throw new Error("Unexpected response");
+      if (old !== root()) return;
       old.replaceWith(next);
-      if (push) history.pushState({comments: true}, "", response.url);
+      // POST redirects to the canonical feed. Do not add mutation URLs to history.
+      if (push && !options) history.pushState({comments: true}, "", response.url);
       var heading = next.querySelector("h1");
-      if (heading) { heading.setAttribute("tabindex", "-1"); heading.focus({preventScroll: true}); }
+      if (heading) {
+        heading.setAttribute("tabindex", "-1");
+        heading.focus({preventScroll: true});
+      }
       document.dispatchEvent(new Event("htmx:afterSwap"));
     } catch (err) {
-      old.removeAttribute("aria-busy");
-      var notice = old.querySelector("[data-comment-error]");
-      if (!notice) {
-        notice = document.createElement("p");
-        notice.className = "notice bad";
-        notice.setAttribute("role", "alert");
-        notice.dataset.commentError = "";
-        old.prepend(notice);
+      if (err.name !== "AbortError" && old.isConnected) {
+        errorMessage(old, "comment_update_error", "Could not update comments. Check your connection and try again.");
       }
-      notice.textContent = window.ForgeI18n ? window.ForgeI18n.t("comment_update_error") : "Could not update comments. Check your connection and try again.";
-    } finally { busy = false; }
+    } finally {
+      old.removeAttribute("aria-busy");
+      busy = false;
+      controller = null;
+    }
   }
   document.addEventListener("submit", function (event) {
     var form = event.target.closest("[data-dynamic-comments] form");
     if (!form) return;
-    if (busy) { event.preventDefault(); return; }
-    if (form.hasAttribute("data-confirm-delete") && !window.confirm(form.getAttribute("data-confirm-delete"))) {
-      event.preventDefault(); return;
-    }
-    if (!form.reportValidity()) { event.preventDefault(); return; }
     event.preventDefault();
-    load(form.action, {method: "POST", body: new FormData(form)}, true);
+    if (busy) return;
+    if (form.hasAttribute("data-confirm-delete") && !window.confirm(form.getAttribute("data-confirm-delete"))) return;
+    if (!form.reportValidity()) return;
+    load(form.action, {method: "POST", body: new FormData(form)}, false);
   });
   document.addEventListener("click", function (event) {
+    var cancel = event.target.closest("[data-dynamic-comments] [data-edit-cancel]");
+    if (cancel) {
+      var form = cancel.closest("form");
+      if (form) form.reset();
+      return;
+    }
     var link = event.target.closest("[data-dynamic-comments] a[href*='/comments?before=']");
-    if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    if (!link || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    if (new URL(link.href).origin !== location.origin) return;
     event.preventDefault();
     load(link.href, null, true);
   });
   window.addEventListener("popstate", function () {
-    if (root()) load(window.location.href, null, false);
+    if (root() && location.pathname.endsWith("/comments")) load(location.href, null, false);
   });
 })();
