@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Reports - Admin - SurvivorsForge{% endblock %}
 {% block content %}
-<p><a href="/admin"><span data-l10n-en="Admin" data-l10n-fr="Administration">Admin</span></a></p>
+<p><a href="/admin"><span data-i18n="admin">Admin</span></a></p>
 <h1><span data-l10n-en="Open reports" data-l10n-fr="Signalements ouverts">Open reports</span></h1>
 {% include "admin/flash.html" %}
 {% if rows.is_empty() %}<section class="panel"><p><span data-l10n-en="No open reports." data-l10n-fr="Aucun signalement ouvert.">No open reports.</span></p></section>{% endif %}
