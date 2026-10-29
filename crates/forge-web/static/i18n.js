@@ -414,7 +414,16 @@
     "admin_make_admin": "Make an admin",
     "admin_banned": "Banned",
     "pub_updated": "Updated",
-    "creator_images_title": "Images"
+    "creator_images_title": "Images",
+    "trust_notice_unavailable": "The file is no longer available on GitHub.",
+    "trust_notice_verified": "An admin checked this exact file by hand.",
+    "trust_notice_verified_author": "An admin verified an earlier version from this author; this one was checked automatically.",
+    "trust_notice_checked": "The automatic check found nothing. No admin has inspected it manually.",
+    "trust_notice_flagged": "The automatic check found something suspicious. Review the findings before installation.",
+    "trust_notice_blocked": "An admin blocked this version. It cannot be downloaded.",
+    "trust_notice_file_changed": "The file on GitHub changed after verification. An admin must inspect it again before it can be downloaded.",
+    "trust_notice_not_checked": "The automatic check has not run yet. Install at your own risk.",
+    "trust_file_changed": "File changed"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -828,7 +837,16 @@
     "admin_make_admin": "Nommer administrateur",
     "admin_banned": "Banni",
     "pub_updated": "Mis à jour",
-    "creator_images_title": "Images"
+    "creator_images_title": "Images",
+    "trust_notice_unavailable": "Le fichier n'est plus disponible sur GitHub.",
+    "trust_notice_verified": "Un administrateur a vérifié manuellement ce fichier précis.",
+    "trust_notice_verified_author": "Un administrateur a vérifié une version précédente de cet auteur ; celle-ci a été analysée automatiquement.",
+    "trust_notice_checked": "L'analyse automatique n'a rien détecté. Aucun administrateur n'a encore vérifié manuellement ce fichier.",
+    "trust_notice_flagged": "L'analyse automatique a détecté un élément suspect. Consultez les résultats avant installation.",
+    "trust_notice_blocked": "Un administrateur a bloqué cette version. Elle ne peut pas être téléchargée.",
+    "trust_notice_file_changed": "Le fichier sur GitHub a changé après sa vérification. Un administrateur doit le contrôler avant tout téléchargement.",
+    "trust_notice_not_checked": "L'analyse automatique n'a pas encore été effectuée. Installez à vos risques et périls.",
+    "trust_file_changed": "Fichier modifié"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1242,7 +1260,16 @@
     "admin_make_admin": "Nadaj prawa administratora",
     "admin_banned": "Zbanowany",
     "pub_updated": "Zaktualizowano",
-    "creator_images_title": "Obrazy"
+    "creator_images_title": "Obrazy",
+    "trust_notice_unavailable": "Plik nie jest już dostępny na GitHub.",
+    "trust_notice_verified": "Administrator ręcznie sprawdził dokładnie ten plik.",
+    "trust_notice_verified_author": "Administrator zweryfikował wcześniejszą wersję tego autora; tę sprawdzono automatycznie.",
+    "trust_notice_checked": "Automatyczna kontrola niczego nie wykryła. Administrator nie sprawdzał tego pliku ręcznie.",
+    "trust_notice_flagged": "Automatyczna kontrola wykryła podejrzane elementy. Sprawdź wyniki przed instalacją.",
+    "trust_notice_blocked": "Administrator zablokował tę wersję. Nie można jej pobrać.",
+    "trust_notice_file_changed": "Plik na GitHub zmienił się po kontroli. Administrator musi go ponownie sprawdzić przed pobraniem.",
+    "trust_notice_not_checked": "Automatyczna kontrola jeszcze się nie odbyła. Instalujesz na własne ryzyko.",
+    "trust_file_changed": "Plik zmieniony"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1656,7 +1683,16 @@
     "admin_make_admin": "Jmenovat správcem",
     "admin_banned": "Zakázaný",
     "pub_updated": "Aktualizováno",
-    "creator_images_title": "Obrázky"
+    "creator_images_title": "Obrázky",
+    "trust_notice_unavailable": "Soubor již není dostupný na GitHubu.",
+    "trust_notice_verified": "Správce ručně zkontroloval přesně tento soubor.",
+    "trust_notice_verified_author": "Správce ověřil starší verzi tohoto autora; tuto verzi prověřila automatická kontrola.",
+    "trust_notice_checked": "Automatická kontrola nic nenašla. Správce soubor ručně nezkontroloval.",
+    "trust_notice_flagged": "Automatická kontrola našla něco podezřelého. Před instalací si přečtěte nálezy.",
+    "trust_notice_blocked": "Správce tuto verzi zablokoval. Nelze ji stáhnout.",
+    "trust_notice_file_changed": "Soubor na GitHubu se po kontrole změnil. Před stažením jej musí znovu prověřit správce.",
+    "trust_notice_not_checked": "Automatická kontrola ještě neproběhla. Instalace je na vlastní riziko.",
+    "trust_file_changed": "Soubor změněn"
   },
   "de": {
     "tiles": "Tiles",
@@ -2070,7 +2106,16 @@
     "admin_make_admin": "Zum Administrator machen",
     "admin_banned": "Gesperrt",
     "pub_updated": "Aktualisiert",
-    "creator_images_title": "Bilder"
+    "creator_images_title": "Bilder",
+    "trust_notice_unavailable": "Die Datei ist auf GitHub nicht mehr verfügbar.",
+    "trust_notice_verified": "Ein Administrator hat genau diese Datei manuell überprüft.",
+    "trust_notice_verified_author": "Ein Administrator hat eine frühere Version dieses Autors geprüft; diese wurde automatisch kontrolliert.",
+    "trust_notice_checked": "Die automatische Prüfung hat nichts gefunden. Ein Administrator hat die Datei nicht manuell geprüft.",
+    "trust_notice_flagged": "Die automatische Prüfung hat verdächtige Inhalte entdeckt. Lies die Ergebnisse vor der Installation.",
+    "trust_notice_blocked": "Ein Administrator hat diese Version gesperrt. Sie kann nicht heruntergeladen werden.",
+    "trust_notice_file_changed": "Die GitHub-Datei wurde nach der Prüfung verändert. Vor dem Download muss ein Administrator sie erneut prüfen.",
+    "trust_notice_not_checked": "Die automatische Prüfung ist noch nicht abgeschlossen. Installation auf eigenes Risiko.",
+    "trust_file_changed": "Datei geändert"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2484,7 +2529,16 @@
     "admin_make_admin": "Tornar administrador",
     "admin_banned": "Banido",
     "pub_updated": "Atualizado",
-    "creator_images_title": "Imagens"
+    "creator_images_title": "Imagens",
+    "trust_notice_unavailable": "O arquivo não está mais disponível no GitHub.",
+    "trust_notice_verified": "Um administrador verificou manualmente este arquivo exato.",
+    "trust_notice_verified_author": "Um administrador verificou uma versão anterior deste autor; esta foi analisada automaticamente.",
+    "trust_notice_checked": "A análise automática não encontrou problemas. Nenhum administrador verificou manualmente.",
+    "trust_notice_flagged": "A análise automática encontrou algo suspeito. Veja os resultados antes de instalar.",
+    "trust_notice_blocked": "Um administrador bloqueou esta versão. Não é possível baixá-la.",
+    "trust_notice_file_changed": "O arquivo no GitHub mudou após a verificação. Um administrador precisa analisá-lo novamente antes do download.",
+    "trust_notice_not_checked": "A análise automática ainda não foi executada. Instale por sua conta e risco.",
+    "trust_file_changed": "Arquivo alterado"
   },
   "es": {
     "tiles": "Tiles",
@@ -2898,7 +2952,16 @@
     "admin_make_admin": "Nombrar administrador",
     "admin_banned": "Bloqueado",
     "pub_updated": "Actualizado",
-    "creator_images_title": "Imágenes"
+    "creator_images_title": "Imágenes",
+    "trust_notice_unavailable": "El archivo ya no está disponible en GitHub.",
+    "trust_notice_verified": "Un administrador ha revisado manualmente este archivo exacto.",
+    "trust_notice_verified_author": "Un administrador verificó una versión anterior de este autor; esta se ha analizado automáticamente.",
+    "trust_notice_checked": "La comprobación automática no encontró problemas. Ningún administrador lo ha revisado manualmente.",
+    "trust_notice_flagged": "La comprobación automática encontró algo sospechoso. Consulta los resultados antes de instalar.",
+    "trust_notice_blocked": "Un administrador ha bloqueado esta versión. No se puede descargar.",
+    "trust_notice_file_changed": "El archivo de GitHub cambió después de la comprobación. Un administrador debe revisarlo antes de permitir la descarga.",
+    "trust_notice_not_checked": "La comprobación automática aún no se ha ejecutado. Instala bajo tu responsabilidad.",
+    "trust_file_changed": "Archivo modificado"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3312,7 +3375,16 @@
     "admin_make_admin": "Numire administrator",
     "admin_banned": "Interzis",
     "pub_updated": "Actualizat",
-    "creator_images_title": "Imagini"
+    "creator_images_title": "Imagini",
+    "trust_notice_unavailable": "Fișierul nu mai este disponibil pe GitHub.",
+    "trust_notice_verified": "Un administrator a verificat manual exact acest fișier.",
+    "trust_notice_verified_author": "Un administrator a verificat o versiune anterioară a autorului; aceasta a fost verificată automat.",
+    "trust_notice_checked": "Verificarea automată nu a găsit nimic. Niciun administrator nu a verificat fișierul manual.",
+    "trust_notice_flagged": "Verificarea automată a găsit ceva suspect. Citește rezultatele înainte de instalare.",
+    "trust_notice_blocked": "Un administrator a blocat această versiune. Nu poate fi descărcată.",
+    "trust_notice_file_changed": "Fișierul de pe GitHub s-a schimbat după verificare. Un administrator trebuie să îl verifice din nou înainte de descărcare.",
+    "trust_notice_not_checked": "Verificarea automată nu a rulat încă. Instalează pe propriul risc.",
+    "trust_file_changed": "Fișier modificat"
   },
   "tr": {
     "tiles": "Tiles",
@@ -3726,7 +3798,16 @@
     "admin_make_admin": "Yönetici yap",
     "admin_banned": "Yasaklandı",
     "pub_updated": "Güncellendi",
-    "creator_images_title": "Resimler"
+    "creator_images_title": "Resimler",
+    "trust_notice_unavailable": "Dosya artık GitHub'da mevcut değil.",
+    "trust_notice_verified": "Bir yönetici bu dosyanın aynısını elle doğruladı.",
+    "trust_notice_verified_author": "Bir yönetici bu yazarın önceki sürümünü doğruladı; bu sürüm otomatik olarak denetlendi.",
+    "trust_notice_checked": "Otomatik denetim bir sorun bulmadı. Yönetici dosyayı elle incelemedi.",
+    "trust_notice_flagged": "Otomatik denetim şüpheli bir unsur buldu. Yüklemeden önce bulguları inceleyin.",
+    "trust_notice_blocked": "Bir yönetici bu sürümü engelledi. İndirilemez.",
+    "trust_notice_file_changed": "GitHub'daki dosya denetimden sonra değişti. İndirilmeden önce bir yöneticinin yeniden incelemesi gerekir.",
+    "trust_notice_not_checked": "Otomatik denetim henüz çalışmadı. Yükleme riski size aittir.",
+    "trust_file_changed": "Dosya değişti"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4140,7 +4221,16 @@
     "admin_make_admin": "Назначить администратором",
     "admin_banned": "Забанен",
     "pub_updated": "Обновлено",
-    "creator_images_title": "Изображения"
+    "creator_images_title": "Изображения",
+    "trust_notice_unavailable": "Файл больше не доступен на GitHub.",
+    "trust_notice_verified": "Администратор вручную проверил именно этот файл.",
+    "trust_notice_verified_author": "Администратор проверил более раннюю версию этого автора; текущая прошла автоматическую проверку.",
+    "trust_notice_checked": "Автоматическая проверка не выявила проблем. Администратор не проверял файл вручную.",
+    "trust_notice_flagged": "Автоматическая проверка обнаружила подозрительные элементы. Изучите результаты перед установкой.",
+    "trust_notice_blocked": "Администратор заблокировал эту версию. Скачать её нельзя.",
+    "trust_notice_file_changed": "Файл на GitHub изменился после проверки. Перед скачиванием администратор должен проверить его заново.",
+    "trust_notice_not_checked": "Автоматическая проверка ещё не выполнялась. Устанавливайте на свой риск.",
+    "trust_file_changed": "Файл изменён"
   },
   "uk": {
     "tiles": "Tiles",
@@ -4554,7 +4644,16 @@
     "admin_make_admin": "Призначити адміністратором",
     "admin_banned": "Забанений",
     "pub_updated": "Оновлено",
-    "creator_images_title": "Зображення"
+    "creator_images_title": "Зображення",
+    "trust_notice_unavailable": "Файл більше не доступний на GitHub.",
+    "trust_notice_verified": "Адміністратор вручну перевірив саме цей файл.",
+    "trust_notice_verified_author": "Адміністратор перевірив попередню версію цього автора; поточна пройшла автоматичну перевірку.",
+    "trust_notice_checked": "Автоматична перевірка не виявила проблем. Адміністратор не перевіряв файл вручну.",
+    "trust_notice_flagged": "Автоматична перевірка виявила підозрілі елементи. Перегляньте результати перед встановленням.",
+    "trust_notice_blocked": "Адміністратор заблокував цю версію. Завантажити її не можна.",
+    "trust_notice_file_changed": "Файл на GitHub змінився після перевірки. Перед завантаженням адміністратор має перевірити його знову.",
+    "trust_notice_not_checked": "Автоматична перевірка ще не виконувалась. Установлюйте на власний ризик.",
+    "trust_file_changed": "Файл змінено"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -4968,7 +5067,16 @@
     "admin_make_admin": "设为管理员",
     "admin_banned": "已封禁",
     "pub_updated": "已更新",
-    "creator_images_title": "图片"
+    "creator_images_title": "图片",
+    "trust_notice_unavailable": "该文件已无法从 GitHub 获取。",
+    "trust_notice_verified": "管理员已手动检查这个确切的文件。",
+    "trust_notice_verified_author": "管理员已验证此作者的较早版本；当前版本通过了自动检查。",
+    "trust_notice_checked": "自动检查未发现问题，但管理员尚未人工审查。",
+    "trust_notice_flagged": "自动检查发现可疑内容。请在安装前查看检查结果。",
+    "trust_notice_blocked": "管理员已屏蔽此版本，无法下载。",
+    "trust_notice_file_changed": "GitHub 上的文件在检查后发生变化。再次下载前必须由管理员重新审核。",
+    "trust_notice_not_checked": "自动检查尚未运行。安装风险由你自行承担。",
+    "trust_file_changed": "文件已更改"
   },
   "ja": {
     "tiles": "Tiles",
@@ -5382,7 +5490,16 @@
     "admin_make_admin": "管理者にする",
     "admin_banned": "停止中",
     "pub_updated": "更新日",
-    "creator_images_title": "画像"
+    "creator_images_title": "画像",
+    "trust_notice_unavailable": "このファイルは GitHub で利用できなくなりました。",
+    "trust_notice_verified": "管理者がこのファイルそのものを手動で確認しました。",
+    "trust_notice_verified_author": "管理者はこの作者の以前のバージョンを検証済みです。今回は自動チェックのみです。",
+    "trust_notice_checked": "自動チェックで問題は見つかりませんでした。管理者による手動検証はまだです。",
+    "trust_notice_flagged": "自動チェックで疑わしい項目が検出されました。インストール前に結果を確認してください。",
+    "trust_notice_blocked": "管理者がこのバージョンをブロックしました。ダウンロードできません。",
+    "trust_notice_file_changed": "検証後に GitHub のファイルが変更されました。再ダウンロードには管理者の確認が必要です。",
+    "trust_notice_not_checked": "自動チェックはまだ行われていません。自己責任でインストールしてください。",
+    "trust_file_changed": "ファイルが変更されました"
   },
   "ko": {
     "tiles": "Tiles",
@@ -5796,7 +5913,16 @@
     "admin_make_admin": "관리자로 지정",
     "admin_banned": "차단됨",
     "pub_updated": "업데이트",
-    "creator_images_title": "이미지"
+    "creator_images_title": "이미지",
+    "trust_notice_unavailable": "이 파일은 더 이상 GitHub에서 제공되지 않습니다.",
+    "trust_notice_verified": "관리자가 이 파일 자체를 수동으로 검사했습니다.",
+    "trust_notice_verified_author": "관리자가 이 작성자의 이전 버전을 검증했으며, 이번 버전은 자동 검사만 거쳤습니다.",
+    "trust_notice_checked": "자동 검사에서 문제가 발견되지 않았지만 관리자의 수동 검증은 받지 않았습니다.",
+    "trust_notice_flagged": "자동 검사에서 의심스러운 항목이 발견되었습니다. 설치 전에 검사 결과를 확인하세요.",
+    "trust_notice_blocked": "관리자가 이 버전을 차단하여 다운로드할 수 없습니다.",
+    "trust_notice_file_changed": "검증 후 GitHub 파일이 변경되었습니다. 다운로드하려면 관리자의 재검토가 필요합니다.",
+    "trust_notice_not_checked": "자동 검사가 아직 실행되지 않았습니다. 설치는 본인의 책임입니다.",
+    "trust_file_changed": "파일 변경됨"
   }
 };
   var supported = Object.keys(translations);
