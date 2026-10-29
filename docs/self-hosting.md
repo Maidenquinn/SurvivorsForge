@@ -7,7 +7,7 @@ The platform is three programs and a database, all started by Docker Compose:
 | `api` | `forge-api serve`: the public API, GitHub login, webhooks |
 | `worker` | `forge-api worker`: syncs releases, scans every new file, checks that files on GitHub stay unchanged |
 | `web` | `forge-web`: the website, a client of the API |
-| `caddy` | TLS certificates, both domains, the uploaded images |
+| `caddy` | both sites over plain HTTP (website on port 3080, API on 3081), the uploaded images |
 | `postgres` | all data except images |
 
 Releases and downloads stay on GitHub. The server keeps metadata, scan results and images.
@@ -16,7 +16,10 @@ To try everything on your own machine first, see [local-setup.md](local-setup.md
 
 ## What you need
 
-- A Linux server with Docker and the Compose plugin (2.24 or newer). Ports 80 and 443 open.
+- A Linux server with Docker and the Compose plugin (2.24 or newer). Ports 3080 (website) and
+  3081 (API) reachable for the TLS proxy in front of it, e.g. Cloudflare with an origin rule that
+  sends each domain to its port. To let Caddy get certificates itself instead, publish 80 and 443
+  in a `compose.override.yaml` and set `DOMAIN_WEB` and `DOMAIN_API` to the bare domains.
 - Two DNS `A` (or `AAAA`) records pointing at the server, for example `forge.example.com` for
   the website and `api.forge.example.com` for the API.
 - A GitHub account to own the GitHub App.
@@ -71,9 +74,9 @@ Your own GitHub user ID for `ADMIN_GITHUB_IDS` is the `id` field of
 | Variable | Required | Meaning | Example |
 |---|---|---|---|
 | `POSTGRES_PASSWORD` | yes | Database password; Compose builds the database URL from it | output of `openssl rand -hex 24` |
-| `DOMAIN_WEB` | yes | Domain of the website, Caddy gets its certificate | `forge.example.com` |
-| `DOMAIN_API` | yes | Domain of the API | `api.forge.example.com` |
-| `ACME_EMAIL` | yes | Contact for Let's Encrypt | `admin@example.com` |
+| `DOMAIN_WEB` | yes | Site of the website as Caddy serves it | `http://forge.example.com:3080` |
+| `DOMAIN_API` | yes | Site of the API as Caddy serves it | `http://api.forge.example.com:3081` |
+| `ACME_EMAIL` | yes | Contact for Let's Encrypt, used only when Caddy gets certificates itself | `admin@example.com` |
 | `FORGE_EDGE_SUBNET` | no | Subnet of the internal edge network; change it if it clashes with another Docker network | `10.213.17.0/24` |
 | `FORGE_CADDY_IP` | no | Caddy's fixed address inside that subnet; the API trusts its `X-Forwarded-For` | `10.213.17.10` |
 | `FORGE_WEB_IP` | no | The website's fixed address inside that subnet; the API trusts the client IP it forwards | `10.213.17.11` |

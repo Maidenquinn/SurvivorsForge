@@ -120,9 +120,11 @@ services:
     env_file:
     - path: ${FORGE_ENV_FILE:-.env}
       required: false
+    # Plain HTTP: the website on 3080, the API on 3081 (the ports in DOMAIN_WEB and DOMAIN_API).
+    # TLS ends in front of the server, e.g. at Cloudflare.
     ports:
-      - "80:80"
-      - "443:443"
+      - "3080:3080"
+      - "3081:3081"
     volumes:
       - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - images:/srv/img:ro

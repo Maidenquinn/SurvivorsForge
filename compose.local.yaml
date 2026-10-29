@@ -6,7 +6,7 @@ name: survivorsforge-local
 
 services:
   caddy:
-    # Instead of 80/443: Caddy serves the two http:// sites of DOMAIN_WEB and DOMAIN_API.
+    # The same ports as compose.yaml, but reachable from this machine only.
     ports: !override
       - "127.0.0.1:3080:3080"
       - "127.0.0.1:3081:3081"
