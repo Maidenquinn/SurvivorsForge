@@ -5,6 +5,7 @@ pub mod compat;
 pub mod deps;
 pub mod github_web;
 pub mod markdown;
+pub mod pack;
 pub mod rate_limit;
 pub mod registry;
 pub mod toc;
@@ -19,6 +20,10 @@ pub enum Error {
     UnsafePath(String),
     NoAddonFound,
     Parse(String),
+    /// Two addons of a pack use the same folder.
+    FolderTwice(String),
+    /// A pack would pass this many bytes.
+    TooLarge(u64),
 }
 
 impl fmt::Display for Error {
@@ -29,6 +34,8 @@ impl fmt::Display for Error {
             Error::UnsafePath(p) => write!(f, "The zip contains an unsafe path ({p}), installation cancelled"),
             Error::NoAddonFound => write!(f, "No addon found"),
             Error::Parse(e) => write!(f, "Unexpected response: {e}"),
+            Error::FolderTwice(folder) => write!(f, "Two addons use the folder {folder}"),
+            Error::TooLarge(max) => write!(f, "The pack would be larger than {} MB", max / 1_000_000),
         }
     }
 }

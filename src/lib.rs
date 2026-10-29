@@ -85,6 +85,7 @@ impl From<forge_core::Error> for Error {
             forge_core::Error::UnsafePath(p) => Error::UnsafePath(p),
             forge_core::Error::NoAddonFound => Error::NoAddonFound,
             forge_core::Error::Parse(e) => Error::Parse(e),
+            e @ (forge_core::Error::FolderTwice(_) | forge_core::Error::TooLarge(_)) => Error::NotInstallable(e.to_string()),
         }
     }
 }
