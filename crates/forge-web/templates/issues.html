@@ -1,25 +1,79 @@
 {% extends "base.html" %}
 {% block title %}Issues - {{ name }}{% endblock %}
 {% block content %}
-<p><a href="/addons/{{ slug }}">← {{ name }}</a></p>
-<h1>Issues</h1>
-<section class="panel">
-  {% if issues.is_empty() %}<p>No issues yet.</p>{% endif %}
-  {% for issue in issues %}
-  <p><a href="/addons/{{ slug }}/issues/{{ issue.id }}"><strong>#{{ issue.id }} {{ issue.title }}</strong></a>
-    <span class="badge">{{ issue.status }}</span> · {{ issue.kind }} · by {{ issue.author }}</p>
-  {% endfor %}
-</section>
-{% if user.is_some() %}
-<section class="panel">
-  <h2>Open an issue</h2>
-  <form method="post" action="/addons/{{ slug }}/issues">
-    <input type="hidden" name="csrf" value="{{ csrf }}">
-    <p><label>Title <input name="title" required minlength="3" maxlength="160"></label></p>
-    <p><label>Type <select name="kind"><option value="bug">Bug</option><option value="feature">Feature request</option><option value="question">Question</option></select></label></p>
-    <p><label>Details <textarea name="body" required maxlength="10000" rows="6"></textarea></label></p>
-    <button type="submit">Create issue</button>
-  </form>
-</section>
-{% else %}<p><a href="/login">Log in</a> to open an issue.</p>{% endif %}
+<div class="issues-shell">
+  <p class="issues-back"><a href="/addons/{{ slug }}">← {{ name }}</a></p>
+  <div class="issues-heading">
+    <div><h1>Community issues</h1><p class="muted">Report bugs, suggest improvements, and follow progress for {{ name }}.</p></div>
+    {% if user.is_some() %}<a class="button" href="#new-issue">+ New issue</a>{% else %}<a class="button" href="/login">Log in to report</a>{% endif %}
+  </div>
+  <section class="issues-board" aria-label="Issue tracker">
+    <div class="issues-toolbar">
+      <div class="issues-tabs" role="group" aria-label="Filter by status">
+        <button type="button" class="secondary active" data-issue-filter="open" aria-pressed="true">Open</button>
+        <button type="button" class="secondary" data-issue-filter="closed" aria-pressed="false">Closed</button>
+        <button type="button" class="secondary" data-issue-filter="all" aria-pressed="false">All</button>
+      </div>
+      <label class="issues-search"><span class="sr-only">Search issues</span><input id="issue-search" type="search" placeholder="Search issues by title or author…"></label>
+    </div>
+    <div id="issues-list">
+      {% for issue in issues %}
+      <article class="issue-row" data-status="{{ issue.status }}" data-search="{{ issue.title }} {{ issue.author }} {{ issue.kind }}">
+        <span class="issue-state" aria-hidden="true">{% if issue.status == "open" %}◉{% else if issue.status == "in_progress" %}◷{% else %}✓{% endif %}</span>
+        <div class="issue-row-content">
+          <a class="issue-row-title" href="/addons/{{ slug }}/issues/{{ issue.id }}">{{ issue.title }}</a>
+          <div class="issue-row-meta">#{{ issue.id }} · opened by {{ issue.author }} <span class="badge">{{ issue.kind }}</span> <span class="badge">{{ issue.status }}</span></div>
+        </div>
+        <a class="issue-row-arrow" href="/addons/{{ slug }}/issues/{{ issue.id }}" aria-label="View issue #{{ issue.id }}">→</a>
+      </article>
+      {% endfor %}
+      <p class="issues-empty" id="issues-empty" hidden>No issues match your filters.</p>
+      {% if issues.is_empty() %}<div class="issues-empty">No issues yet. Be the first to start a discussion.</div>{% endif %}
+    </div>
+  </section>
+  {% if user.is_some() %}
+  <section class="panel issues-compose" id="new-issue">
+    <div class="issues-compose-heading"><h2>Open a new issue</h2><p class="muted">Describe what happened, or explain what you'd like to improve.</p></div>
+    <form method="post" action="/addons/{{ slug }}/issues">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label for="issue-title">Title</label>
+      <input id="issue-title" name="title" required minlength="3" maxlength="160" placeholder="A short, descriptive title">
+      <label for="issue-kind">Category</label>
+      <select id="issue-kind" name="kind"><option value="bug">Bug report</option><option value="feature">Feature request</option><option value="question">Question</option></select>
+      <label for="issue-body">Description</label>
+      <textarea id="issue-body" name="body" required maxlength="10000" rows="7" placeholder="What happened? What did you expect? How can the author reproduce it?"></textarea>
+      <div class="issues-form-footer"><span class="muted">Avoid sharing passwords, tokens, or other private information.</span><button type="submit">Submit issue</button></div>
+    </form>
+  </section>
+  {% else %}<p class="notice">Want to report a problem? <a href="/login">Log in with GitHub</a> to participate.</p>{% endif %}
+</div>
+<script>
+(() => {
+  const search = document.getElementById('issue-search');
+  const rows = [...document.querySelectorAll('.issue-row')];
+  const buttons = [...document.querySelectorAll('[data-issue-filter]')];
+  const empty = document.getElementById('issues-empty');
+  let filter = 'open';
+  function update() {
+    const term = search.value.trim().toLocaleLowerCase();
+    let visible = 0;
+    rows.forEach(row => {
+      const status = row.dataset.status;
+      const matches = filter === 'all' || (filter === 'open' ? status === 'open' || status === 'in_progress' : status === 'closed' || status === 'resolved');
+      const show = matches && row.dataset.search.toLocaleLowerCase().includes(term);
+      row.hidden = !show;
+      if (show) visible++;
+    });
+    empty.hidden = visible > 0 || rows.length === 0;
+    buttons.forEach(btn => {
+      const active = btn.dataset.issueFilter === filter;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+  }
+  buttons.forEach(btn => btn.addEventListener('click', () => { filter = btn.dataset.issueFilter; update(); }));
+  search.addEventListener('input', update);
+  update();
+})();
+</script>
 {% endblock %}
