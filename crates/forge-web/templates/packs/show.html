@@ -32,7 +32,7 @@
         <tr>
           <td><a href="/addons/{{ e.slug }}">{{ e.name }}</a></td>
           <td>{{ e.tag }}</td>
-          <td class="check">{% if e.available %}<span class="badge {{ e.notice.class }}">{{ e.notice.badge }}</span>{% else %}<span class="badge bad" data-i18n="pack_unavailable_badge">Unavailable</span>{% endif %}</td>
+          <td class="check">{% if e.available %}<span class="badge {{ e.notice.class }}" data-i18n-enum="trust" data-i18n-value="{{ e.notice.badge }}">{{ e.notice.badge }}</span>{% else %}<span class="badge bad" data-i18n="pack_unavailable_badge">Unavailable</span>{% endif %}</td>
           <td>{{ e.folders }}</td>
         </tr>
         {% endfor %}
