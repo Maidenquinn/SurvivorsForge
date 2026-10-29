@@ -7,7 +7,7 @@
 use crate::toc::Toc;
 use crate::{Error, Result};
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Seek};
 use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -21,7 +21,7 @@ pub struct DetectedAddon {
 
 /// Normalizes a zip entry name to `/`-separated components and rejects anything that
 /// could escape the target folder.
-fn safe_components(raw: &str) -> Result<Vec<String>> {
+pub fn safe_components(raw: &str) -> Result<Vec<String>> {
     let name = raw.replace('\\', "/");
     if name.starts_with('/') || name.contains(':') {
         return Err(Error::UnsafePath(raw.to_string()));
@@ -42,7 +42,12 @@ fn open(zip_path: &Path) -> Result<zip::ZipArchive<File>> {
 }
 
 pub fn analyze(zip_path: &Path) -> Result<Vec<DetectedAddon>> {
-    let mut zip = open(zip_path)?;
+    analyze_reader(File::open(zip_path)?)
+}
+
+/// `analyze` for a zip that is not a file, e.g. one in memory.
+pub fn analyze_reader<R: Read + Seek>(reader: R) -> Result<Vec<DetectedAddon>> {
+    let mut zip = zip::ZipArchive::new(reader).map_err(|e| Error::Zip(e.to_string()))?;
     // (depth, folder name doesn't match stem, prefix, name, toc). Several `.toc` files in one
     // folder (`pfUI.toc`, `pfUI-tbc.toc`) are client variants: the 1.12 one wins, then the shortest name.
     let mut candidates: Vec<(usize, bool, String, String, Toc)> = Vec::new();
