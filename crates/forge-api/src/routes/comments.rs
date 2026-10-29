@@ -77,8 +77,9 @@ pub async fn edit(State(state): State<AppState>, user: CurrentUser,
     ).bind(id).bind(addon.id).fetch_optional(&state.pool).await?;
     let author = author.ok_or_else(ApiError::not_found)?;
     if author != user.id && !user.is_admin() { return Err(forbidden()); }
-    sqlx::query("UPDATE addon_comments SET body=$3,edited_at=$4 WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL")
-        .bind(id).bind(addon.id).bind(body.body.trim()).bind((state.clock)()).execute(&state.pool).await?;
+    let updated = sqlx::query("UPDATE addon_comments SET body=$3,edited_at=$4 WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL AND author_id=$5")
+        .bind(id).bind(addon.id).bind(body.body.trim()).bind((state.clock)()).bind(author).execute(&state.pool).await?;
+    if updated.rows_affected() == 0 { return Err(ApiError::not_found()); }
     Ok(Json(json!({"id":id,"edited":true})))
 }
 
@@ -94,8 +95,9 @@ pub async fn remove(State(state): State<AppState>, user: CurrentUser,
     if author != user.id && !user.is_admin() && !rights.owner && !rights.admin && !rights.edit_description {
         return Err(forbidden());
     }
-    sqlx::query("UPDATE addon_comments SET deleted_at=$3,deleted_by=$4 WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL")
+    let removed = sqlx::query("UPDATE addon_comments SET deleted_at=$3,deleted_by=$4 WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL")
         .bind(id).bind(addon.id).bind((state.clock)()).bind(user.id).execute(&state.pool).await?;
+    if removed.rows_affected() == 0 { return Err(ApiError::not_found()); }
     Ok(Json(json!({"id":id,"deleted":true})))
 }
 
