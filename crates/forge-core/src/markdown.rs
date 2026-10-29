@@ -1,6 +1,6 @@
 //! Addon descriptions: Markdown in, sanitized HTML out. The only place user text becomes HTML.
 
-use pulldown_cmark::{Event, Options, Parser, html};
+use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd, html};
 use std::collections::HashSet;
 
 const TAGS: &[&str] = &[
@@ -10,10 +10,15 @@ const TAGS: &[&str] = &[
 
 /// Renders `md` to HTML that is safe to embed: no scripts, no event handlers, no styles, links only to
 /// `http`, `https` and `mailto`, images only from `image_base` (the platform's own image URL).
-/// A single line break stays one, as in GitHub comments; authors paste text, not prose.
+/// A single line break stays one, as in GitHub comments; authors paste text, not prose. Headings go
+/// one level down: the page around a description has its own h1.
 pub fn render(md: &str, image_base: &str) -> String {
-    let events = Parser::new_ext(md, Options::ENABLE_TABLES | Options::ENABLE_STRIKETHROUGH)
-        .map(|e| if e == Event::SoftBreak { Event::HardBreak } else { e });
+    let events = Parser::new_ext(md, Options::ENABLE_TABLES | Options::ENABLE_STRIKETHROUGH).map(|e| match e {
+        Event::SoftBreak => Event::HardBreak,
+        Event::Start(Tag::Heading { level, id, classes, attrs }) => Event::Start(Tag::Heading { level: lower(level), id, classes, attrs }),
+        Event::End(TagEnd::Heading(level)) => Event::End(TagEnd::Heading(lower(level))),
+        e => e,
+    });
     let mut raw = String::new();
     html::push_html(&mut raw, events);
 
@@ -37,6 +42,16 @@ pub fn render(md: &str, image_base: &str) -> String {
         })
         .clean(&raw)
         .to_string()
+}
+
+fn lower(level: HeadingLevel) -> HeadingLevel {
+    match level {
+        HeadingLevel::H1 => HeadingLevel::H2,
+        HeadingLevel::H2 => HeadingLevel::H3,
+        HeadingLevel::H3 => HeadingLevel::H4,
+        HeadingLevel::H4 => HeadingLevel::H5,
+        _ => HeadingLevel::H6,
+    }
 }
 
 #[cfg(test)]
@@ -101,6 +116,14 @@ mod tests {
     }
 
     #[test]
+    fn headings_sit_below_the_page_title() {
+        // The page has its own h1 (the addon's name); a description's # is a section of it.
+        let out = r("# Features\n\n## Setup\n\n###### Small");
+        assert!(out.contains("<h2>Features</h2>") && out.contains("<h3>Setup</h3>") && out.contains("<h6>Small</h6>"), "{out}");
+        assert!(!out.contains("<h1>"), "{out}");
+    }
+
+    #[test]
     fn a_single_line_break_stays_a_line_break() {
         let out = r("Golden chest pins.\nShows stack counts.");
         assert!(out.contains("Golden chest pins.<br>"), "{out}");
@@ -109,7 +132,7 @@ mod tests {
     #[test]
     fn keeps_regular_markdown() {
         let out = r("# Title\n\n- one\n- two\n\n```\ncode()\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n> quote\n\n**bold** ~~gone~~");
-        for tag in ["<h1>Title</h1>", "<li>one</li>", "<pre><code>code()", "<table>", "<td>1</td>", "<blockquote>", "<strong>bold</strong>", "<del>gone</del>"] {
+        for tag in ["<h2>Title</h2>", "<li>one</li>", "<pre><code>code()", "<table>", "<td>1</td>", "<blockquote>", "<strong>bold</strong>", "<del>gone</del>"] {
             assert!(out.contains(tag), "missing {tag} in {out}");
         }
     }
