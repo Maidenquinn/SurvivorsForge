@@ -578,3 +578,50 @@ document.addEventListener("DOMContentLoaded", function () {
     if (root() && (location.pathname.endsWith("/comments") || new URL(location.href).searchParams.get("tab") === "comments")) load(location.href, null, false);
   });
 })();
+
+/* Progressive enhancement: swap addon tab content without reloading the document.
+   Real links remain functional when JavaScript is disabled. */
+(function () {
+  "use strict";
+  var controller = null;
+  function tabs() { return document.querySelector("nav.addon-tabs"); }
+  function section() { return tabs() && tabs().nextElementSibling; }
+  async function navigate(url, push) {
+    var nav = tabs(), old = section();
+    if (!nav || !old) { location.assign(url); return; }
+    if (controller) controller.abort();
+    controller = new AbortController();
+    var current = controller;
+    nav.setAttribute("aria-busy", "true");
+    try {
+      var response = await fetch(url, {credentials: "same-origin", headers: {"Accept": "text/html"}, signal: current.signal});
+      if (!response.ok || new URL(response.url).pathname !== location.pathname) throw new Error("Invalid addon tab response");
+      var doc = new DOMParser().parseFromString(await response.text(), "text/html");
+      var nextNav = doc.querySelector("nav.addon-tabs");
+      var next = nextNav && nextNav.nextElementSibling;
+      if (!nextNav || !next || !next.classList.contains("addon-tab-section")) throw new Error("Missing addon tab");
+      if (current !== controller || !nav.isConnected) return;
+      nav.replaceWith(nextNav);
+      old.replaceWith(next);
+      if (push) history.pushState({addonTab: true}, "", url);
+      document.title = doc.title;
+      if (window.ForgeI18n && typeof window.ForgeI18n.apply === "function") window.ForgeI18n.apply();
+      document.dispatchEvent(new Event("htmx:afterSwap"));
+    } catch (err) {
+      if (err.name !== "AbortError") location.assign(url);
+    } finally {
+      if (controller === current) { controller = null; var active = tabs(); if (active) active.removeAttribute("aria-busy"); }
+    }
+  }
+  document.addEventListener("click", function (event) {
+    var link = event.target.closest("nav.addon-tabs a[href]");
+    if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    var url = new URL(link.href);
+    if (url.origin !== location.origin || url.pathname !== location.pathname) return;
+    event.preventDefault();
+    navigate(url.href, true);
+  });
+  window.addEventListener("popstate", function () {
+    if (tabs()) navigate(location.href, false);
+  });
+})();
