@@ -24,6 +24,25 @@ pub enum GitHubError {
     Network(String),
     Parse(String),
     Auth(String),
+    /// A download URL or redirect outside `DOWNLOAD_HOSTS`.
+    ForbiddenHost(String),
+}
+
+/// The only hosts addon files are downloaded from, redirects included.
+pub const DOWNLOAD_HOSTS: &[&str] = &[
+    "github.com",
+    "api.github.com",
+    "codeload.github.com",
+    "objects.githubusercontent.com",
+    "release-assets.githubusercontent.com",
+];
+
+/// `url` is https (or http for a listed test host) on one of `hosts`.
+pub fn download_allowed(url: &str, hosts: &[String]) -> bool {
+    reqwest::Url::parse(url).is_ok_and(|u| {
+        let host = u.host_str().unwrap_or_default();
+        hosts.iter().any(|h| h == host) && (u.scheme() == "https" || !DOWNLOAD_HOSTS.contains(&host))
+    })
 }
 
 impl std::fmt::Display for GitHubError {
@@ -36,6 +55,7 @@ impl std::fmt::Display for GitHubError {
             GitHubError::Network(e) => write!(f, "cannot reach GitHub: {e}"),
             GitHubError::Parse(e) => write!(f, "unexpected answer from GitHub: {e}"),
             GitHubError::Auth(e) => write!(f, "GitHub App authentication failed: {e}"),
+            GitHubError::ForbiddenHost(url) => write!(f, "downloads from {url} are not allowed"),
         }
     }
 }
@@ -67,6 +87,9 @@ pub type Clock = Arc<dyn Fn() -> DateTime<Utc> + Send + Sync>;
 
 pub struct GitHubClient {
     http: reqwest::Client,
+    /// Follows redirects only to `download_hosts`.
+    downloads: reqwest::Client,
+    download_hosts: Vec<String>,
     api_url: String,
     app_id: String,
     key: EncodingKey,
@@ -89,11 +112,14 @@ const TOKEN_MARGIN: Duration = Duration::minutes(5);
 
 impl GitHubClient {
     pub fn new(api_url: &str, app_id: &str, key: EncodingKey, clock: Clock) -> GitHubClient {
+        let download_hosts: Vec<String> = DOWNLOAD_HOSTS.iter().map(|h| h.to_string()).collect();
         GitHubClient {
             http: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(60))
                 .build()
                 .expect("HTTP client"),
+            downloads: download_client(download_hosts.clone()),
+            download_hosts,
             api_url: api_url.trim_end_matches('/').to_string(),
             app_id: app_id.to_string(),
             key,
@@ -102,6 +128,13 @@ impl GitHubClient {
             etags: Mutex::new(HashMap::new()),
             oauth: None,
         }
+    }
+
+    /// Other download hosts than GitHub's, for tests against a local server.
+    pub fn with_download_hosts(mut self, hosts: &[&str]) -> GitHubClient {
+        self.download_hosts = hosts.iter().map(|h| h.to_string()).collect();
+        self.downloads = download_client(self.download_hosts.clone());
+        self
     }
 
     pub fn with_oauth(mut self, oauth: OAuthApp) -> GitHubClient {
@@ -160,7 +193,28 @@ impl GitHubClient {
     }
 }
 
+fn download_client(hosts: Vec<String>) -> reqwest::Client {
+    let policy = reqwest::redirect::Policy::custom(move |attempt| {
+        if attempt.previous().len() >= 10 {
+            attempt.error("too many redirects")
+        } else if download_allowed(attempt.url().as_str(), &hosts) {
+            attempt.follow()
+        } else {
+            let url = attempt.url().to_string();
+            attempt.error(format!("redirect to a forbidden host: {url}"))
+        }
+    });
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(120))
+        .redirect(policy)
+        .build()
+        .expect("download client")
+}
+
 fn network(e: reqwest::Error) -> GitHubError {
+    if e.is_redirect() {
+        return GitHubError::ForbiddenHost(e.url().map(|u| u.to_string()).unwrap_or_default());
+    }
     GitHubError::Network(e.to_string())
 }
 
@@ -266,7 +320,10 @@ impl GitHubApi for GitHubClient {
     }
 
     async fn download(&self, url: &str, max_bytes: u64) -> GitHubResult<Vec<u8>> {
-        let response = self.http.get(url).header(USER_AGENT, "SurvivorsForge").send().await.map_err(network)?;
+        if !download_allowed(url, &self.download_hosts) {
+            return Err(GitHubError::ForbiddenHost(url.to_string()));
+        }
+        let response = self.downloads.get(url).header(USER_AGENT, "SurvivorsForge").send().await.map_err(network)?;
         let mut response = check(response).await?;
         if response.content_length().is_some_and(|len| len > max_bytes) {
             return Err(GitHubError::TooLarge);

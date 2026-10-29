@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
-const USAGE: &str = "usage: forge-api <serve|worker|migrate>";
+const USAGE: &str = "usage: forge-api <serve|worker|migrate|rescan --all>";
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -18,7 +18,7 @@ async fn main() -> ExitCode {
         .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
         .init();
     let command = std::env::args().nth(1).unwrap_or_default();
-    if !matches!(command.as_str(), "serve" | "worker" | "migrate") {
+    if !matches!(command.as_str(), "serve" | "worker" | "migrate" | "rescan") {
         eprintln!("{USAGE}");
         return ExitCode::from(2);
     }
@@ -39,6 +39,14 @@ async fn main() -> ExitCode {
     let result = match command.as_str() {
         "migrate" => MIGRATOR.run(&pool).await.map_err(|e| e.to_string()),
         "worker" => work(config, pool).await,
+        "rescan" if std::env::args().nth(2).as_deref() == Some("--all") => match build_state(config, pool) {
+            Ok(state) => forge_api::scan_job::rescan_outdated(&state)
+                .await
+                .map(|n| println!("queued {n} scans"))
+                .map_err(|e| e.to_string()),
+            Err(e) => Err(e),
+        },
+        "rescan" => Err(USAGE.to_string()),
         _ => serve(config, pool).await,
     };
     match result {

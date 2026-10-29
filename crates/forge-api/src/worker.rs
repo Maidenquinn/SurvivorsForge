@@ -26,7 +26,8 @@ pub struct Worker {
 /// The worker of the platform: every job kind and every periodic job.
 pub fn platform(state: AppState) -> Worker {
     let sync_state = state.clone();
-    let poll_state = state;
+    let poll_state = state.clone();
+    let scan_state = state;
     Worker::default()
         .handle(sync::SYNC_ADDON, move |job| {
             let state = sync_state.clone();
@@ -38,6 +39,10 @@ pub fn platform(state: AppState) -> Worker {
         .handle(sync::POLL_RELEASES, move |_| {
             let state = poll_state.clone();
             async move { sync::poll_releases(&state).await }
+        })
+        .handle(sync::SCAN_VERSION, move |job| {
+            let state = scan_state.clone();
+            async move { crate::scan_job::run(&state, &job).await }
         })
         .every(sync::POLL_RELEASES, Duration::days(1))
 }

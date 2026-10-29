@@ -22,7 +22,7 @@ fn t0() -> DateTime<Utc> {
 }
 
 fn client(server: &MockServer, now: Arc<Mutex<DateTime<Utc>>>) -> GitHubClient {
-    GitHubClient::new(&server.uri(), "42", key(), Arc::new(move || *now.lock().unwrap()))
+    GitHubClient::new(&server.uri(), "42", key(), Arc::new(move || *now.lock().unwrap())).with_download_hosts(&["127.0.0.1"])
 }
 
 async fn mount_token(server: &MockServer, expires_at: DateTime<Utc>) {
@@ -191,4 +191,30 @@ async fn oauth_user_trades_code_and_reads_user() {
     let user = gh.oauth_user("abc", "ver", "https://api.test/cb").await.unwrap();
     assert_eq!((user.id, user.login.as_str()), (9, "nine"));
     assert_eq!(gh.oauth_user("wrong", "ver", "https://api.test/cb").await, Err(GitHubError::Auth("bad_verification_code".into())));
+}
+
+#[tokio::test]
+async fn download_refuses_foreign_hosts_and_redirects() {
+    let server = MockServer::start().await;
+    let foreign = format!("http://localhost:{}/evil.zip", server.address().port());
+    Mock::given(method("GET"))
+        .and(path("/redirect.zip"))
+        .respond_with(ResponseTemplate::new(302).insert_header("location", foreign.as_str()))
+        .mount(&server)
+        .await;
+    Mock::given(method("GET")).and(path("/evil.zip")).respond_with(ResponseTemplate::new(200).set_body_bytes(b"x".to_vec())).mount(&server).await;
+    let gh = client(&server, Arc::new(Mutex::new(t0())));
+    assert!(matches!(gh.download(&foreign, 100).await, Err(GitHubError::ForbiddenHost(_))), "localhost is not a listed host");
+    let redirected = gh.download(&format!("{}/redirect.zip", server.uri()), 100).await;
+    assert!(matches!(redirected, Err(GitHubError::ForbiddenHost(_))), "{redirected:?}");
+}
+
+#[test]
+fn download_hosts_are_githubs_over_https() {
+    let hosts: Vec<String> = forge_api::github::DOWNLOAD_HOSTS.iter().map(|h| h.to_string()).collect();
+    assert!(forge_api::github::download_allowed("https://github.com/o/r/releases/download/v1/a.zip", &hosts));
+    assert!(forge_api::github::download_allowed("https://codeload.github.com/o/r/zip/refs/tags/v1", &hosts));
+    assert!(!forge_api::github::download_allowed("http://github.com/o/r/a.zip", &hosts), "no plain http");
+    assert!(!forge_api::github::download_allowed("https://github.com.evil.test/a.zip", &hosts));
+    assert!(!forge_api::github::download_allowed("https://evil.test/a.zip", &hosts));
 }
