@@ -108,8 +108,11 @@ async fn category_filter_lists_subcategories_and_reaches_the_api() {
         .await;
     let page = web.get("/addons?category=Classes").await;
     assert_eq!(page.status, StatusCode::OK, "{}", page.body);
-    assert!(page.body.contains(r#"<option value="Classes" selected>Classes</option>"#), "{}", page.body);
-    assert!(page.body.contains(r#"<option value="Warrior" >Classes: Warrior</option>"#));
+    // Subcategories sit in a group of their parent; its first option filters the whole group.
+    assert!(page.body.contains(r#"<optgroup label="Classes">"#), "{}", page.body);
+    assert!(page.body.contains(r#"<option value="Classes" selected>All Classes</option>"#), "{}", page.body);
+    assert!(page.body.contains(r#"<option value="Warrior">Warrior</option>"#));
+    assert!(page.body.contains(r#"<option value="Combat">Combat</option>"#), "a category without subcategories stays a plain option");
     assert!(page.body.contains("All categories"));
 }
 
@@ -362,10 +365,15 @@ async fn new_results_start_at_the_top() {
 }
 
 #[tokio::test]
-async fn the_view_switch_is_as_tall_as_other_buttons() {
+async fn the_view_switch_is_one_segmented_control_with_icons() {
+    // One framed control, the active half filled; icons say tiles or list at a glance.
     let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
+    mock(&web, "/v1/addons", json!({ "total": 0, "addons": [] })).await;
+    let body = web.get("/addons").await.body;
+    assert_eq!(body.matches(r#"<svg class="view-icon""#).count(), 2, "{body}");
     let css = web.get("/static/app.css").await.body;
-    assert!(css.contains(".view-toggle button { padding: 2px 12px; font-size: var(--meta); }"), "no smaller height than the 34 px buttons");
+    assert!(css.contains(".view-toggle { display: inline-flex;") && css.contains(r#".view-toggle button[aria-pressed="true"]"#));
 }
 
 #[tokio::test]

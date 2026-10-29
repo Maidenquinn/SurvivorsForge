@@ -78,6 +78,18 @@ impl CategoryOption {
             })
             .collect()
     }
+
+    /// The top-level categories, each with its subcategories (empty for a plain one), in order.
+    pub fn groups(list: Vec<CategoryOption>) -> Vec<(CategoryOption, Vec<CategoryOption>)> {
+        let mut groups: Vec<(CategoryOption, Vec<CategoryOption>)> = Vec::new();
+        for c in list {
+            match groups.iter_mut().find(|(top, _)| !c.parent.is_empty() && top.name.eq_ignore_ascii_case(&c.parent)) {
+                Some((_, children)) => children.push(c),
+                None => groups.push((c, Vec::new())),
+            }
+        }
+        groups
+    }
 }
 
 pub struct Card {
@@ -105,7 +117,8 @@ pub struct AddonsPage {
     pub sort: String,
     pub total: i64,
     /// For the filter, all of them.
-    pub categories: Vec<CategoryOption>,
+    /// Top-level categories with their subcategories, for the grouped filter.
+    pub categories: Vec<(CategoryOption, Vec<CategoryOption>)>,
     pub cards: Vec<Card>,
     pub prev: Option<String>,
     pub next: Option<String>,

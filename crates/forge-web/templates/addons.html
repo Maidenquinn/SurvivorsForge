@@ -22,7 +22,13 @@
       <label for="category">Category</label>
       <select id="category" name="category">
         <option value="" {% if category == "" %}selected{% endif %}>All categories</option>
-        {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
+        {% for (top, children) in categories %}
+        {% if children.is_empty() %}<option value="{{ top.name }}"{% if top.name.eq_ignore_ascii_case(category) %} selected{% endif %}>{{ top.name }}</option>
+        {% else %}<optgroup label="{{ top.name }}">
+          <option value="{{ top.name }}"{% if top.name.eq_ignore_ascii_case(category) %} selected{% endif %}>All {{ top.name }}</option>
+          {% for c in children %}<option value="{{ c.name }}"{% if c.name.eq_ignore_ascii_case(category) %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </optgroup>{% endif %}
+        {% endfor %}
       </select>
     </div>
     <div>
@@ -42,10 +48,7 @@
 <div id="results" class="list">
   <div class="result-bar">
   <p class="muted">{{ total }} addon{% if total != 1 %}s{% endif %}{% if category != "" %} in {{ category }} (<a href="/addons">all categories</a>){% endif %}</p>
-  <div class="view-toggle" role="group" aria-label="View">
-    <button type="button" class="secondary" data-set-view="tiles">Tiles</button>
-    <button type="button" class="secondary" data-set-view="list">List</button>
-  </div>
+    {% include "view_toggle.html" %}
   </div>
   {% if cards.is_empty() %}
     <section class="panel"><p>No addon matches. Try fewer words or another filter.</p><p><a href="/addons">Show all addons</a></p></section>
