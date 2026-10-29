@@ -360,3 +360,10 @@ async fn new_results_start_at_the_top() {
         assert!(web.get(page).await.body.contains(r#"hx-swap="innerHTML scroll:top""#), "{page}");
     }
 }
+
+#[tokio::test]
+async fn the_view_switch_is_as_tall_as_other_buttons() {
+    let mut web = TestWeb::new().await;
+    let css = web.get("/static/app.css").await.body;
+    assert!(css.contains(".view-toggle button { padding: 2px 12px; font-size: var(--meta); }"), "no smaller height than the 34 px buttons");
+}

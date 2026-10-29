@@ -185,7 +185,7 @@ label { display: block; margin: 12px 0 4px; color: var(--gold); }
 .result-bar p { margin: 8px 0; }
 .view-toggle { display: flex; gap: 4px; }
 html:not([data-view]) .view-toggle { display: none; }
-.view-toggle button { min-height: 28px; padding: 2px 12px; font-size: var(--meta); }
+.view-toggle button { padding: 2px 12px; font-size: var(--meta); }
 html[data-view="tiles"] [data-set-view="tiles"], html[data-view="list"] [data-set-view="list"] { border-color: var(--outline-active); color: var(--gold-bright); }
 html[data-view="list"] .grid { grid-template-columns: minmax(0, 1fr); gap: 6px; }
 html[data-view="list"] .grid .card { display: flex; align-items: center; gap: 16px; padding: 10px 16px; margin: 0; }
