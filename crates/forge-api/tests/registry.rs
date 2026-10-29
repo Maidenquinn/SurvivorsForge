@@ -108,8 +108,8 @@ async fn import_is_idempotent(pool: PgPool) {
     let view = app.get("/v1/addons/luckyodds", None).await.json();
     assert_eq!((view["author"].as_str(), view["claimed"].as_bool()), (Some("cadoky"), Some(false)));
     assert_eq!(view["owner"], json!(null));
-    let bordo: String = sqlx::query_scalar("SELECT source_type FROM addons WHERE slug = 'bordoui'").fetch_one(&app.pool).await.unwrap();
-    assert_eq!(bordo, "tag");
+    let stats: String = sqlx::query_scalar("SELECT source_type FROM addons WHERE slug = 'azerothstats'").fetch_one(&app.pool).await.unwrap();
+    assert_eq!(stats, "tag");
 }
 
 #[sqlx::test]
