@@ -3,15 +3,15 @@
 {% block head %}<meta name="description" content="Addon packs for the browser version of Azeroth Survivors: several checked addons in one zip.">{% endblock %}
 {% block content %}
 <div class="title-row">
-  <h1>Addon packs</h1>
-  <a class="button" href="/packs/new">Build a pack</a>
+  <h1><span data-l10n-en="Addon packs" data-l10n-fr="Packs d'AddOns">Addon packs</span></h1>
+  <a class="button" href="/packs/new"><span data-l10n-en="Build a pack" data-l10n-fr="Créer un pack">Build a pack</span></a>
 </div>
-<p class="muted">Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show.</p>
+<p class="muted"><span data-l10n-en="Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show." data-l10n-fr="Plusieurs AddOns réunis dans un fichier ZIP pour la version navigateur du jeu. Ces packs sont partagés par leurs créateurs.">Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show.</span></p>
 <form class="search" method="get" action="/packs" role="search"
       hx-get="/packs" hx-trigger="input changed delay:300ms from:input, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results" hx-select-oob="#result-status" hx-swap="innerHTML scroll:top">
-  <label for="q">Search</label>
+  <label for="q"><span data-l10n-en="Search" data-l10n-fr="Rechercher">Search</span></label>
   <input id="q" type="search" name="q" value="{{ q }}" placeholder="Pack name or an addon in it" autocomplete="off">
-  <noscript><button type="submit">Search</button></noscript>
+  <noscript><button type="submit"><span data-l10n-en="Search" data-l10n-fr="Rechercher">Search</span></button></noscript>
 </form>
 
 <p id="result-status" class="sr-only" role="status">{{ total }} pack{% if total != 1 %}s{% endif %}</p>
@@ -21,7 +21,7 @@
     {% include "view_toggle.html" %}
   </div>
   {% if rows.is_empty() %}
-    <section class="panel">{% if q != "" %}<p>No pack matches. Try a shorter name.</p><p><a href="/packs">Show all packs</a></p>{% else %}<p>No pack is listed yet. Build one and tick "Show it on the public pack list".</p>{% endif %}</section>
+    <section class="panel">{% if q != "" %}<p><span data-l10n-en="No pack matches. Try a shorter name." data-l10n-fr="Aucun pack trouvé. Essayez un nom plus court.">No pack matches. Try a shorter name.</span></p><p><a href="/packs"><span data-l10n-en="Show all packs" data-l10n-fr="Afficher tous les packs">Show all packs</span></a></p>{% else %}<p><span data-l10n-en="No pack is listed yet. Build one and tick &quot;Show it on the public pack list&quot;." data-l10n-fr="Aucun pack public pour le moment. Créez-en un et activez sa publication.">No pack is listed yet. Build one and tick "Show it on the public pack list".</span></p>{% endif %}</section>
   {% else %}
   <div class="grid">
     {% for p in rows %}
@@ -34,8 +34,8 @@
   </div>
   {% endif %}
   <nav class="pager">
-    {% if let Some(p) = prev %}<a href="{{ p }}">Previous</a>{% endif %}
-    {% if let Some(n) = next %}<a href="{{ n }}">Next</a>{% endif %}
+    {% if let Some(p) = prev %}<a href="{{ p }}"><span data-l10n-en="Previous" data-l10n-fr="Précédent">Previous</span></a>{% endif %}
+    {% if let Some(n) = next %}<a href="{{ n }}"><span data-l10n-en="Next" data-l10n-fr="Suivant">Next</span></a>{% endif %}
   </nav>
 </div>
 {% endblock %}
