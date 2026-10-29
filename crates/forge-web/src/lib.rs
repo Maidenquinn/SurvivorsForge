@@ -10,6 +10,7 @@ pub mod error;
 pub mod packs;
 pub mod public;
 pub mod issues;
+pub mod comments;
 pub mod i18n;
 pub mod rate_limit;
 pub mod session;
