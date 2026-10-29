@@ -51,13 +51,29 @@ async fn wizard_happy_path_and_field_errors() {
     Mock::given(method("POST"))
         .and(path("/v1/addons"))
         .and(header("authorization", "Bearer tok"))
-        .and(body_partial_json(json!({ "repo": "alice/lucky", "folders": ["Lucky", "LuckyData"] })))
+        .and(body_partial_json(json!({ "repo": "alice/lucky", "folders": ["Lucky", "LuckyData"], "summary": "Odds", "description_md": "## Features" })))
         .respond_with(ResponseTemplate::new(201).set_body_json(json!({ "slug": "lucky" })))
         .mount(&web.api)
         .await;
-    let fields = [("repo", "alice/lucky"), ("slug", "lucky"), ("name", "Lucky"), ("category", "Miscellaneous"), ("source_type", "release"), ("asset_pattern", "L-*.zip"), ("folders", "Lucky\nLuckyData")];
+    let fields = [
+        ("repo", "alice/lucky"), ("slug", "lucky"), ("name", "Lucky"), ("summary", "Odds"), ("description_md", "## Features"),
+        ("category", "Miscellaneous"), ("source_type", "release"), ("asset_pattern", "L-*.zip"), ("folders", "Lucky\nLuckyData"),
+    ];
     let page = web.post_form("/addons/new", &fields).await;
-    assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/lucky/edit"));
+    assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/lucky/images?created=1"), "straight on to the screenshots");
+    let images = web.get("/addons/lucky/images?created=1").await;
+    assert!(images.body.contains("Your addon is published"), "{}", images.body);
+}
+
+#[tokio::test]
+async fn the_new_addon_form_has_both_descriptions() {
+    let mut web = logged_in(owner()).await;
+    let page = web.get("/addons/new").await;
+    assert!(page.body.contains(">Short description<") && !page.body.contains("One line about it"), "{}", page.body);
+    assert!(page.body.contains(r#"name="description_md""#) && page.body.contains(r#"hx-post="/addons/new/preview""#));
+    assert!(page.body.contains("screenshots"), "says where screenshots go");
+    let preview = web.post_form("/addons/new/preview", &[("description_md", "**bold**")]).await;
+    assert!(preview.body.contains("<strong>bold</strong>"), "{}", preview.body);
 }
 
 #[tokio::test]

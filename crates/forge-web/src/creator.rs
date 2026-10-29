@@ -8,7 +8,7 @@ use crate::templates::{
     DeleteAddonPage, DepsPage, EditAddonPage, Errors, ImagesPage, MembersPage, MyAddonsPage, NewAddonPage, Perms, VersionEditPage, Visitor, render,
 };
 use axum::Extension;
-use axum::extract::{Form, Multipart, Path, State};
+use axum::extract::{Form, Multipart, Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum_extra::extract::PrivateCookieJar;
@@ -117,6 +117,8 @@ pub struct NewAddonForm {
     pub asset_pattern: String,
     #[serde(default)]
     pub folders: String,
+    #[serde(default)]
+    pub description_md: String,
 }
 
 /// Where the visitor manages the App on their account, if it is installed there. Unknown (GitHub
@@ -149,11 +151,13 @@ pub async fn create_addon(
     let (user, token) = me(&state, &jar).await?;
     let body = json!({
         "repo": form.repo.trim(), "slug": form.slug.trim(), "name": form.name.trim(), "summary": form.summary.trim(),
+        "description_md": form.description_md,
         "category": form.category, "source_type": form.source_type, "asset_pattern": form.asset_pattern.trim(),
         "folders": folders_of(&form.folders),
     });
     match state.api.post("/v1/addons", Some(&token), &body).await {
-        Ok(created) => Ok(Redirect::to(&format!("/addons/{}/edit", s(&created["slug"]))).into_response()),
+        // Straight on to the screenshots: they need the addon to exist.
+        Ok(created) => Ok(Redirect::to(&format!("/addons/{}/images?created=1", s(&created["slug"]))).into_response()),
         Err(e) => {
             let errors = form_errors(e)?;
             let manage_url = app_manage_url(&state, &token).await;
@@ -272,12 +276,25 @@ async fn images_page(state: &AppState, user: Visitor, csrf: String, slug: &str, 
     Ok(render(&ImagesPage { user: Some(user), csrf, slug: slug.into(), name: s(&a["name"]), icon_url: a["icon_url"].as_str().map(str::to_string), images, message, error }))
 }
 
-pub async fn images(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(slug): Path<String>) -> WebResult<Response> {
+#[derive(Deserialize)]
+pub struct ImagesQuery {
+    #[serde(default)]
+    created: Option<String>,
+}
+
+pub async fn images(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Extension(csrf): Extension<CsrfToken>,
+    Path(slug): Path<String>,
+    Query(query): Query<ImagesQuery>,
+) -> WebResult<Response> {
     let (user, token) = me(&state, &jar).await?;
     if !perms(&state, &slug, &token).await?.edit_images {
         return Ok(forbidden());
     }
-    Ok(images_page(&state, user, csrf.0, &slug, None, None).await?.into_response())
+    let message = query.created.map(|_| "Your addon is published. Add screenshots and an icon now, or later under Edit.".to_string());
+    Ok(images_page(&state, user, csrf.0, &slug, message, None).await?.into_response())
 }
 
 pub async fn upload_image(

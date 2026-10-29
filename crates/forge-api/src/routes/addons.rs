@@ -196,6 +196,9 @@ pub struct CreateAddon {
     pub category: String,
     #[serde(default)]
     pub summary: String,
+    /// The long description, Markdown.
+    #[serde(default)]
+    pub description_md: String,
     pub folders: Vec<String>,
     /// Admin additions only: the author's name while nobody owns the addon.
     #[serde(default)]
@@ -213,6 +216,7 @@ pub async fn insert_addon(
     validate_slug(&body.slug)?;
     validate_name(&body.name)?;
     validate_summary(&body.summary)?;
+    validate_description(&body.description_md)?;
     let pattern = body.asset_pattern.clone().filter(|_| body.source_type == "release");
     validate_source(&body.source_type, pattern.as_deref())?;
     validate_folders(&body.folders)?;
@@ -230,8 +234,8 @@ pub async fn insert_addon(
     let mut tx = state.pool.begin().await?;
     let id: i64 = sqlx::query_scalar(
         "INSERT INTO addons (slug, name, owner_id, repo_id, repo_full_name, installation_id, source_type, asset_pattern,
-                             category, summary, author_name, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12) RETURNING id",
+                             category, summary, author_name, created_at, updated_at, description_md)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, $13) RETURNING id",
     )
     .bind(&body.slug)
     .bind(body.name.trim())
@@ -245,6 +249,7 @@ pub async fn insert_addon(
     .bind(&body.summary)
     .bind(body.author_name.as_deref().map(str::trim).filter(|a| !a.is_empty() && owner.is_none()))
     .bind(now)
+    .bind(&body.description_md)
     .fetch_one(&mut *tx)
     .await
     .map_err(map_unique)?;

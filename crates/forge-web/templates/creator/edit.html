@@ -36,7 +36,7 @@
 <form class="panel" method="post" action="/addons/{{ slug }}/edit">
   <input type="hidden" name="csrf" value="{{ csrf }}">
   <h2>Description</h2>
-  <label for="summary">One line about it</label>
+  <label for="summary">Short description</label>
   <input id="summary" name="summary" value="{{ summary }}" maxlength="200">
   {% if errors.get("summary") != "" %}<p class="field-error">{{ errors.get("summary") }}</p>{% endif %}
   <label for="description_md">Description (Markdown)</label>

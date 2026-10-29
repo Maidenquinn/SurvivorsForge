@@ -156,6 +156,7 @@ pub async fn import_verified(state: &AppState, text: &str) -> Result<Vec<Importe
             asset_pattern,
             category: entry.category.clone(),
             summary: entry.description.clone(),
+            description_md: String::new(),
             folders: entry.folders.clone(),
             author_name: Some(entry.author.clone()),
         };

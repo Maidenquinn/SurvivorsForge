@@ -168,3 +168,21 @@ async fn banned_user_and_blocked_addon_are_read_only(pool: PgPool) {
     let reply = app.patch("/v1/addons/lucky", Some(&token), json!({ "summary": "x" })).await;
     assert_eq!((reply.status, reply.error().as_str()), (StatusCode::FORBIDDEN, "banned"));
 }
+
+#[sqlx::test]
+async fn the_long_description_can_come_with_the_new_addon(pool: PgPool) {
+    let app = TestApp::new(pool);
+    app.github.add_repo(100, "alice/lucky", "alice");
+    let token = app.login(1, "alice").await;
+    let mut body = addon("lucky", "alice/lucky", &["Lucky"]);
+    body["description_md"] = json!("## Features\n\n- Odds on the minimap");
+    assert_eq!(app.post("/v1/addons", Some(&token), body.clone()).await.status, StatusCode::CREATED);
+    let shown = app.get("/v1/addons/lucky", None).await.json();
+    assert_eq!(shown["description_md"], "## Features\n\n- Odds on the minimap");
+    assert!(shown["description_html"].as_str().unwrap().contains("<h2>Features</h2>"), "{shown}");
+
+    app.github.add_repo(101, "alice/big", "alice");
+    let mut big = addon("big", "alice/big", &["Big"]);
+    big["description_md"] = json!("x".repeat(50_001));
+    assert_eq!(app.post("/v1/addons", Some(&token), big).await.error(), "description_too_long");
+}

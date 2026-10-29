@@ -36,8 +36,9 @@
   <p class="muted">Lowercase letters, digits and dashes. It cannot be changed later.</p>
   {% if errors.get("slug") != "" %}<p class="field-error">{{ errors.get("slug") }}</p>{% endif %}
 
-  <label for="summary">One line about it</label>
+  <label for="summary">Short description</label>
   <input id="summary" name="summary" value="{{ form.summary }}" maxlength="200">
+  <p class="muted">One sentence, shown in lists and search results.</p>
   {% if errors.get("summary") != "" %}<p class="field-error">{{ errors.get("summary") }}</p>{% endif %}
 
   <label for="category">Category</label>
@@ -61,6 +62,15 @@
   <textarea id="folders" name="folders" rows="3" placeholder="LuckyOdds" required>{{ form.folders }}</textarea>
   <p class="muted">One per line. Each folder belongs to one addon on the whole platform.</p>
   {% if errors.get("folders") != "" %}<p class="field-error">{{ errors.get("folders") }}</p>{% endif %}
+
+  <h2>4. Description</h2>
+  <label for="description_md">Description (Markdown)</label>
+  <textarea id="description_md" name="description_md" rows="12" placeholder="## Features&#10;&#10;- ..."
+            hx-post="/addons/new/preview" hx-trigger="input changed delay:500ms" hx-target="#preview">{{ form.description_md }}</textarea>
+  {% if errors.get("description") != "" %}<p class="field-error">{{ errors.get("description") }}</p>{% endif %}
+  <h3>Preview</h3>
+  <div id="preview" class="description preview"></div>
+  <p class="muted">You add screenshots and the icon right after publishing: they need the addon to exist.</p>
 
   <p><button type="submit">Publish</button></p>
 </form>
