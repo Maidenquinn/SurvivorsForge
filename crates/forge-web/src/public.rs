@@ -111,7 +111,7 @@ pub async fn addons(State(state): State<AppState>, jar: PrivateCookieJar, Extens
                 Some(trust) => notice(trust, a["verified_author"] == true, false),
                 None => Notice { class: "", badge: "No release", text: "", downloadable: false, confirm: false },
             },
-            downloads: a["downloads"].as_i64(),
+            downloads: a["downloads"].as_i64().map(grouped),
             updated: s(&a["updated_at"]).chars().take(10).collect(),
         })
         .collect();
@@ -136,6 +136,19 @@ pub async fn addons(State(state): State<AppState>, jar: PrivateCookieJar, Extens
         prev: (page > 1).then(|| link(page - 1)),
         next: (page * per_page < total).then(|| link(page + 1)),
     }))
+}
+
+/// `24365` as `24,365`.
+fn grouped(n: i64) -> String {
+    let digits = n.unsigned_abs().to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    if n < 0 { format!("-{out}") } else { out }
 }
 
 #[derive(Deserialize, Default)]

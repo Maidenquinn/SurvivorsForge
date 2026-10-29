@@ -337,3 +337,15 @@ async fn the_trust_filter_says_what_it_filters() {
     mock(&web, "/v1/addons", json!({ "total": 0, "addons": [] })).await;
     assert!(web.get("/addons").await.body.contains(r#"<label for="trust">Safety check</label>"#));
 }
+
+#[tokio::test]
+async fn large_download_counts_are_grouped() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
+    mock(&web, "/v1/addons", json!({ "total": 1, "addons": [
+        { "slug": "big", "name": "Big", "summary": "", "category": "Combat", "trust": "scanned", "icon_url": null, "owner": null,
+          "author": "bob", "verified_author": false, "downloads": 1234567, "updated_at": "2026-05-01" }
+    ] }))
+    .await;
+    assert!(web.get("/addons").await.body.contains("1,234,567 downloads"));
+}
