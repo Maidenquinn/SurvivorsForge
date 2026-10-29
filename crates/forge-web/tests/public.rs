@@ -471,3 +471,21 @@ async fn links_that_leave_the_site_are_marked() {
     assert!(page.contains(r#"rel="external noopener">Download from GitHub</a>"#), "{page}");
     assert!(web.get("/static/app.css").await.body.contains(r#"a[rel~="external"]::after"#));
 }
+
+#[tokio::test]
+async fn category_links_are_encoded() {
+    let mut web = TestWeb::new().await;
+    let mut a = addon("scanned");
+    a["category"] = json!("Action Bars");
+    mock(&web, "/v1/addons/lucky", a).await;
+    mock(&web, "/v1/addons/lucky/versions", versions("scanned", "available")).await;
+    mock(&web, "/v1/categories", categories()).await;
+    mock(&web, "/v1/addons", json!({ "total": 1, "addons": [
+        { "slug": "lucky", "name": "Lucky", "summary": "", "category": "Action Bars", "trust": "scanned", "icon_url": null, "owner": null,
+          "author": "bob", "verified_author": false, "downloads": 1, "updated_at": "2026-05-01" }
+    ] }))
+    .await;
+    for page in ["/addons/lucky", "/addons"] {
+        assert!(web.get(page).await.body.contains(r#"href="/addons?category=Action%20Bars""#), "{page}");
+    }
+}
