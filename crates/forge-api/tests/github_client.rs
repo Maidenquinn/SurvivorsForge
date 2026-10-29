@@ -1,0 +1,164 @@
+use chrono::{DateTime, Duration, Utc};
+use forge_api::github::{GitHubApi, GitHubClient, GitHubError};
+use jsonwebtoken::EncodingKey;
+use rsa::pkcs8::{EncodePrivateKey, LineEnding};
+use serde_json::json;
+use std::sync::{Arc, Mutex, OnceLock};
+use tokio::io::AsyncWriteExt;
+use wiremock::matchers::{header, method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
+
+/// Generated per test run, never stored in the repo.
+fn key() -> EncodingKey {
+    static PEM: OnceLock<String> = OnceLock::new();
+    let pem = PEM.get_or_init(|| {
+        rsa::RsaPrivateKey::new(&mut rsa::rand_core::OsRng, 2048).unwrap().to_pkcs8_pem(LineEnding::LF).unwrap().to_string()
+    });
+    EncodingKey::from_rsa_pem(pem.as_bytes()).unwrap()
+}
+
+fn t0() -> DateTime<Utc> {
+    DateTime::parse_from_rfc3339("2026-01-01T12:00:00Z").unwrap().with_timezone(&Utc)
+}
+
+fn client(server: &MockServer, now: Arc<Mutex<DateTime<Utc>>>) -> GitHubClient {
+    GitHubClient::new(&server.uri(), "42", key(), Arc::new(move || *now.lock().unwrap()))
+}
+
+async fn mount_token(server: &MockServer, expires_at: DateTime<Utc>) {
+    Mock::given(method("POST"))
+        .and(path("/app/installations/1/access_tokens"))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({ "token": "inst-token", "expires_at": expires_at })))
+        .mount(server)
+        .await;
+}
+
+fn repo_json() -> serde_json::Value {
+    json!({ "id": 5, "full_name": "o/r", "private": false, "owner": { "login": "o" } })
+}
+
+async fn token_calls(server: &MockServer) -> usize {
+    server.received_requests().await.unwrap().iter().filter(|r| r.url.path().ends_with("/access_tokens")).count()
+}
+
+#[tokio::test]
+async fn installation_token_is_cached_until_near_expiry() {
+    let server = MockServer::start().await;
+    mount_token(&server, t0() + Duration::minutes(60)).await;
+    Mock::given(method("GET"))
+        .and(path("/repositories/5"))
+        .and(header("authorization", "Bearer inst-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(repo_json()))
+        .mount(&server)
+        .await;
+    let now = Arc::new(Mutex::new(t0()));
+    let gh = client(&server, now.clone());
+
+    assert_eq!(gh.repo(1, 5).await.unwrap().full_name, "o/r");
+    gh.repo(1, 5).await.unwrap();
+    assert_eq!(token_calls(&server).await, 1);
+
+    *now.lock().unwrap() = t0() + Duration::minutes(56);
+    gh.repo(1, 5).await.unwrap();
+    assert_eq!(token_calls(&server).await, 2, "renewed 5 minutes before expiry");
+}
+
+#[tokio::test]
+async fn etag_304_returns_cached_body() {
+    let server = MockServer::start().await;
+    mount_token(&server, t0() + Duration::hours(1)).await;
+    Mock::given(method("GET"))
+        .and(path("/repositories/5"))
+        .and(header("if-none-match", "\"v1\""))
+        .respond_with(ResponseTemplate::new(304))
+        .with_priority(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/repositories/5"))
+        .respond_with(ResponseTemplate::new(200).insert_header("etag", "\"v1\"").set_body_json(repo_json()))
+        .with_priority(2)
+        .mount(&server)
+        .await;
+    let gh = client(&server, Arc::new(Mutex::new(t0())));
+    let first = gh.repo(1, 5).await.unwrap();
+    let second = gh.repo(1, 5).await.unwrap();
+    assert_eq!(first, second);
+    let conditional = server.received_requests().await.unwrap().iter().filter(|r| r.headers.contains_key("if-none-match")).count();
+    assert_eq!(conditional, 1);
+}
+
+#[tokio::test]
+async fn rate_limit_and_not_found_errors() {
+    let server = MockServer::start().await;
+    mount_token(&server, t0() + Duration::hours(1)).await;
+    Mock::given(method("GET"))
+        .and(path("/repositories/1"))
+        .respond_with(
+            ResponseTemplate::new(403).insert_header("x-ratelimit-remaining", "0").insert_header("x-ratelimit-reset", "1767272400"),
+        )
+        .mount(&server)
+        .await;
+    Mock::given(method("GET")).and(path("/repositories/2")).respond_with(ResponseTemplate::new(429)).mount(&server).await;
+    Mock::given(method("GET")).and(path("/repositories/3")).respond_with(ResponseTemplate::new(404)).mount(&server).await;
+    Mock::given(method("GET")).and(path("/repositories/4")).respond_with(ResponseTemplate::new(403)).mount(&server).await;
+    let gh = client(&server, Arc::new(Mutex::new(t0())));
+
+    match gh.repo(1, 1).await {
+        Err(GitHubError::RateLimited { reset_at }) => assert_eq!(reset_at.unwrap().timestamp(), 1767272400),
+        other => panic!("{other:?}"),
+    }
+    assert!(matches!(gh.repo(1, 2).await, Err(GitHubError::RateLimited { .. })));
+    assert_eq!(gh.repo(1, 3).await, Err(GitHubError::NotFound));
+    assert_eq!(gh.repo(1, 4).await, Err(GitHubError::Http(403)), "403 with requests left is no rate limit");
+}
+
+#[tokio::test]
+async fn installation_lookup_uses_app_jwt_and_404_is_none() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/repos/o/r/installation"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "id": 77 })))
+        .mount(&server)
+        .await;
+    Mock::given(method("GET")).and(path("/repos/o/none/installation")).respond_with(ResponseTemplate::new(404)).mount(&server).await;
+    let gh = client(&server, Arc::new(Mutex::new(Utc::now())));
+    assert_eq!(gh.installation_for_repo("o/r").await.unwrap(), Some(77));
+    assert_eq!(gh.installation_for_repo("o/none").await.unwrap(), None);
+    let auth = server.received_requests().await.unwrap()[0].headers["authorization"].to_str().unwrap().to_string();
+    assert_eq!(auth.split('.').count(), 3, "a JWT: {auth}");
+}
+
+#[tokio::test]
+async fn download_rejects_large_content_length() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET")).and(path("/a.zip")).respond_with(ResponseTemplate::new(200).set_body_bytes(vec![0u8; 100])).mount(&server).await;
+    let gh = client(&server, Arc::new(Mutex::new(t0())));
+    let url = format!("{}/a.zip", server.uri());
+    assert_eq!(gh.download(&url, 99).await, Err(GitHubError::TooLarge));
+    assert_eq!(gh.download(&url, 100).await.unwrap().len(), 100);
+}
+
+#[tokio::test]
+async fn download_stops_at_max_bytes_without_content_length() {
+    // A chunked answer has no Content-Length; the limit must hold while reading.
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let mut buf = [0u8; 1024];
+        let _ = tokio::io::AsyncReadExt::read(&mut socket, &mut buf).await;
+        socket.write_all(b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n").await.unwrap();
+        for _ in 0..100 {
+            if socket.write_all(b"400\r\n").await.is_err() {
+                return;
+            }
+            let _ = socket.write_all(&[b'x'; 0x400]).await;
+            let _ = socket.write_all(b"\r\n").await;
+        }
+        let _ = socket.write_all(b"0\r\n\r\n").await;
+    });
+    let server = MockServer::start().await;
+    let gh = client(&server, Arc::new(Mutex::new(t0())));
+    assert_eq!(gh.download(&format!("http://{addr}/big"), 4096).await, Err(GitHubError::TooLarge));
+}

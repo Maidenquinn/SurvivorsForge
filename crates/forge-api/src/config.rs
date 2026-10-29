@@ -11,6 +11,11 @@ pub struct Config {
     pub migrate_on_start: bool,
     pub rate_limit_per_minute: u32,
     pub trusted_proxies: Vec<IpAddr>,
+    pub github_api_url: String,
+    pub github_app_id: String,
+    /// PEM text; `\n` escapes allowed. Read by `github::app_auth::load_private_key`.
+    pub github_app_private_key: Option<String>,
+    pub github_app_private_key_file: Option<String>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -31,6 +36,10 @@ impl Config {
         "MIGRATE_ON_START",
         "RATE_LIMIT_PER_MINUTE",
         "TRUSTED_PROXIES",
+        "GITHUB_API_URL",
+        "GITHUB_APP_ID",
+        "GITHUB_APP_PRIVATE_KEY",
+        "GITHUB_APP_PRIVATE_KEY_FILE",
     ];
 
     pub fn from_env() -> Result<Config, ConfigError> {
@@ -59,6 +68,10 @@ impl Config {
                 .filter(|p| !p.is_empty())
                 .map(|p| p.parse().map_err(|_| invalid("TRUSTED_PROXIES", p)))
                 .collect::<Result<_, _>>()?,
+            github_api_url: parse("GITHUB_API_URL", "https://api.github.com")?.trim_end_matches('/').to_string(),
+            github_app_id: required("GITHUB_APP_ID")?,
+            github_app_private_key: get("GITHUB_APP_PRIVATE_KEY").map(str::to_string),
+            github_app_private_key_file: get("GITHUB_APP_PRIVATE_KEY_FILE").map(str::to_string),
         })
     }
 
@@ -71,6 +84,10 @@ impl Config {
             migrate_on_start: false,
             rate_limit_per_minute: 10_000,
             trusted_proxies: Vec::new(),
+            github_api_url: "http://github.test".into(),
+            github_app_id: "1".into(),
+            github_app_private_key: None,
+            github_app_private_key_file: None,
         }
     }
 }
@@ -83,13 +100,18 @@ mod tests {
         pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect()
     }
 
-    const MINIMAL: &[(&str, &str)] = &[("DATABASE_URL", "postgres://x"), ("PUBLIC_API_URL", "https://api.example.com/")];
+    const MINIMAL: &[(&str, &str)] = &[
+        ("DATABASE_URL", "postgres://x"),
+        ("PUBLIC_API_URL", "https://api.example.com/"),
+        ("GITHUB_APP_ID", "1"),
+    ];
 
     #[test]
     fn missing_database_url_names_variable() {
-        let err = Config::from_map(&env(&[("PUBLIC_API_URL", "https://a")])).unwrap_err();
+        let err = Config::from_map(&env(&[("PUBLIC_API_URL", "https://a"), ("GITHUB_APP_ID", "1")])).unwrap_err();
         assert!(err.0.contains("DATABASE_URL"), "{}", err.0);
-        let err = Config::from_map(&env(&[("DATABASE_URL", "postgres://x"), ("PUBLIC_API_URL", " ")])).unwrap_err();
+        let err =
+            Config::from_map(&env(&[("DATABASE_URL", "postgres://x"), ("PUBLIC_API_URL", " "), ("GITHUB_APP_ID", "1")])).unwrap_err();
         assert!(err.0.contains("PUBLIC_API_URL"), "{}", err.0);
     }
 

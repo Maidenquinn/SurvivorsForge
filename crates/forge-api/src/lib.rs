@@ -3,6 +3,7 @@
 pub mod app;
 pub mod config;
 pub mod error;
+pub mod github;
 pub mod jobs;
 pub mod rate_limit;
 pub mod worker;
