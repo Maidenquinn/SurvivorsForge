@@ -89,12 +89,13 @@ pub async fn comment(State(state): State<AppState>, user: CurrentUser, Path((slu
 }
 pub async fn set_status(State(state): State<AppState>, user: CurrentUser, Path((slug,id)): Path<(String,i64)>,
     Json(body): Json<ChangeStatus>) -> ApiResult<Json<Value>> {
-    if !matches!(body.status.as_str(), "open" | "in_progress" | "resolved" | "closed") {
+    if !matches!(body.status.as_str(), "open" | "acknowledged" | "in_progress" | "resolved" | "closed") {
         return Err(invalid("Unknown issue status"));
     }
     let addon = load_addon(&state.pool, &slug).await?;
     let rights = user_permissions(&state.pool, &addon, &user).await?;
     if !rights.owner && !rights.admin && !rights.edit_description { return Err(forbidden()); }
+    if addon.blocked_at.is_some() { return Err(forbidden()); }
     let changed = sqlx::query(
         "UPDATE addon_issues SET status=$3, updated_at=$4 WHERE id=$1 AND addon_id=$2"
     ).bind(id).bind(addon.id).bind(&body.status).bind((state.clock)())
