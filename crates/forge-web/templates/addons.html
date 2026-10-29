@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Addons - SurvivorsForge{% endblock %}
+{% block head %}<meta name="description" content="Addons for Azeroth Survivors, checked for harmful code.">{% endblock %}
+{% block content %}
+<h1>Addons</h1>
+<form class="search" method="get" action="/addons" role="search"
+      hx-get="/addons" hx-trigger="input changed delay:300ms from:input, change from:select, search" hx-target="#results" hx-select="#results" hx-push-url="true">
+  <label for="q">Search</label>
+  <input id="q" type="search" name="q" value="{{ q }}" placeholder="Name or what it does" autocomplete="off">
+  <div class="filters">
+    <div>
+      <label for="trust">Check</label>
+      <select id="trust" name="trust">
+        <option value="" {% if trust == "" %}selected{% endif %}>Any</option>
+        <option value="verified" {% if trust == "verified" %}selected{% endif %}>Verified</option>
+        <option value="scanned" {% if trust == "scanned" %}selected{% endif %}>Checked</option>
+        <option value="flagged" {% if trust == "flagged" %}selected{% endif %}>Flagged</option>
+        <option value="unscanned" {% if trust == "unscanned" %}selected{% endif %}>Not checked</option>
+      </select>
+    </div>
+    <div>
+      <label for="sort">Sort</label>
+      <select id="sort" name="sort">
+        <option value="" {% if sort == "" %}selected{% endif %}>Best match</option>
+        <option value="downloads" {% if sort == "downloads" %}selected{% endif %}>Most downloads</option>
+        <option value="updated" {% if sort == "updated" %}selected{% endif %}>Recently updated</option>
+        <option value="name" {% if sort == "name" %}selected{% endif %}>Name</option>
+      </select>
+    </div>
+  </div>
+  {% if category != "" %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+  <noscript><button type="submit">Search</button></noscript>
+</form>
+
+<div id="results">
+  <p class="muted">{{ total }} addon{% if total != 1 %}s{% endif %}{% if category != "" %} in {{ category }} (<a href="/addons">all categories</a>){% endif %}</p>
+  {% if cards.is_empty() %}
+    <section class="panel"><p>No addon matches. Try fewer words or another filter.</p></section>
+  {% else %}
+  <div class="grid">
+    {% for c in cards %}
+    <article class="panel card">
+      <div class="card-head">
+        {% if let Some(icon) = c.icon_url %}<img class="icon" src="{{ icon }}" alt="" width="48" height="48">{% endif %}
+        <div>
+          <h2><a href="/addons/{{ c.slug }}">{{ c.name }}</a></h2>
+          <p class="muted">by {{ c.author }} · <a href="/addons?category={{ c.category }}">{{ c.category }}</a></p>
+        </div>
+      </div>
+      <p>{{ c.summary }}</p>
+      <p><span class="badge {{ c.notice.class }}">{{ c.notice.badge }}</span> <span class="muted">{{ c.downloads }} downloads</span></p>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <nav class="pager">
+    {% if let Some(p) = prev %}<a href="{{ p }}">Previous</a>{% endif %}
+    {% if let Some(n) = next %}<a href="{{ n }}">Next</a>{% endif %}
+  </nav>
+</div>
+{% endblock %}

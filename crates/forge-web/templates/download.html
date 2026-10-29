@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Download {{ name }} {{ row.tag }}? - SurvivorsForge{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<section class="panel">
+  <h1>Download {{ name }} {{ row.tag }}?</h1>
+  <div class="notice {{ row.notice.class }}" role="alert"><strong>{{ row.notice.badge }}.</strong> {{ row.notice.text }}</div>
+  {% if !findings.is_empty() %}
+  <h2>What the check found</h2>
+  <ul class="findings">
+    {% for f in findings %}
+    <li><span class="badge {% if f.severity == "critical" %}bad{% else %}warn{% endif %}">{{ f.severity }}</span> <code>{{ f.place }}</code> {{ f.message }}{% if f.snippet != "" %}<pre>{{ f.snippet }}</pre>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <p>Only continue if you trust the author.</p>
+  <p class="actions">
+    <a class="button secondary" href="/addons/{{ slug }}">Back to {{ name }}</a>
+    <a class="button danger" href="{{ row.asset_url }}" rel="noopener">I understand, download from GitHub</a>
+  </p>
+</section>
+{% endblock %}

@@ -5,5 +5,7 @@ pub mod app;
 pub mod config;
 pub mod csrf;
 pub mod error;
+pub mod public;
 pub mod session;
 pub mod templates;
+pub mod trust;

@@ -57,6 +57,11 @@ pub async fn visitor(state: &AppState, jar: &PrivateCookieJar) -> WebResult<Opti
 pub fn router(state: AppState) -> Router {
     let pages = Router::new()
         .route("/", get(index))
+        .route("/addons", get(crate::public::addons))
+        .route("/addons/{slug}", get(crate::public::addon))
+        .route("/addons/{slug}/versions", get(crate::public::versions))
+        .route("/addons/{slug}/versions/{tag}", get(crate::public::version))
+        .route("/addons/{slug}/versions/{tag}/download", get(crate::public::download))
         .route("/login", get(login))
         .route("/auth/callback", get(callback))
         .route("/logout", post(logout))

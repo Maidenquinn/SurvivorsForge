@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} - SurvivorsForge{% endblock %}
+{% block content %}
+<section class="panel">
+  <h1>{{ name }}</h1>
+  <div class="notice bad" role="status"><strong>Blocked.</strong> An admin blocked this addon. It cannot be downloaded here.</div>
+  {% if reason != "" %}<p>Reason: {{ reason }}</p>{% endif %}
+</section>
+{% endblock %}

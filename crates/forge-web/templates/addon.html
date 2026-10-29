@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} - SurvivorsForge{% endblock %}
+{% block head %}
+<meta name="description" content="{{ summary }}">
+<link rel="canonical" href="{{ canonical }}">
+{% endblock %}
+{% block content %}
+<header class="addon-head">
+  {% if let Some(icon) = icon_url %}<img class="icon big" src="{{ icon }}" alt="" width="96" height="96">{% endif %}
+  <div>
+    <h1>{{ name }}</h1>
+    <p class="muted">by {{ author }}{% if !claimed %} (not claimed on this site yet){% endif %} · <a href="/addons?category={{ category }}">{{ category }}</a> · <a href="https://github.com/{{ repo }}" rel="noopener">GitHub</a></p>
+    <p>{{ summary }}</p>
+  </div>
+</header>
+
+<section class="panel download">
+  {% match latest %}
+  {% when Some with (l) %}
+    <h2>Version {{ l.row.tag }}</h2>
+    <div class="notice {{ l.row.notice.class }}" role="status">
+      <strong>{{ l.row.notice.badge }}.</strong> {{ l.row.notice.text }}
+    </div>
+    {% if !l.findings.is_empty() %}
+      <h3>Findings</h3>
+      <ul class="findings">
+        {% for f in l.findings %}
+        <li><span class="badge {% if f.severity == "critical" %}bad{% else %}warn{% endif %}">{{ f.severity }}</span> <code>{{ f.place }}</code> {{ f.message }}{% if f.snippet != "" %}<pre>{{ f.snippet }}</pre>{% endif %}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    <p class="muted">Runs on: {{ l.row.game }}</p>
+    {% if l.row.notice.downloadable %}
+      <p><a class="button{% if l.row.notice.confirm %} danger{% endif %}" href="{{ l.href }}">Download from GitHub</a></p>
+    {% endif %}
+    <p><a href="/addons/{{ slug }}/versions">All versions</a></p>
+  {% when None %}
+    <p>No release yet.</p>
+  {% endmatch %}
+</section>
+
+{% if !shots.is_empty() %}
+<section class="shots" aria-label="Screenshots">
+  {% for shot in shots %}
+  <figure>
+    <a href="{{ shot.url }}"><img src="{{ shot.url }}" alt="{{ shot.caption }}" width="{{ shot.width }}" height="{{ shot.height }}" loading="lazy"></a>
+    {% if shot.caption != "" %}<figcaption>{{ shot.caption }}</figcaption>{% endif %}
+  </figure>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="panel description">
+  {{ description_html|safe }}
+</section>
+
+{% if !deps.is_empty() %}
+<section class="panel">
+  <h2>Needs</h2>
+  <ul>
+    {% for d in deps %}
+    <li><a href="/addons/{{ d.slug }}">{{ d.name }}</a> {% if d.required %}(required){% else %}(optional){% endif %}
+      {% if d.available %}<span class="badge {{ d.notice.class }}">{{ d.notice.badge }}</span>{% else %}<span class="badge bad">Unavailable</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if !contributors.is_empty() %}
+<section class="panel">
+  <h2>Contributors</h2>
+  <p>{% for c in contributors %}{{ c }}{% if !loop.last %}, {% endif %}{% endfor %}</p>
+</section>
+{% endif %}
+{% endblock %}
