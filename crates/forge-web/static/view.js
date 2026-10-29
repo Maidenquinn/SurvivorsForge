@@ -492,7 +492,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   document.addEventListener("submit", function (event) {
     var form = event.target.closest("[data-dynamic-comments] form");
-    if (!form || busy) return;
+    if (!form) return;
+    if (busy) { event.preventDefault(); return; }
     if (form.hasAttribute("data-confirm-delete") && !window.confirm(form.getAttribute("data-confirm-delete"))) {
       event.preventDefault(); return;
     }
