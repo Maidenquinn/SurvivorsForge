@@ -44,13 +44,13 @@
     <p class="muted">Game version: {{ l.row.game }}</p>
     {% if l.row.notice.downloadable %}
       <div class="actions">
-        <a class="button large" href="survivorsforge://addon/{{ slug }}" data-launcher>Install with the launcher</a>
-        <a class="button secondary{% if l.row.notice.confirm %} danger{% endif %}" href="{{ l.href }}"{% if !l.row.notice.confirm %} rel="external noopener"{% endif %}>Download from GitHub</a>
+        <a class="button large" href="survivorsforge://addon/{{ slug }}" data-launcher data-i18n="install_launcher">Install with the launcher</a>
+        <a class="button secondary{% if l.row.notice.confirm %} danger{% endif %}" href="{{ l.href }}"{% if !l.row.notice.confirm %} rel="external noopener"{% endif %} data-i18n="download_github">Download from GitHub</a>
       </div>
       <p class="muted" data-launcher-missing>The launcher installs it, its libraries and every update. No launcher yet? <a href="https://rezondes.github.io/SurvivorsForge/">Get SurvivorsForge</a>, free for Windows, Linux and Steam Deck.</p>
       <p class="muted">Without the launcher: unzip the download into the game's <code>AddOns</code> folder.</p>
     {% endif %}
-    <p><a href="/addons/{{ slug }}/versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} · <a href="/packs/new?addon={{ slug }}">Put into an addon pack</a>{% endif %}</p>
+    <p><a href="/addons/{{ slug }}/versions" data-i18n="all_versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} · <a href="/packs/new?addon={{ slug }}">Put into an addon pack</a>{% endif %}</p>
   {% when None %}
     <p>No release yet.</p>
   {% endmatch %}
@@ -105,17 +105,17 @@
     <article class="issue-message issue-editable" data-inline-editor>
       <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ issue.author|truncate(1) }}</span><strong>{{ issue.author }}</strong> <span class="muted">opened this issue</span>
         <span class="issue-action-spacer"></span>
-        {% if issue.can_edit %}<button class="issue-action" type="button" data-edit-toggle aria-label="Edit issue">Edit</button>{% endif %}
-        {% if issue.can_delete %}<form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/delete" data-confirm-delete="Delete this issue? This cannot be undone."><input type="hidden" name="csrf" value="{{ csrf }}"><button class="issue-action issue-danger" type="submit">Delete</button></form>{% endif %}
+        {% if issue.can_edit %}<button class="issue-action" type="button" data-edit-toggle aria-label="Edit issue" data-i18n="edit">Edit</button>{% endif %}
+        {% if issue.can_delete %}<form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/delete" data-confirm-delete="Delete this issue? This cannot be undone."><input type="hidden" name="csrf" value="{{ csrf }}"><button class="issue-action issue-danger" type="submit" data-i18n="delete">Delete</button></form>{% endif %}
       </header>
       <div data-edit-view class="issue-message-body">{{ issue.body }}</div>
       {% if issue.can_edit %}
       <form data-edit-form hidden class="issue-inline-form" method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/edit">
         <input type="hidden" name="csrf" value="{{ csrf }}">
         <label>Title <input name="title" required minlength="3" maxlength="160" value="{{ issue.title }}"></label>
-        <label>Category <select name="kind"><option value="{{ issue.kind }}">{{ issue.kind }}</option><option value="bug">Bug</option><option value="feature">Feature</option><option value="question">Question</option></select></label>
+        <label>Category <select name="kind"><option value="{{ issue.kind }}">{{ issue.kind }}</option><option value="bug">Bug</option><option value="feature">Feature</option><option value="question" data-i18n="question">Question</option></select></label>
         <label>Description <textarea name="body" required maxlength="10000" rows="6">{{ issue.body }}</textarea></label>
-        <div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel>Cancel</button><button type="submit">Save changes</button></div>
+        <div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel data-i18n="cancel">Cancel</button><button type="submit" data-i18n="save">Save changes</button></div>
       </form>
       {% endif %}
     </article>
@@ -136,11 +136,11 @@
     {% for comment in issue.comments %}
     <article class="issue-message issue-editable" data-inline-editor>
       <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ comment.author|truncate(1) }}</span><strong>{{ comment.author }}</strong><span class="muted">commented</span><span class="issue-action-spacer"></span>
-      {% if comment.can_edit %}<button type="button" class="issue-action" data-edit-toggle>Edit</button>
-      <form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="issue-action issue-danger">Delete</button></form>{% endif %}
+      {% if comment.can_edit %}<button type="button" class="issue-action" data-edit-toggle data-i18n="edit">Edit</button>
+      <form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="issue-action issue-danger" data-i18n="delete">Delete</button></form>{% endif %}
       </header>
       <div class="issue-message-body" data-edit-view>{{ comment.body }}</div>
-      {% if comment.can_edit %}<form class="issue-inline-form" data-edit-form hidden method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/edit"><input type="hidden" name="csrf" value="{{ csrf }}"><textarea name="body" required maxlength="10000" rows="4">{{ comment.body }}</textarea><div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel>Cancel</button><button type="submit">Save comment</button></div></form>{% endif %}
+      {% if comment.can_edit %}<form class="issue-inline-form" data-edit-form hidden method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/edit"><input type="hidden" name="csrf" value="{{ csrf }}"><textarea name="body" required maxlength="10000" rows="4">{{ comment.body }}</textarea><div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel data-i18n="cancel">Cancel</button><button type="submit" data-i18n="save_comment">Save comment</button></div></form>{% endif %}
     </article>
     {% endfor %}
     {% if user.is_some() %}
@@ -148,19 +148,19 @@
       <input type="hidden" name="csrf" value="{{ csrf }}">
       <label for="inline-issue-reply" data-i18n="reply">Reply</label>
       <textarea id="inline-issue-reply" name="body" required maxlength="10000" rows="4" placeholder="Write a constructive reply" data-i18n-placeholder="reply_placeholder"></textarea>
-      <div class="issues-form-footer"><a href="/addons/{{ slug }}/issues/{{ issue.id }}" data-i18n="share_issue">Shareable issue link</a><button type="submit">Post comment</button></div>
+      <div class="issues-form-footer"><a href="/addons/{{ slug }}/issues/{{ issue.id }}" data-i18n="share_issue">Shareable issue link</a><button type="submit" data-i18n="post">Post comment</button></div>
     </form>
     {% endif %}
     {% if can_manage_issues %}
     <form class="inline-issue-status panel" method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/status">
       <input type="hidden" name="csrf" value="{{ csrf }}">
-      <label for="inline-status">Status</label>
+      <label for="inline-status" data-i18n="status">Status</label>
       <select id="inline-status" name="status">
-        <option value="open" {% if issue.status == "open" %}selected{% endif %}>Open</option>
-        <option value="acknowledged" {% if issue.status == "acknowledged" %}selected{% endif %}>Acknowledged / Taken into account</option>
-        <option value="in_progress" {% if issue.status == "in_progress" %}selected{% endif %}>In progress</option>
-        <option value="resolved" {% if issue.status == "resolved" %}selected{% endif %}>Resolved</option>
-        <option value="closed" {% if issue.status == "closed" %}selected{% endif %}>Closed</option>
+        <option value="open" {% if issue.status == "open" %}selected{% endif %} data-i18n="open">Open</option>
+        <option value="acknowledged" {% if issue.status == "acknowledged" %}selected{% endif %} data-i18n="acknowledged">Acknowledged / Taken into account</option>
+        <option value="in_progress" {% if issue.status == "in_progress" %}selected{% endif %} data-i18n="in_progress">In progress</option>
+        <option value="resolved" {% if issue.status == "resolved" %}selected{% endif %} data-i18n="resolved">Resolved</option>
+        <option value="closed" {% if issue.status == "closed" %}selected{% endif %} data-i18n="closed">Closed</option>
       </select>
       <button type="submit" data-i18n="update_status">Update status</button>
     </form>
@@ -172,19 +172,19 @@
     <summary data-i18n="report_issue">+ Report an issue or suggest an improvement</summary>
     <form method="post" action="/addons/{{ slug }}/issues">
       <input type="hidden" name="csrf" value="{{ csrf }}">
-      <label for="addon-issue-title">Title</label><input id="addon-issue-title" name="title" minlength="3" maxlength="160" required placeholder="A short, descriptive title">
-      <label for="addon-issue-kind">Category</label>
-      <select id="addon-issue-kind" name="kind"><option value="bug">Bug report</option><option value="feature">Feature request</option><option value="question">Question</option></select>
-      <label for="addon-issue-body">Description</label>
-      <textarea id="addon-issue-body" name="body" maxlength="10000" rows="6" required placeholder="What happened? What did you expect? How can it be reproduced?"></textarea>
-      <div class="issues-form-footer"><span class="muted">Don't share private data.</span><button type="submit" data-i18n="submit_issue">Submit issue</button></div>
+      <label for="addon-issue-title" data-i18n="title">Title</label><input id="addon-issue-title" name="title" minlength="3" maxlength="160" required placeholder="A short, descriptive title" data-i18n-placeholder="issue_title_placeholder">
+      <label for="addon-issue-kind" data-i18n="category">Category</label>
+      <select id="addon-issue-kind" name="kind"><option value="bug" data-i18n="bug_report">Bug report</option><option value="feature" data-i18n="feature_request">Feature request</option><option value="question" data-i18n="question">Question</option></select>
+      <label for="addon-issue-body" data-i18n="description">Description</label>
+      <textarea id="addon-issue-body" name="body" maxlength="10000" rows="6" required placeholder="What happened? What did you expect? How can it be reproduced?" data-i18n-placeholder="issue_body_placeholder"></textarea>
+      <div class="issues-form-footer"><span class="muted"><span data-i18n="privacy_note">Don't share private data.</span></span><button type="submit" data-i18n="submit_issue">Submit issue</button></div>
     </form>
   </details>
   {% endif %}
 </section>
 {% else if tab == "gallery" %}
 <section class="addon-tab-section">
-  <h2>Gallery</h2>
+  <h2 data-i18n="gallery">Gallery</h2>
   {% if !shots.is_empty() %}
 <section class="shots" aria-label="Screenshots" data-gallery>
   {% for shot in shots %}
@@ -208,7 +208,7 @@
 </section>
 {% else if tab == "versions" %}
 <section class="addon-tab-section">
-  <h2>Versions</h2>
+  <h2 data-i18n="versions">Versions</h2>
   <p class="muted" data-i18n="versions_intro">Browse releases and download a specific version.</p>
   {% if version_rows.is_empty() %}
   <section class="panel"><p>No release yet.</p></section>
@@ -242,7 +242,7 @@
 
 {% if !deps.is_empty() %}
 <section class="panel">
-  <h2>Needs</h2>
+  <h2 data-i18n="needs">Needs</h2>
   <ul>
     {% for d in deps %}
     <li><a href="/addons/{{ d.slug }}">{{ d.name }}</a> {% if d.required %}(required){% else %}(optional){% endif %}
@@ -255,7 +255,7 @@
 
 {% if !contributors.is_empty() %}
 <section class="panel">
-  <h2>Contributors</h2>
+  <h2 data-i18n="contributors">Contributors</h2>
   <p>{% for c in contributors %}{{ c }}{% if !loop.last %}, {% endif %}{% endfor %}</p>
 </section>
 {% endif %}
