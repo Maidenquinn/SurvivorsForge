@@ -158,12 +158,19 @@ pub async fn pack(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
         .collect::<Vec<PackEntry>>();
     let kept: Vec<String> = entries.iter().filter(|e| e.available).map(|e| format!("addon={}", e.slug)).collect();
     let rebuild = if kept.is_empty() { "/packs/new".into() } else { format!("/packs/new?{}", kept.join("&")) };
+    // A pack without a name is called after its addons, so several open packs can be told apart.
+    let name = match (s(&p["name"]), entries.as_slice()) {
+        (name, _) if !name.is_empty() => name,
+        (_, [only]) => only.name.clone(),
+        (_, [first, rest @ ..]) => format!("{} and {} more", first.name, rest.len()),
+        (_, []) => String::new(),
+    };
     Ok(render(&PackPage {
         rebuild,
         user,
         csrf: csrf.0,
         link: format!("{}/packs/{id}", state.config.public_web_url),
-        name: s(&p["name"]),
+        name,
         created_by: s(&p["created_by"]),
         created: long_date(&s(&p["created_at"])),
         available: p["available"] == true,

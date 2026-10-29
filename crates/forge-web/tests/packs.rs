@@ -86,6 +86,13 @@ async fn the_pack_page_is_public_and_shows_the_content_and_the_link() {
     let page = web.get("/packs/NotBuilt12").await;
     assert!(page.body.contains("Packed on the first download"), "says the first download waits");
 
+    let mut unnamed = pack(true);
+    unnamed["name"] = json!("");
+    unnamed["addons"].as_array_mut().unwrap().push(json!({ "slug": "odds", "name": "Odds", "tag": "v2", "trust": "verified", "available": true, "folders": ["Odds"] }));
+    Mock::given(method("GET")).and(path("/v1/packs/Unnamed123")).respond_with(ResponseTemplate::new(200).set_body_json(unnamed)).mount(&web.api).await;
+    let page = web.get("/packs/Unnamed123").await;
+    assert!(page.body.contains("<title>Lucky and 1 more - SurvivorsForge</title>") && page.body.contains("<h1>Lucky and 1 more</h1>"), "{}", page.body);
+
     assert_eq!(web.get("/packs/not-an-id").await.status, StatusCode::NOT_FOUND);
     assert_eq!(web.get("/packs/AbCdE12345%2F..").await.status, StatusCode::NOT_FOUND);
 }
