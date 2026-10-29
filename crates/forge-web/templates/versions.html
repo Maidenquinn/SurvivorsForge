@@ -15,7 +15,7 @@
     <tr>
       <td><a href="/addons/{{ slug }}/versions/{{ r.tag }}">{{ r.tag }}</a>{% if r.prerelease %} <span class="badge" data-i18n="pub_prerelease">Pre-release</span>{% endif %}{% if r.deleted %} <span class="badge" data-i18n="pub_removed_github">Removed on GitHub</span>{% endif %}</td>
       <td>{{ r.published }}</td>
-      <td><span class="badge {{ r.notice.class }}">{{ r.notice.badge }}</span></td>
+      <td><span class="badge {{ r.notice.class }}" data-i18n-enum="trust" data-i18n-value="{{ r.notice.badge }}">{{ r.notice.badge }}</span></td>
       <td>{{ r.game }}</td>
       <td><code>{{ r.sha256|truncate(12) }}</code></td>
       <td>{% if r.notice.downloadable && !r.deleted %}<a href="{{ href }}" data-i18n="pub_download_question">Download</a>{% endif %}</td>
