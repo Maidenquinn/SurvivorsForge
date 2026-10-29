@@ -455,7 +455,8 @@
     "security_warning": "warning",
     "admin_remove_verification": "Remove verification",
     "my_findings_count": "findings",
-    "issue_information": "Issue information"
+    "issue_information": "Issue information",
+    "catalog_in": "in"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -910,7 +911,8 @@
     "security_warning": "avertissement",
     "admin_remove_verification": "Retirer la vérification",
     "my_findings_count": "résultats d'analyse",
-    "issue_information": "Informations sur le signalement"
+    "issue_information": "Informations sur le signalement",
+    "catalog_in": "dans"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1365,7 +1367,8 @@
     "security_warning": "ostrzeżenie",
     "admin_remove_verification": "Cofnij weryfikację",
     "my_findings_count": "wyniki kontroli",
-    "issue_information": "Informacje o zgłoszeniu"
+    "issue_information": "Informacje o zgłoszeniu",
+    "catalog_in": "w"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1820,7 +1823,8 @@
     "security_warning": "varování",
     "admin_remove_verification": "Odebrat ověření",
     "my_findings_count": "nálezy",
-    "issue_information": "Informace o hlášení"
+    "issue_information": "Informace o hlášení",
+    "catalog_in": "v"
   },
   "de": {
     "tiles": "Tiles",
@@ -2275,7 +2279,8 @@
     "security_warning": "Warnung",
     "admin_remove_verification": "Verifizierung entfernen",
     "my_findings_count": "Prüfergebnisse",
-    "issue_information": "Informationen zur Meldung"
+    "issue_information": "Informationen zur Meldung",
+    "catalog_in": "in"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2730,7 +2735,8 @@
     "security_warning": "aviso",
     "admin_remove_verification": "Remover verificação",
     "my_findings_count": "resultados da análise",
-    "issue_information": "Informações do relato"
+    "issue_information": "Informações do relato",
+    "catalog_in": "em"
   },
   "es": {
     "tiles": "Tiles",
@@ -3185,7 +3191,8 @@
     "security_warning": "advertencia",
     "admin_remove_verification": "Quitar verificación",
     "my_findings_count": "resultados del análisis",
-    "issue_information": "Información de la incidencia"
+    "issue_information": "Información de la incidencia",
+    "catalog_in": "en"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3640,7 +3647,8 @@
     "security_warning": "avertisment",
     "admin_remove_verification": "Elimină verificarea",
     "my_findings_count": "rezultatele verificării",
-    "issue_information": "Informații despre raportare"
+    "issue_information": "Informații despre raportare",
+    "catalog_in": "în"
   },
   "tr": {
     "tiles": "Tiles",
@@ -4095,7 +4103,8 @@
     "security_warning": "uyarı",
     "admin_remove_verification": "Doğrulamayı kaldır",
     "my_findings_count": "tarama bulguları",
-    "issue_information": "Bildirim bilgileri"
+    "issue_information": "Bildirim bilgileri",
+    "catalog_in": "içinde"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4550,7 +4559,8 @@
     "security_warning": "предупреждение",
     "admin_remove_verification": "Снять проверку",
     "my_findings_count": "результаты проверки",
-    "issue_information": "Информация об обращении"
+    "issue_information": "Информация об обращении",
+    "catalog_in": "в"
   },
   "uk": {
     "tiles": "Tiles",
@@ -5005,7 +5015,8 @@
     "security_warning": "попередження",
     "admin_remove_verification": "Зняти перевірку",
     "my_findings_count": "результати перевірки",
-    "issue_information": "Інформація про звернення"
+    "issue_information": "Інформація про звернення",
+    "catalog_in": "у"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -5460,7 +5471,8 @@
     "security_warning": "警告",
     "admin_remove_verification": "撤销验证",
     "my_findings_count": "检查结果",
-    "issue_information": "问题信息"
+    "issue_information": "问题信息",
+    "catalog_in": "分类："
   },
   "ja": {
     "tiles": "Tiles",
@@ -5915,7 +5927,8 @@
     "security_warning": "警告",
     "admin_remove_verification": "検証を取り消す",
     "my_findings_count": "検査結果",
-    "issue_information": "問題の情報"
+    "issue_information": "問題の情報",
+    "catalog_in": "カテゴリー："
   },
   "ko": {
     "tiles": "Tiles",
@@ -6370,7 +6383,8 @@
     "security_warning": "경고",
     "admin_remove_verification": "검증 제거",
     "my_findings_count": "검사 결과",
-    "issue_information": "이슈 정보"
+    "issue_information": "이슈 정보",
+    "catalog_in": "분류:"
   }
 };
   var supported = Object.keys(translations);
