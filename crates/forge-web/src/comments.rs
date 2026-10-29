@@ -20,18 +20,14 @@ pub struct Page { before: Option<i64> }
 #[derive(Deserialize)]
 pub struct Body { body: String }
 #[derive(Clone)]
-struct Comment { id: i64, author: String, avatar: String, body: String, created: String, edited: bool, can_edit: bool, can_delete: bool }
+pub struct Comment { pub id: i64, pub author: String, pub avatar: String, pub body: String, pub created: String, pub edited: bool, pub can_edit: bool, pub can_delete: bool }
 #[derive(Template)]
 #[template(path="comments.html")]
 struct CommentsPage { user: Option<crate::templates::Visitor>, csrf: String, slug: String, name: String, comments: Vec<Comment>, next: Option<i64> }
 
-pub async fn list(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>,
-    Path(slug): Path<String>, Query(page): Query<Page>) -> WebResult<Html<String>> {
-    let session = visitor(&state, &jar).await?;
+pub async fn feed(state: &AppState, slug: &str, session: &Option<(crate::templates::Visitor, String)>, before: Option<i64>) -> WebResult<(Vec<Comment>, Option<i64>, bool)> {
     let user = session.as_ref().map(|(v,_)| v.clone());
-    let addon = state.api.get(&format!("/v1/addons/{}",seg(&slug)),None).await?;
-    if addon["blocked"] == true {return Err(WebError::NotFound);}
-    let path = format!("/v1/addons/{}/comments{}",seg(&slug),page.before.map(|n|format!("?before={n}")).unwrap_or_default());
+    let path = format!("/v1/addons/{}/comments{}",seg(slug),before.map(|n|format!("?before={n}")).unwrap_or_default());
     let data = state.api.get(&path,None).await?;
     let perms = if let Some((_,token)) = &session {
         state.api.get(&format!("/v1/addons/{}/permissions",seg(&slug)),Some(token)).await.ok()
@@ -44,6 +40,16 @@ pub async fn list(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
         Comment { id:c["id"].as_i64().unwrap_or_default(), author, avatar:strval(&c["avatar_url"]), body:strval(&c["body"]),
             created:strval(&c["created_at"]).chars().take(10).collect(), edited:c["edited_at"].is_string(),can_edit:own || user.as_ref().is_some_and(|u|u.admin),can_delete:own || moderator }
     }).collect();
+    Ok((comments,next,moderator))
+}
+
+pub async fn list(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>,
+    Path(slug): Path<String>, Query(page): Query<Page>) -> WebResult<Html<String>> {
+    let session = visitor(&state, &jar).await?;
+    let user = session.as_ref().map(|(v,_)| v.clone());
+    let addon = state.api.get(&format!("/v1/addons/{}",seg(&slug)),None).await?;
+    if addon["blocked"] == true {return Err(WebError::NotFound);}
+    let (comments,next,_) = feed(&state, &slug, &session, page.before).await?;
     Ok(Html(CommentsPage {user,csrf:csrf.0,slug,name:strval(&addon["name"]),comments,next}.render().map_err(|_|WebError::NotFound)?))
 }
 pub async fn create(State(state): State<AppState>,jar:PrivateCookieJar,Path(slug):Path<String>,Form(body):Form<Body>)->WebResult<Redirect>{
