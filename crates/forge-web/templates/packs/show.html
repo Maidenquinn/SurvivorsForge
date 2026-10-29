@@ -10,7 +10,7 @@
     <p><a class="button" href="/packs/{{ id }}/download">Download the pack{% if let Some(s) = size %} ({{ s }}){% endif %}</a></p>
     <p class="muted">One zip, every addon in its own folder. Upload it in the browser version of the game.</p>
   {% else %}
-    <div class="notice bad" role="alert">An addon of this pack is no longer available, so the pack cannot be downloaded. Build a new one.</div>
+    <div class="notice bad" role="alert">An addon of this pack is no longer available, so the pack cannot be downloaded. <a href="{{ rebuild }}">Build a new one</a> without it.</div>
   {% endif %}
   <label for="link">Link to share</label>
   <div class="copy-row">
@@ -38,5 +38,5 @@
     </table>
   </div>
 </section>
-<p><a href="/packs/new{% for e in entries %}{% if loop.first %}?{% else %}&amp;{% endif %}addon={{ e.slug }}{% endfor %}">Build your own pack from this one</a></p>
+<p><a href="{{ rebuild }}">Build your own pack from this one</a></p>
 {% endblock %}

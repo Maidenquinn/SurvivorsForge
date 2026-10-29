@@ -87,6 +87,13 @@ async fn an_unavailable_pack_offers_no_download() {
     Mock::given(method("GET")).and(path("/v1/packs/AbCdE12345")).respond_with(ResponseTemplate::new(200).set_body_json(pack(false))).mount(&web.api).await;
     let page = web.get("/packs/AbCdE12345").await;
     assert!(page.body.contains("no longer available") && !page.body.contains("Download the pack"));
+
+    let mut mixed = pack(false);
+    mixed["addons"].as_array_mut().unwrap().push(json!({ "slug": "odds", "name": "Odds", "tag": "v2", "trust": "verified", "available": true, "folders": ["Odds"] }));
+    Mock::given(method("GET")).and(path("/v1/packs/Mixed12345")).respond_with(ResponseTemplate::new(200).set_body_json(mixed)).mount(&web.api).await;
+    let page = web.get("/packs/Mixed12345").await;
+    assert!(page.body.contains(r#"<a href="/packs/new?addon=odds">Build a new one</a>"#), "{}", page.body);
+    assert!(!page.body.contains("addon=lucky"), "the new pack leaves out what is gone");
 }
 
 #[tokio::test]

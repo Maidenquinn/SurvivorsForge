@@ -142,8 +142,11 @@ pub async fn pack(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
             notice: notice(a["trust"].as_str().unwrap_or_default(), false, false),
             folders: a["folders"].as_array().into_iter().flatten().map(s).collect::<Vec<_>>().join(", "),
         })
-        .collect();
+        .collect::<Vec<PackEntry>>();
+    let kept: Vec<String> = entries.iter().filter(|e| e.available).map(|e| format!("addon={}", e.slug)).collect();
+    let rebuild = if kept.is_empty() { "/packs/new".into() } else { format!("/packs/new?{}", kept.join("&")) };
     Ok(render(&PackPage {
+        rebuild,
         user,
         csrf: csrf.0,
         link: format!("{}/packs/{id}", state.config.public_web_url),

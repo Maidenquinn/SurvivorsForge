@@ -652,6 +652,8 @@ pub struct PackPage {
     pub available: bool,
     pub size: Option<String>,
     pub entries: Vec<PackEntry>,
+    /// The picker with the addons of this pack that are still available.
+    pub rebuild: String,
 }
 
 pub struct PackListRow {
