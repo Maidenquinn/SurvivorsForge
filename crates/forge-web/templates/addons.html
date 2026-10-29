@@ -39,7 +39,13 @@
 </form>
 
 <div id="results" class="list">
+  <div class="result-bar">
   <p class="muted">{{ total }} addon{% if total != 1 %}s{% endif %}{% if category != "" %} in {{ category }} (<a href="/addons">all categories</a>){% endif %}</p>
+  <div class="view-toggle" role="group" aria-label="View">
+    <button type="button" class="secondary" data-set-view="tiles">Tiles</button>
+    <button type="button" class="secondary" data-set-view="list">List</button>
+  </div>
+  </div>
   {% if cards.is_empty() %}
     <section class="panel"><p>No addon matches. Try fewer words or another filter.</p></section>
   {% else %}

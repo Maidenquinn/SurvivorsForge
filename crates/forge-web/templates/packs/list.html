@@ -6,7 +6,13 @@
   <h1>Addon packs</h1>
   <a class="button" href="/packs/new">Build a pack</a>
 </div>
-<p class="muted">Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show.</p>
+<div class="result-bar">
+  <p class="muted">Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show.</p>
+  <div class="view-toggle" role="group" aria-label="View">
+    <button type="button" class="secondary" data-set-view="tiles">Tiles</button>
+    <button type="button" class="secondary" data-set-view="list">List</button>
+  </div>
+</div>
 {% if rows.is_empty() %}
   <section class="panel"><p>No pack is listed yet. Build one and tick "Show it on the public pack list".</p></section>
 {% else %}

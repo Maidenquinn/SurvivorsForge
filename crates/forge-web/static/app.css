@@ -179,6 +179,21 @@ label { display: block; margin: 12px 0 4px; color: var(--gold); }
 .badge.bad { border-color: var(--bad); color: var(--bad); }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+
+/* Tiles or list (view.js sets data-view on <html>); without JavaScript the tiles stay */
+.result-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.result-bar p { margin: 8px 0; }
+.view-toggle { display: flex; gap: 4px; }
+html:not([data-view]) .view-toggle { display: none; }
+.view-toggle button { min-height: 28px; padding: 2px 12px; font-size: var(--meta); }
+html[data-view="tiles"] [data-set-view="tiles"], html[data-view="list"] [data-set-view="list"] { border-color: var(--outline-active); color: var(--gold-bright); }
+html[data-view="list"] .grid { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+html[data-view="list"] .grid .card { display: flex; align-items: center; gap: 16px; padding: 10px 16px; margin: 0; }
+html[data-view="list"] .grid .card > * { margin: 0; }
+html[data-view="list"] .grid .card > :first-child { flex: 0 0 30%; min-width: 0; }
+html[data-view="list"] .grid .card > p:not(:last-child) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-view="list"] .grid .card > :last-child { flex: none; }
+html[data-view="list"] .grid .card .icon { width: 32px; height: 32px; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { color: var(--gold); font-weight: 400; }
@@ -270,6 +285,9 @@ input.narrow { width: 6em; flex: none; }
   /* Leave the list as much room as possible: filters side by side, no footer under it */
   .search .filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .search .filters > div { min-width: 0; }
+  html[data-view="list"] .grid .card { flex-wrap: wrap; gap: 4px 16px; }
+  html[data-view="list"] .grid .card > :first-child { flex: 1 1 100%; }
+  html[data-view="list"] .grid .card > p:not(:last-child) { display: none; }
   main:has(> .list) > .bottom { display: none; }
 }
 

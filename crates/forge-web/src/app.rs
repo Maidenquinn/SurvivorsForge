@@ -133,6 +133,7 @@ pub fn router(state: AppState) -> Router {
         .route("/logout", post(logout))
         .route("/static/htmx.min.js", get(|| async { asset("text/javascript", include_str!("../static/htmx.min.js")) }))
         .route("/static/app.css", get(|| async { asset("text/css", include_str!("../static/app.css")) }))
+        .route("/static/view.js", get(|| async { asset("text/javascript", include_str!("../static/view.js")) }))
         // The launcher's fonts (SIL OFL, licenses next to them in ui/fonts).
         // The launcher's icon, as tab icon and home screen icon.
         .route("/static/icon.png", get(|| async { binary("image/png", include_bytes!("../../../assets/icon.png")) }))

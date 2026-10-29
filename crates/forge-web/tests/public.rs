@@ -257,3 +257,19 @@ async fn scrollbars_use_the_theme() {
     let css = web.get("/static/app.css").await.body;
     assert!(css.contains("scrollbar-color: var(--outline) var(--field)"), "no themed scrollbars");
 }
+
+#[tokio::test]
+async fn card_lists_switch_between_tiles_and_a_list() {
+    // The choice lives in the browser (view.js, localStorage); the pages only offer the switch.
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
+    mock(&web, "/v1/addons", json!({ "total": 0, "addons": [] })).await;
+    mock(&web, "/v1/packs", json!({ "total": 0, "packs": [] })).await;
+    for page in ["/addons", "/packs"] {
+        let body = web.get(page).await.body;
+        assert!(body.contains(r#"data-set-view="list""#) && body.contains(r#"data-set-view="tiles""#), "{page}: {body}");
+        assert!(body.contains(r#"<script src="/static/view.js"></script>"#), "{page}: before the page is drawn");
+    }
+    let script = web.get("/static/view.js").await;
+    assert!(script.headers["content-type"].to_str().unwrap().starts_with("text/javascript") && script.body.contains("localStorage"));
+}
