@@ -173,3 +173,15 @@ async fn checkboxes_are_drawn_like_the_launcher() {
     assert!(rule.contains("appearance: none") && rule.contains("var(--field)") && rule.contains("var(--outline)"), "{rule}");
     assert!(css.contains("input[type=\"checkbox\"]:checked"), "a gold square when ticked");
 }
+
+#[tokio::test]
+async fn the_launcher_icon_is_the_favicon() {
+    let mut web = TestWeb::new().await;
+    let page = web.get("/").await;
+    assert!(page.body.contains(r#"<link rel="icon" href="/static/icon.png" type="image/png">"#), "{}", page.body);
+    assert!(page.body.contains(r#"<link rel="apple-touch-icon" href="/static/icon.png">"#));
+    let png = web.get("/static/icon.png").await;
+    assert_eq!((png.status, png.headers["content-type"].to_str().unwrap()), (StatusCode::OK, "image/png"));
+    let ico = web.get("/favicon.ico").await;
+    assert_eq!((ico.status, ico.headers["content-type"].to_str().unwrap()), (StatusCode::OK, "image/x-icon"));
+}

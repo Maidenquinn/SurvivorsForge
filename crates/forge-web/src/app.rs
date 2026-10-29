@@ -124,6 +124,9 @@ pub fn router(state: AppState) -> Router {
         .route("/static/htmx.min.js", get(|| async { asset("text/javascript", include_str!("../static/htmx.min.js")) }))
         .route("/static/app.css", get(|| async { asset("text/css", include_str!("../static/app.css")) }))
         // The launcher's fonts (SIL OFL, licenses next to them in ui/fonts).
+        // The launcher's icon, as tab icon and home screen icon.
+        .route("/static/icon.png", get(|| async { binary("image/png", include_bytes!("../../../assets/icon.png")) }))
+        .route("/favicon.ico", get(|| async { binary("image/x-icon", include_bytes!("../../../assets/icon.ico")) }))
         .route("/static/fonts/marcellus.ttf", get(|| async { font(include_bytes!("../../../ui/fonts/Marcellus-Regular.ttf")) }))
         .route("/static/fonts/uncial-antiqua.ttf", get(|| async { font(include_bytes!("../../../ui/fonts/UncialAntiqua-Regular.ttf")) }))
         .fallback(|| async { WebError::NotFound })
@@ -140,6 +143,10 @@ pub fn router(state: AppState) -> Router {
         .layer(SetResponseHeaderLayer::overriding(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY")))
         .layer(SetResponseHeaderLayer::overriding(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff")))
         .layer(SetResponseHeaderLayer::overriding(header::REFERRER_POLICY, HeaderValue::from_static("strict-origin-when-cross-origin")))
+}
+
+fn binary(content_type: &'static str, body: &'static [u8]) -> Response {
+    ([(header::CONTENT_TYPE, content_type), (header::CACHE_CONTROL, "public, max-age=86400")], body).into_response()
 }
 
 fn font(body: &'static [u8]) -> Response {
