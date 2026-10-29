@@ -96,7 +96,8 @@
     "confirm_delete_issue": "Delete this issue? This cannot be undone.",
     "filter_issues": "Filter issues",
     "addon_sections": "Addon sections",
-    "comment_update_error": "Could not update comments. Check your connection and try again."
+    "comment_update_error": "Could not update comments. Check your connection and try again.",
+    "edit_comment": "Edit comment"
   },
   "fr": {
     "addons": "Extensions",
@@ -192,7 +193,8 @@
     "confirm_delete_issue": "Supprimer ce signalement ? Cette action est irréversible.",
     "filter_issues": "Filtrer les signalements",
     "addon_sections": "Sections de l'addon",
-    "comment_update_error": "Impossible de mettre à jour les commentaires. Vérifiez votre connexion et réessayez."
+    "comment_update_error": "Impossible de mettre à jour les commentaires. Vérifiez votre connexion et réessayez.",
+    "edit_comment": "Modifier le commentaire"
   },
   "pl": {
     "addons": "Dodatki",
@@ -288,7 +290,8 @@
     "confirm_delete_issue": "Usunąć zgłoszenie? Tej operacji nie można cofnąć.",
     "filter_issues": "Filtruj zgłoszenia",
     "addon_sections": "Sekcje dodatku",
-    "comment_update_error": "Nie udało się zaktualizować komentarzy. Sprawdź połączenie i spróbuj ponownie."
+    "comment_update_error": "Nie udało się zaktualizować komentarzy. Sprawdź połączenie i spróbuj ponownie.",
+    "edit_comment": "Edytuj komentarz"
   },
   "cs": {
     "addons": "Doplňky",
@@ -384,7 +387,8 @@
     "confirm_delete_issue": "Smazat hlášení? Tuto akci nelze vrátit.",
     "filter_issues": "Filtrovat hlášení",
     "addon_sections": "Sekce doplňku",
-    "comment_update_error": "Komentáře se nepodařilo aktualizovat. Zkontrolujte připojení."
+    "comment_update_error": "Komentáře se nepodařilo aktualizovat. Zkontrolujte připojení.",
+    "edit_comment": "Upravit komentář"
   },
   "de": {
     "addons": "Addons",
@@ -480,7 +484,8 @@
     "confirm_delete_issue": "Dieses Problem löschen? Dies kann nicht rückgängig gemacht werden.",
     "filter_issues": "Probleme filtern",
     "addon_sections": "Addon-Bereiche",
-    "comment_update_error": "Kommentare konnten nicht aktualisiert werden. Verbindung prüfen und erneut versuchen."
+    "comment_update_error": "Kommentare konnten nicht aktualisiert werden. Verbindung prüfen und erneut versuchen.",
+    "edit_comment": "Kommentar bearbeiten"
   },
   "pt-BR": {
     "addons": "Complementos",
@@ -576,7 +581,8 @@
     "confirm_delete_issue": "Excluir este problema? Não é possível desfazer.",
     "filter_issues": "Filtrar problemas",
     "addon_sections": "Seções do complemento",
-    "comment_update_error": "Não foi possível atualizar os comentários. Verifique sua conexão e tente novamente."
+    "comment_update_error": "Não foi possível atualizar os comentários. Verifique sua conexão e tente novamente.",
+    "edit_comment": "Editar comentário"
   },
   "es": {
     "addons": "Complementos",
@@ -672,7 +678,8 @@
     "confirm_delete_issue": "¿Eliminar esta incidencia? No se puede deshacer.",
     "filter_issues": "Filtrar incidencias",
     "addon_sections": "Secciones del complemento",
-    "comment_update_error": "No se pudieron actualizar los comentarios. Comprueba la conexión e inténtalo de nuevo."
+    "comment_update_error": "No se pudieron actualizar los comentarios. Comprueba la conexión e inténtalo de nuevo.",
+    "edit_comment": "Editar comentario"
   },
   "ro": {
     "addons": "Suplimente",
@@ -768,7 +775,8 @@
     "confirm_delete_issue": "Ștergi această problemă? Acțiunea nu poate fi anulată.",
     "filter_issues": "Filtrează problemele",
     "addon_sections": "Secțiunile suplimentului",
-    "comment_update_error": "Comentariile nu au putut fi actualizate. Verifică conexiunea și încearcă din nou."
+    "comment_update_error": "Comentariile nu au putut fi actualizate. Verifică conexiunea și încearcă din nou.",
+    "edit_comment": "Editează comentariul"
   },
   "tr": {
     "addons": "Eklentiler",
@@ -864,7 +872,8 @@
     "confirm_delete_issue": "Bu sorun silinsin mi? İşlem geri alınamaz.",
     "filter_issues": "Sorunları filtrele",
     "addon_sections": "Eklenti bölümleri",
-    "comment_update_error": "Yorumlar güncellenemedi. Bağlantınızı kontrol edip tekrar deneyin."
+    "comment_update_error": "Yorumlar güncellenemedi. Bağlantınızı kontrol edip tekrar deneyin.",
+    "edit_comment": "Yorumu düzenle"
   },
   "ru": {
     "addons": "Аддоны",
@@ -960,7 +969,8 @@
     "confirm_delete_issue": "Удалить обращение? Это действие нельзя отменить.",
     "filter_issues": "Фильтр обращений",
     "addon_sections": "Разделы аддона",
-    "comment_update_error": "Не удалось обновить комментарии. Проверьте подключение и повторите попытку."
+    "comment_update_error": "Не удалось обновить комментарии. Проверьте подключение и повторите попытку.",
+    "edit_comment": "Редактировать комментарий"
   },
   "uk": {
     "addons": "Аддони",
@@ -1056,7 +1066,8 @@
     "confirm_delete_issue": "Видалити звернення? Цю дію неможливо скасувати.",
     "filter_issues": "Фільтр звернень",
     "addon_sections": "Розділи аддона",
-    "comment_update_error": "Не вдалося оновити коментарі. Перевірте з'єднання та повторіть спробу."
+    "comment_update_error": "Не вдалося оновити коментарі. Перевірте з'єднання та повторіть спробу.",
+    "edit_comment": "Редагувати коментар"
   },
   "zh-Hans": {
     "addons": "插件",
@@ -1152,7 +1163,8 @@
     "confirm_delete_issue": "删除此问题？此操作无法撤销。",
     "filter_issues": "筛选问题",
     "addon_sections": "插件页面分区",
-    "comment_update_error": "无法更新评论。请检查网络连接并重试。"
+    "comment_update_error": "无法更新评论。请检查网络连接并重试。",
+    "edit_comment": "编辑评论"
   },
   "ja": {
     "addons": "アドオン",
@@ -1248,7 +1260,8 @@
     "confirm_delete_issue": "この問題を削除しますか？元に戻せません。",
     "filter_issues": "問題を絞り込む",
     "addon_sections": "アドオンのセクション",
-    "comment_update_error": "コメントを更新できませんでした。接続を確認して再試行してください。"
+    "comment_update_error": "コメントを更新できませんでした。接続を確認して再試行してください。",
+    "edit_comment": "コメントを編集"
   },
   "ko": {
     "addons": "애드온",
@@ -1344,7 +1357,8 @@
     "confirm_delete_issue": "이 문제를 삭제할까요? 되돌릴 수 없습니다.",
     "filter_issues": "문제 필터",
     "addon_sections": "애드온 섹션",
-    "comment_update_error": "댓글을 업데이트하지 못했습니다. 연결을 확인하고 다시 시도하세요."
+    "comment_update_error": "댓글을 업데이트하지 못했습니다. 연결을 확인하고 다시 시도하세요.",
+    "edit_comment": "댓글 수정"
   }
 };
   var supported = Object.keys(translations);
