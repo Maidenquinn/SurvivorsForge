@@ -145,6 +145,14 @@ input:focus, select:focus, textarea:focus { border-color: var(--outline-active);
 input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 1px solid var(--outline-active); outline-offset: 0; }
 input::placeholder, textarea::placeholder { color: var(--disabled); }
 input:disabled, select:disabled, textarea:disabled { color: var(--muted); border-color: var(--line); }
+/* File inputs: the browser's grey "Choose file" button drawn like a .secondary button */
+input[type="file"] { padding: 4px 6px; color: var(--muted); cursor: pointer; }
+input[type="file"]::file-selector-button {
+  margin-right: 12px; padding: 4px 14px; min-height: 28px;
+  border: 1px solid var(--outline); border-radius: var(--radius);
+  background: var(--control); color: var(--gold); font: inherit; cursor: pointer;
+}
+input[type="file"]::file-selector-button:hover { border-color: var(--outline-hover); color: var(--gold-bright); }
 label { display: block; margin: 12px 0 4px; color: var(--gold); }
 .field-error { color: var(--bad); font-size: var(--meta); margin-top: 4px; }
 

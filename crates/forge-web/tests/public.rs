@@ -241,3 +241,11 @@ async fn api_down_shows_error_page() {
     assert_eq!(page.status, StatusCode::INTERNAL_SERVER_ERROR);
     assert!(page.body.contains("Something went wrong"));
 }
+
+#[tokio::test]
+async fn file_pickers_look_like_the_site() {
+    // The browser's grey "Choose file" button gets the outlined gold look of the other buttons.
+    let mut web = TestWeb::new().await;
+    let css = web.get("/static/app.css").await.body;
+    assert!(css.contains("::file-selector-button"), "no style for the file picker button");
+}
