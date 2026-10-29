@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Publish an addon - SurvivorsForge{% endblock %}
+{% block content %}
+<h1>Publish an addon</h1>
+{% if errors.get("form") != "" %}<div class="notice bad" role="alert">{{ errors.get("form") }}</div>{% endif %}
+
+<section class="panel">
+  <h2>1. Install the SurvivorsForge App on your repo</h2>
+  <p>The App lets the platform read your releases and proves the repo is yours. It only gets read access.</p>
+  <p><a class="button secondary" href="{{ install_url }}" rel="noopener">Install the GitHub App</a></p>
+</section>
+
+<form class="panel" method="post" action="/addons/new">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <h2>2. Your repo</h2>
+  <label for="repo">GitHub repo</label>
+  <input id="repo" name="repo" value="{{ form.repo }}" placeholder="owner/name" required>
+  {% if errors.get("repo") != "" %}<p class="field-error">{{ errors.get("repo") }}</p>{% endif %}
+
+  <h2>3. About the addon</h2>
+  <label for="name">Name</label>
+  <input id="name" name="name" value="{{ form.name }}" maxlength="64" required>
+  {% if errors.get("name") != "" %}<p class="field-error">{{ errors.get("name") }}</p>{% endif %}
+
+  <label for="slug">Address on this site</label>
+  <input id="slug" name="slug" value="{{ form.slug }}" placeholder="lucky-odds" pattern="[a-z0-9][a-z0-9-]{1,48}" required>
+  <p class="muted">Lowercase letters, digits and dashes. It cannot be changed later.</p>
+  {% if errors.get("slug") != "" %}<p class="field-error">{{ errors.get("slug") }}</p>{% endif %}
+
+  <label for="summary">One line about it</label>
+  <input id="summary" name="summary" value="{{ form.summary }}" maxlength="200">
+  {% if errors.get("summary") != "" %}<p class="field-error">{{ errors.get("summary") }}</p>{% endif %}
+
+  <label for="category">Category</label>
+  <select id="category" name="category">
+    {% for c in categories %}<option value="{{ c }}" {% if *c == form.category %}selected{% endif %}>{{ c }}</option>{% endfor %}
+  </select>
+  {% if errors.get("category") != "" %}<p class="field-error">{{ errors.get("category") }}</p>{% endif %}
+
+  <label for="source_type">Downloads come from</label>
+  <select id="source_type" name="source_type">
+    <option value="release" {% if form.source_type == "release" %}selected{% endif %}>A zip attached to each release</option>
+    <option value="tag" {% if form.source_type == "tag" %}selected{% endif %}>The source zip of each tag</option>
+  </select>
+
+  <label for="asset_pattern">Release zip name</label>
+  <input id="asset_pattern" name="asset_pattern" value="{{ form.asset_pattern }}" placeholder="LuckyOdds-v*.zip">
+  <p class="muted">For releases only. <code>*</code> stands for the version.</p>
+  {% if errors.get("asset_pattern") != "" %}<p class="field-error">{{ errors.get("asset_pattern") }}</p>{% endif %}
+
+  <label for="folders">Addon folders in the zip</label>
+  <textarea id="folders" name="folders" rows="3" placeholder="LuckyOdds" required>{{ form.folders }}</textarea>
+  <p class="muted">One per line. Each folder belongs to one addon on the whole platform.</p>
+  {% if errors.get("folders") != "" %}<p class="field-error">{{ errors.get("folders") }}</p>{% endif %}
+
+  <p><button type="submit">Publish</button></p>
+</form>
+{% endblock %}

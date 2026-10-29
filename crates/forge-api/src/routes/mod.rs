@@ -3,6 +3,7 @@
 pub mod addons;
 pub mod admin_moderation;
 pub mod admin_verify;
+pub mod creator;
 pub mod dependencies;
 pub mod game_versions;
 pub mod images;

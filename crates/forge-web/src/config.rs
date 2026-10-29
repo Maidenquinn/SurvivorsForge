@@ -14,11 +14,13 @@ pub struct Config {
     /// At least 32 bytes; signs and encrypts the session cookies.
     pub cookie_key: String,
     pub bind_addr: SocketAddr,
+    /// The GitHub App's URL name, for the "install the App" link.
+    pub github_app_slug: String,
 }
 
 impl Config {
     /// Every variable `from_map` reads. `.env.example` must list each of them.
-    pub const VARIABLES: &[&str] = &["API_INTERNAL_URL", "PUBLIC_API_URL", "PUBLIC_WEB_URL", "COOKIE_KEY", "WEB_BIND_ADDR"];
+    pub const VARIABLES: &[&str] = &["API_INTERNAL_URL", "PUBLIC_API_URL", "PUBLIC_WEB_URL", "COOKIE_KEY", "WEB_BIND_ADDR", "GITHUB_APP_SLUG"];
 
     pub fn from_env() -> Result<Config, String> {
         Config::from_map(&std::env::vars().collect())
@@ -38,6 +40,7 @@ impl Config {
             public_web_url: required("PUBLIC_WEB_URL")?,
             cookie_key,
             bind_addr: bind.parse().map_err(|_| format!("WEB_BIND_ADDR has an invalid value: {bind}"))?,
+            github_app_slug: required("GITHUB_APP_SLUG")?,
         })
     }
 
@@ -53,6 +56,7 @@ impl Config {
             public_web_url: "https://web.test".into(),
             cookie_key: "test-cookie-key-that-is-long-enough-0123456789".into(),
             bind_addr: "127.0.0.1:0".parse().unwrap(),
+            github_app_slug: "survivorsforge-test".into(),
         }
     }
 }
@@ -63,7 +67,7 @@ mod tests {
 
     #[test]
     fn missing_and_short_values_are_named() {
-        let env: HashMap<String, String> = [("API_INTERNAL_URL", "http://api"), ("PUBLIC_API_URL", "https://a"), ("PUBLIC_WEB_URL", "https://w")]
+        let env: HashMap<String, String> = [("API_INTERNAL_URL", "http://api"), ("PUBLIC_API_URL", "https://a"), ("PUBLIC_WEB_URL", "https://w"), ("GITHUB_APP_SLUG", "app")]
             .iter()
             .map(|(k, v)| (k.to_string(), v.to_string()))
             .collect();

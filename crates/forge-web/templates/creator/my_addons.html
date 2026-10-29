@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}My addons - SurvivorsForge{% endblock %}
+{% block content %}
+<div class="title-row">
+  <h1>My addons</h1>
+  <a class="button" href="/addons/new">Publish an addon</a>
+</div>
+{% if rows.is_empty() %}
+<section class="panel">
+  <p>You have no addons here yet. Publish one from your GitHub repo, or ask an owner to add you as a contributor.</p>
+</section>
+{% else %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Addon</th><th>Your role</th><th>Newest version</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td><a href="/addons/{{ r.slug }}">{{ r.name }}</a>
+        {% if r.blocked %} <span class="badge bad">Blocked</span>{% endif %}
+        {% if r.locked %} <span class="badge warn">Repo not reachable</span>{% endif %}</td>
+      <td>{{ r.role }}</td>
+      <td>{% if r.has_version %}<span class="badge {{ r.notice.class }}">{{ r.notice.badge }}</span>{% if r.findings > 0 %} {{ r.findings }} finding{% if r.findings != 1 %}s{% endif %}{% endif %}{% else %}<span class="muted">No release yet</span>{% endif %}</td>
+      <td><a href="/addons/{{ r.slug }}/edit">Edit</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,189 @@
+mod common;
+
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
+use common::{TestWeb, WEB, me};
+use serde_json::{Value, json};
+use wiremock::matchers::{body_partial_json, header, method, path};
+use wiremock::{Mock, ResponseTemplate};
+
+async fn get_json(web: &TestWeb, route: &str, body: Value) {
+    Mock::given(method("GET")).and(path(route)).respond_with(ResponseTemplate::new(200).set_body_json(body)).mount(&web.api).await;
+}
+
+async fn logged_in(perms: Value) -> TestWeb {
+    let mut web = TestWeb::new().await;
+    web.login_as("tok", me("alice", "user")).await;
+    get_json(&web, "/v1/categories", json!(["UI", "Info"])).await;
+    get_json(&web, "/v1/addons/lucky/permissions", perms).await;
+    get_json(&web, "/v1/addons/lucky", json!({
+        "slug": "lucky", "name": "Lucky", "category": "Info", "source_type": "release", "asset_pattern": "Lucky-v*.zip",
+        "folders": ["Lucky"], "summary": "Odds", "description_md": "# Hi", "images": [{ "id": 7, "url": "https://web.test/img/a.webp", "caption": "x" }],
+        "icon_url": null, "dependencies": [{ "slug": "lib", "name": "Lib", "required": true }]
+    }))
+    .await;
+    web
+}
+
+fn owner() -> Value {
+    json!({ "owner": true, "edit_description": true, "edit_images": true, "admin": false })
+}
+
+#[tokio::test]
+async fn wizard_happy_path_and_field_errors() {
+    let mut web = logged_in(owner()).await;
+    let page = web.get("/addons/new").await;
+    assert!(page.body.contains("https://github.com/apps/survivorsforge-test/installations/new"), "install link");
+
+    Mock::given(method("POST"))
+        .and(path("/v1/addons"))
+        .and(body_partial_json(json!({ "repo": "alice/taken" })))
+        .respond_with(ResponseTemplate::new(409).set_body_json(json!({ "error": "folder_taken", "message": "The folder Lucky belongs to the addon Other" })))
+        .mount(&web.api)
+        .await;
+    let fields = [("repo", "alice/taken"), ("slug", "lucky"), ("name", "Lucky"), ("category", "Info"), ("source_type", "release"), ("asset_pattern", "L-*.zip"), ("folders", "Lucky")];
+    let page = web.post_form("/addons/new", &fields).await;
+    assert_eq!(page.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert!(page.body.contains("The folder Lucky belongs to the addon Other"));
+    assert!(page.body.contains("value=\"alice/taken\""), "input kept");
+
+    Mock::given(method("POST"))
+        .and(path("/v1/addons"))
+        .and(header("authorization", "Bearer tok"))
+        .and(body_partial_json(json!({ "repo": "alice/lucky", "folders": ["Lucky", "LuckyData"] })))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({ "slug": "lucky" })))
+        .mount(&web.api)
+        .await;
+    let fields = [("repo", "alice/lucky"), ("slug", "lucky"), ("name", "Lucky"), ("category", "Info"), ("source_type", "release"), ("asset_pattern", "L-*.zip"), ("folders", "Lucky\nLuckyData")];
+    let page = web.post_form("/addons/new", &fields).await;
+    assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/lucky/edit"));
+}
+
+#[tokio::test]
+async fn contributor_sees_only_allowed_sections() {
+    let mut web = logged_in(json!({ "owner": false, "edit_description": true, "edit_images": false })).await;
+    let page = web.get("/addons/lucky/edit").await;
+    assert!(page.body.contains("Description (Markdown)"));
+    assert!(!page.body.contains("Save details"), "no owner section");
+    assert!(!page.body.contains("/addons/lucky/members"), "no owner links");
+    for owner_page in ["/addons/lucky/members", "/addons/lucky/dependencies", "/addons/lucky/delete", "/addons/lucky/images"] {
+        assert_eq!(web.get(owner_page).await.status, StatusCode::FORBIDDEN, "{owner_page}");
+    }
+
+    let mut images_only = logged_in(json!({ "owner": false, "edit_description": false, "edit_images": true })).await;
+    let page = images_only.get("/addons/lucky/edit").await;
+    assert_eq!(page.location(), "/addons/lucky/images");
+}
+
+#[tokio::test]
+async fn owner_manages_members() {
+    let mut web = logged_in(owner()).await;
+    get_json(&web, "/v1/addons/lucky/members", json!([{ "github_id": 2, "login": "bob", "can_edit_description": true, "can_edit_images": false }])).await;
+    let page = web.get("/addons/lucky/members").await;
+    assert!(page.body.contains("bob"));
+    Mock::given(method("POST"))
+        .and(path("/v1/addons/lucky/members"))
+        .and(body_partial_json(json!({ "login": "carol", "can_edit_description": false, "can_edit_images": true })))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!([])))
+        .expect(1)
+        .mount(&web.api)
+        .await;
+    let page = web.post_form("/addons/lucky/members", &[("login", "carol"), ("images", "1")]).await;
+    assert_eq!(page.status, StatusCode::SEE_OTHER);
+    Mock::given(method("PATCH"))
+        .and(path("/v1/addons/lucky/members/2"))
+        .and(body_partial_json(json!({ "can_edit_description": false, "can_edit_images": true })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([])))
+        .expect(1)
+        .mount(&web.api)
+        .await;
+    web.post_form("/addons/lucky/members/2", &[("images", "1")]).await;
+}
+
+#[tokio::test]
+async fn image_upload_messages() {
+    let mut web = logged_in(owner()).await;
+    Mock::given(method("POST"))
+        .and(path("/v1/addons/lucky/images"))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({
+            "id": 8, "notice": "resized", "original": { "width": 3000, "height": 1000 }, "stored": { "width": 1920, "height": 640 }
+        })))
+        .mount(&web.api)
+        .await;
+    let token = web.csrf().await;
+    let boundary = "B0UND";
+    let body = format!(
+        "--{boundary}\r\nContent-Disposition: form-data; name=\"kind\"\r\n\r\nscreenshot\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"a.png\"\r\nContent-Type: image/png\r\n\r\nPNGDATA\r\n--{boundary}--\r\n"
+    );
+    let cookie = web.cookies.iter().map(|(k, v)| format!("{k}={v}")).collect::<Vec<_>>().join("; ");
+    let request = Request::post("/addons/lucky/images")
+        .header("cookie", cookie)
+        .header("origin", WEB)
+        .header("x-csrf-token", token)
+        .header("content-type", format!("multipart/form-data; boundary={boundary}"))
+        .body(Body::from(body))
+        .unwrap();
+    let page = web.request(request).await;
+    assert!(page.body.contains("Image was scaled down from 3000 x 1000 to 1920 x 640 px."), "{}", page.body);
+}
+
+#[tokio::test]
+async fn dependency_cycle_message() {
+    let mut web = logged_in(owner()).await;
+    Mock::given(method("PUT"))
+        .and(path("/v1/addons/lucky/dependencies"))
+        .respond_with(ResponseTemplate::new(422).set_body_json(json!({ "error": "dependency_cycle", "message": "This would make a cycle: lucky -> lib -> lucky" })))
+        .mount(&web.api)
+        .await;
+    let page = web.post_form("/addons/lucky/dependencies", &[("dependency", "lib2"), ("required", "1")]).await;
+    assert!(page.body.contains("lucky -&gt; lib -&gt; lucky") || page.body.contains("lucky -&#62; lib -&#62; lucky"), "{}", page.body);
+}
+
+#[tokio::test]
+async fn version_compat_form() {
+    let mut web = logged_in(owner()).await;
+    get_json(&web, "/v1/addons/lucky/versions", json!([{ "tag": "v1", "game_min": "0.69.0", "game_max": null }])).await;
+    get_json(&web, "/v1/game-versions", json!([{ "name": "0.69.0" }, { "name": "0.70.0" }])).await;
+    let page = web.get("/addons/lucky/versions/v1/edit").await;
+    assert!(page.body.contains("<option value=\"0.69.0\" selected>"), "{}", page.body);
+    Mock::given(method("PATCH"))
+        .and(path("/v1/addons/lucky/versions/v1"))
+        .and(body_partial_json(json!({ "game_min": "0.69.0", "game_max": "0.70.0" })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+        .expect(1)
+        .mount(&web.api)
+        .await;
+    let page = web.post_form("/addons/lucky/versions/v1/edit", &[("game_min", "0.69.0"), ("game_max", "0.70.0")]).await;
+    assert_eq!(page.status, StatusCode::SEE_OTHER);
+}
+
+#[tokio::test]
+async fn dashboard_lists_own_and_shared() {
+    let mut web = logged_in(owner()).await;
+    get_json(&web, "/v1/me/addons", json!([
+        { "slug": "lucky", "name": "Lucky", "role": "owner", "trust": "flagged", "latest_tag": "v1", "findings": { "critical": 1, "warn": 2 }, "blocked": false, "locked": false },
+        { "slug": "plates", "name": "Plates", "role": "contributor", "trust": null, "latest_tag": null, "findings": { "critical": 0, "warn": 0 }, "blocked": false, "locked": true }
+    ]))
+    .await;
+    let page = web.get("/me/addons").await;
+    for text in ["Lucky", "owner", "Flagged", "3 findings", "Plates", "contributor", "No release yet", "Repo not reachable"] {
+        assert!(page.body.contains(text), "missing {text}");
+    }
+}
+
+#[tokio::test]
+async fn delete_requires_slug() {
+    let mut web = logged_in(owner()).await;
+    Mock::given(method("DELETE")).and(path("/v1/addons/lucky")).respond_with(ResponseTemplate::new(204)).expect(1).mount(&web.api).await;
+    let wrong = web.post_form("/addons/lucky/delete", &[("confirm", "Lucky")]).await;
+    assert_eq!(wrong.status, StatusCode::UNPROCESSABLE_ENTITY);
+    let right = web.post_form("/addons/lucky/delete", &[("confirm", "lucky")]).await;
+    assert_eq!((right.status, right.location()), (StatusCode::SEE_OTHER, "/me/addons"));
+}
+
+#[tokio::test]
+async fn creator_pages_need_login() {
+    let mut web = TestWeb::new().await;
+    let page = web.get("/me/addons").await;
+    assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/login"));
+}

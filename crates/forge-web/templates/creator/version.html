@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ tag }} compatibility - SurvivorsForge{% endblock %}
+{% block content %}
+<h1>Which game versions does {{ tag }} run on?</h1>
+<p><a href="/addons/{{ slug }}/versions">Back to versions</a></p>
+{% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
+<form class="panel" method="post" action="/addons/{{ slug }}/versions/{{ tag }}/edit">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label for="game_min">From</label>
+  <select id="game_min" name="game_min">
+    <option value="">Not stated</option>
+    {% for g in games %}<option value="{{ g }}" {% if *g == game_min %}selected{% endif %}>{{ g }}</option>{% endfor %}
+  </select>
+  <label for="game_max">Up to (leave empty for "and later")</label>
+  <select id="game_max" name="game_max">
+    <option value="">And later</option>
+    {% for g in games %}<option value="{{ g }}" {% if *g == game_max %}selected{% endif %}>{{ g }}</option>{% endfor %}
+  </select>
+  <p><button type="submit">Save</button></p>
+</form>
+{% endblock %}

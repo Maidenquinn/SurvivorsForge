@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Images of {{ name }} - SurvivorsForge{% endblock %}
+{% block content %}
+<h1>Images of {{ name }}</h1>
+<p><a href="/addons/{{ slug }}/edit">Back to editing</a></p>
+{% if let Some(m) = message %}<div class="notice ok" role="status">{{ m }}</div>{% endif %}
+{% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
+
+<form class="panel" method="post" action="/addons/{{ slug }}/images" enctype="multipart/form-data"
+      hx-post="/addons/{{ slug }}/images" hx-encoding="multipart/form-data" hx-target="main" hx-select="main" hx-swap="outerHTML">
+  <h2>Upload</h2>
+  <label for="file">Image (PNG, JPEG or WebP, at most 5 MB)</label>
+  <input id="file" type="file" name="file" accept="image/png,image/jpeg,image/webp" required>
+  <label for="kind">Use as</label>
+  <select id="kind" name="kind">
+    <option value="screenshot">Screenshot (up to 10, scaled to at most 1920 px)</option>
+    <option value="icon">Icon (one, cropped to a 256 px square)</option>
+  </select>
+  <label for="caption">Caption</label>
+  <input id="caption" name="caption" maxlength="200">
+  <p><button type="submit">Upload</button> <span class="htmx-indicator muted">Uploading...</span></p>
+</form>
+
+{% if let Some(icon) = icon_url %}
+<section class="panel"><h2>Icon</h2><img class="icon big" src="{{ icon }}" alt="Icon" width="96" height="96"></section>
+{% endif %}
+
+<section class="panel">
+  <h2>Screenshots</h2>
+  {% if images.is_empty() %}<p class="muted">No screenshots yet.</p>{% endif %}
+  <div class="shots">
+    {% for img in images %}
+    <figure>
+      <img src="{{ img.url }}" alt="{{ img.caption }}" loading="lazy">
+      <figcaption>{{ img.caption }}</figcaption>
+      <div class="actions">
+        <form method="post" action="/addons/{{ slug }}/images/{{ img.id }}/move" class="inline">
+          <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="direction" value="up">
+          <button type="submit" class="secondary" {% if loop.first %}disabled{% endif %}>Earlier</button>
+        </form>
+        <form method="post" action="/addons/{{ slug }}/images/{{ img.id }}/move" class="inline">
+          <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="direction" value="down">
+          <button type="submit" class="secondary" {% if loop.last %}disabled{% endif %}>Later</button>
+        </form>
+        <form method="post" action="/addons/{{ slug }}/images/{{ img.id }}/delete" class="inline">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button type="submit" class="danger">Delete</button>
+        </form>
+      </div>
+    </figure>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

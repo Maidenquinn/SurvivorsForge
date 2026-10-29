@@ -89,6 +89,18 @@ pre { background: var(--bg); border: 1px solid var(--line); border-radius: var(-
 .pager { display: flex; justify-content: space-between; margin-top: 16px; }
 .actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
+.title-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.subnav { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.danger-link { color: var(--bad); }
+label.check { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+label.check input { width: auto; }
+.member { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.member form { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0; }
+.preview { border: 1px dashed var(--line); border-radius: var(--radius); padding: 12px; min-height: 48px; }
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline; }
+button:disabled { opacity: 0.4; cursor: default; }
+
 @media (max-width: 640px) {
   .addon-head { flex-direction: column; }
   .hero { padding: 24px 0; }

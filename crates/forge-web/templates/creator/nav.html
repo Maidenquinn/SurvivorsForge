@@ -1,0 +1,11 @@
+<nav class="subnav" aria-label="Edit addon">
+  <a href="/addons/{{ slug }}">View page</a>
+  {% if perms.owner || perms.edit_description %}<a href="/addons/{{ slug }}/edit">Details</a>{% endif %}
+  {% if perms.edit_images %}<a href="/addons/{{ slug }}/images">Images</a>{% endif %}
+  {% if perms.owner %}
+    <a href="/addons/{{ slug }}/members">Contributors</a>
+    <a href="/addons/{{ slug }}/dependencies">Dependencies</a>
+    <a href="/addons/{{ slug }}/versions">Versions</a>
+    <a href="/addons/{{ slug }}/delete" class="danger-link">Delete</a>
+  {% endif %}
+</nav>

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Contributors - SurvivorsForge{% endblock %}
+{% block content %}
+<h1>Contributors</h1>
+<p><a href="/addons/{{ slug }}/edit">Back to editing</a></p>
+{% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
+
+<form class="panel" method="post" action="/addons/{{ slug }}/members">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <h2>Add a contributor</h2>
+  <label for="login">GitHub login</label>
+  <input id="login" name="login" required placeholder="octocat">
+  <label class="check"><input type="checkbox" name="description" value="1"> May edit the description</label>
+  <label class="check"><input type="checkbox" name="images" value="1"> May edit the images</label>
+  <p><button type="submit">Add</button></p>
+</form>
+
+<section class="panel">
+  <h2>Current contributors</h2>
+  {% if members.is_empty() %}<p class="muted">Nobody yet.</p>{% endif %}
+  {% for m in members %}
+  <div class="member">
+    <form method="post" action="/addons/{{ slug }}/members/{{ m.github_id }}">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <strong>{{ m.login }}</strong>
+      <label class="check"><input type="checkbox" name="description" value="1" {% if m.description %}checked{% endif %}> Description</label>
+      <label class="check"><input type="checkbox" name="images" value="1" {% if m.images %}checked{% endif %}> Images</label>
+      <button type="submit" class="secondary">Save</button>
+    </form>
+    <form method="post" action="/addons/{{ slug }}/members/{{ m.github_id }}/delete" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button type="submit" class="danger">Remove</button>
+    </form>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

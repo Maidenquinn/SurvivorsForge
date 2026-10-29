@@ -36,6 +36,15 @@ impl AppState {
         AppState { api: ApiClient::new(&config.api_internal_url), config: Arc::new(config), key }
     }
 
+    pub fn install_url(&self) -> String {
+        format!("https://github.com/apps/{}/installations/new", self.config.github_app_slug)
+    }
+
+    /// Where uploaded images live; descriptions may only show images from here.
+    pub fn image_base(&self) -> String {
+        format!("{}/img", self.config.public_web_url)
+    }
+
     pub fn secure_cookies(&self) -> bool {
         self.config.public_web_url.starts_with("https://")
     }
@@ -62,6 +71,24 @@ pub fn router(state: AppState) -> Router {
         .route("/addons/{slug}/versions", get(crate::public::versions))
         .route("/addons/{slug}/versions/{tag}", get(crate::public::version))
         .route("/addons/{slug}/versions/{tag}/download", get(crate::public::download))
+        .route("/me/addons", get(crate::creator::my_addons))
+        .route("/addons/new", get(crate::creator::new_addon).post(crate::creator::create_addon))
+        .route("/addons/{slug}/edit", get(crate::creator::edit_addon).post(crate::creator::save_addon))
+        .route("/addons/{slug}/preview", post(crate::creator::preview))
+        .route(
+            "/addons/{slug}/images",
+            get(crate::creator::images)
+                .post(crate::creator::upload_image)
+                .layer(axum::extract::DefaultBodyLimit::max(6 * 1024 * 1024)),
+        )
+        .route("/addons/{slug}/images/{id}/move", post(crate::creator::move_image))
+        .route("/addons/{slug}/images/{id}/delete", post(crate::creator::delete_image))
+        .route("/addons/{slug}/members", get(crate::creator::members).post(crate::creator::add_member))
+        .route("/addons/{slug}/members/{github_id}", post(crate::creator::update_member))
+        .route("/addons/{slug}/members/{github_id}/delete", post(crate::creator::remove_member))
+        .route("/addons/{slug}/dependencies", get(crate::creator::deps).post(crate::creator::save_deps))
+        .route("/addons/{slug}/versions/{tag}/edit", get(crate::creator::version_edit).post(crate::creator::save_version))
+        .route("/addons/{slug}/delete", get(crate::creator::delete_page).post(crate::creator::delete_addon))
         .route("/login", get(login))
         .route("/auth/callback", get(callback))
         .route("/logout", post(logout))

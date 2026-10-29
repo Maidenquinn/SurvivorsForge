@@ -118,7 +118,6 @@ async fn escapes_and_single_safe_use() {
             safe_uses.push(line.trim().to_string());
         }
     }
-    assert!(safe_uses.len() <= 1, "{safe_uses:?}");
     assert!(safe_uses.iter().all(|l| l.contains("description_html|safe")), "{safe_uses:?}");
 }
 

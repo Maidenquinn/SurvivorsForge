@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Dependencies - SurvivorsForge{% endblock %}
+{% block content %}
+<h1>Dependencies</h1>
+<p><a href="/addons/{{ slug }}/edit">Back to editing</a></p>
+{% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
+
+<form class="panel" method="post" action="/addons/{{ slug }}/dependencies">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <h2>Add a dependency</h2>
+  <label for="dependency">Addon address</label>
+  <input id="dependency" name="dependency" required placeholder="ace-lib">
+  <p class="muted">The part after /addons/ in the other addon's link.</p>
+  <label class="check"><input type="checkbox" name="required" value="1" checked> Required (the launcher installs it too)</label>
+  <p><button type="submit">Add</button></p>
+</form>
+
+<section class="panel">
+  <h2>Current dependencies</h2>
+  {% if deps.is_empty() %}<p class="muted">None.</p>{% endif %}
+  <ul>
+  {% for (dep, name, required) in deps %}
+    <li><a href="/addons/{{ dep }}">{{ name }}</a> {% if *required %}(required){% else %}(optional){% endif %}
+      <form method="post" action="/addons/{{ slug }}/dependencies" class="inline">
+        <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="remove" value="{{ dep }}">
+        <button type="submit" class="link">Remove</button>
+      </form>
+    </li>
+  {% endfor %}
+  </ul>
+</section>
+{% endblock %}

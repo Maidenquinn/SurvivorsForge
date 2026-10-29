@@ -33,6 +33,9 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/auth/exchange", post(oauth::exchange))
         .route("/v1/auth/logout", post(routes::me::logout))
         .route("/v1/me", get(routes::me::me))
+        .route("/v1/me/addons", get(routes::creator::my_addons))
+        .route("/v1/addons/{slug}/permissions", get(routes::creator::my_permissions))
+        .route("/v1/categories", get(routes::creator::categories))
         .route("/v1/addons", get(routes::search::list).post(routes::addons::create))
         .route(
             "/v1/addons/{slug}",

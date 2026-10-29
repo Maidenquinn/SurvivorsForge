@@ -182,3 +182,141 @@ pub struct DownloadPage {
     pub row: VersionRow,
     pub findings: Vec<FindingRow>,
 }
+
+/// Form errors by field name; `form` holds the ones that belong to no field.
+#[derive(Debug, Default)]
+pub struct Errors(pub std::collections::HashMap<String, String>);
+
+impl Errors {
+    pub fn get(&self, field: &str) -> &str {
+        self.0.get(field).map(String::as_str).unwrap_or_default()
+    }
+}
+
+/// What the visitor may change on one addon.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Perms {
+    pub owner: bool,
+    pub edit_description: bool,
+    pub edit_images: bool,
+}
+
+pub struct MyAddon {
+    pub slug: String,
+    pub name: String,
+    pub role: String,
+    pub notice: Notice,
+    pub has_version: bool,
+    pub findings: i64,
+    pub blocked: bool,
+    pub locked: bool,
+}
+
+#[derive(Template)]
+#[template(path = "creator/my_addons.html")]
+pub struct MyAddonsPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub rows: Vec<MyAddon>,
+}
+
+#[derive(Template)]
+#[template(path = "creator/new.html")]
+pub struct NewAddonPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub install_url: String,
+    pub categories: Vec<String>,
+    pub form: crate::creator::NewAddonForm,
+    pub errors: Errors,
+}
+
+#[derive(Template)]
+#[template(path = "creator/edit.html")]
+pub struct EditAddonPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub name: String,
+    pub category: String,
+    pub categories: Vec<String>,
+    pub source_type: String,
+    pub asset_pattern: String,
+    pub folders: String,
+    pub summary: String,
+    pub description: String,
+    /// The preview, sanitized by forge_core::markdown like the API does it.
+    pub description_html: String,
+    pub perms: Perms,
+    pub errors: Errors,
+    pub saved: bool,
+}
+
+pub struct ImageRow {
+    pub id: i64,
+    pub url: String,
+    pub caption: String,
+}
+
+#[derive(Template)]
+#[template(path = "creator/images.html")]
+pub struct ImagesPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub name: String,
+    pub icon_url: Option<String>,
+    pub images: Vec<ImageRow>,
+    pub message: Option<String>,
+    pub error: Option<String>,
+}
+
+pub struct MemberRow {
+    pub github_id: i64,
+    pub login: String,
+    pub description: bool,
+    pub images: bool,
+}
+
+#[derive(Template)]
+#[template(path = "creator/members.html")]
+pub struct MembersPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub members: Vec<MemberRow>,
+    pub error: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "creator/dependencies.html")]
+pub struct DepsPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    /// (slug, name, required)
+    pub deps: Vec<(String, String, bool)>,
+    pub error: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "creator/version.html")]
+pub struct VersionEditPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub tag: String,
+    pub game_min: String,
+    pub game_max: String,
+    pub games: Vec<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "creator/delete.html")]
+pub struct DeleteAddonPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub error: Option<String>,
+}
