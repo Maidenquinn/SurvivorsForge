@@ -27,8 +27,8 @@
   </select>
   <label for="source_type"><span data-l10n-en="Downloads come from" data-l10n-fr="Source des téléchargements">Downloads come from</span></label>
   <select id="source_type" name="source_type">
-    <option value="release" {% if form.base.source_type == "release" %}selected{% endif %}><span data-l10n-en="A zip attached to each release" data-l10n-fr="Archive ZIP jointe à chaque version">A zip attached to each release</span></option>
-    <option value="tag" {% if form.base.source_type == "tag" %}selected{% endif %}><span data-l10n-en="The source zip of each tag" data-l10n-fr="Archive ZIP du code source de chaque tag">The source zip of each tag</span></option>
+    <option value="release" {% if form.base.source_type == "release" %}selected{% endif %} data-l10n-option-en="A zip attached to each release" data-l10n-option-fr="Archive ZIP jointe à chaque version">A zip attached to each release</option>
+    <option value="tag" {% if form.base.source_type == "tag" %}selected{% endif %} data-l10n-option-en="The source zip of each tag" data-l10n-option-fr="Archive ZIP du code source de chaque tag">The source zip of each tag</option>
   </select>
   <label for="asset_pattern"><span data-l10n-en="Release zip name" data-l10n-fr="Nom de l'archive ZIP">Release zip name</span></label>
   <input id="asset_pattern" name="asset_pattern" value="{{ form.base.asset_pattern }}">
