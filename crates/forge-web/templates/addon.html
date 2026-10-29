@@ -58,11 +58,11 @@
 
 
 <nav class="addon-tabs" aria-label="Addon sections">
-  <a href="/addons/{{ slug }}" {% if tab == "overview" %}aria-current="page"{% endif %}>Overview</a>
-  <a href="/addons/{{ slug }}?tab=issues" {% if tab == "issues" %}aria-current="page"{% endif %}>Issues</a>
-  <a href="/addons/{{ slug }}?tab=gallery" {% if tab == "gallery" %}aria-current="page"{% endif %}>Gallery</a>
-  <a href="/addons/{{ slug }}?tab=versions" {% if tab == "versions" %}aria-current="page"{% endif %}>Versions</a>
-  <a href="/addons/{{ slug }}/comments">Comments</a>
+  <a href="/addons/{{ slug }}" {% if tab == "overview" %}aria-current="page"{% endif %} data-i18n="overview">Overview</a>
+  <a href="/addons/{{ slug }}?tab=issues" {% if tab == "issues" %}aria-current="page"{% endif %} data-i18n="issues">Issues</a>
+  <a href="/addons/{{ slug }}?tab=gallery" {% if tab == "gallery" %}aria-current="page"{% endif %} data-i18n="gallery">Gallery</a>
+  <a href="/addons/{{ slug }}?tab=versions" {% if tab == "versions" %}aria-current="page"{% endif %} data-i18n="versions">Versions</a>
+  <a href="/addons/{{ slug }}/comments" data-i18n="comments_tab">Comments</a>
 </nav>
 {% if tab == "issues" %}
 <section class="addon-tab-section" data-dynamic-issues>
