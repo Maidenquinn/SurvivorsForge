@@ -4,6 +4,24 @@
 <p><a href="/admin">Admin</a></p>
 <h1>Users</h1>
 {% include "admin/flash.html" %}
+<section class="panel">
+  <h2>Admins</h2>
+  {% for a in admins %}
+  <div class="member">
+    <strong>{{ a.login }}</strong>
+    {% if a.by_config %}
+      <span class="muted">set in ADMIN_GITHUB_IDS on the server</span>
+    {% else %}
+    <form method="post" action="/admin/users/{{ a.github_id }}/remove-admin">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="login" value="">
+      <label class="sr-only" for="revoke-{{ a.github_id }}">Note</label><input id="revoke-{{ a.github_id }}" name="note" placeholder="Note" required>
+      <button type="submit" class="danger">Take admin rights</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+  <p class="muted">To make someone an admin, look them up below. They must have logged in here once.</p>
+</section>
 <form class="panel" method="get" action="/admin/users">
   <label for="login">GitHub login</label>
   <input id="login" name="login" value="{{ login }}" required>
@@ -21,6 +39,12 @@
     <button type="submit">Lift the ban</button>
   </form>
   {% else if u.role != "admin" %}
+  <form method="post" action="/admin/users/{{ u.github_id }}/make-admin" class="admin-actions">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="login" value="{{ u.login }}">
+    <label for="grant-note">Why</label><input id="grant-note" name="note" required>
+    <p class="muted">Admins review and verify versions, block addons, ban users and manage the lists.</p>
+    <button type="submit">Make {{ u.login }} an admin</button>
+  </form>
   <form method="post" action="/admin/users/{{ u.github_id }}/ban" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="login" value="{{ u.login }}">
     <label for="ban-note">Reason</label><input id="ban-note" name="note" required>

@@ -108,3 +108,31 @@ async fn user_lookup(pool: PgPool) {
     assert_eq!(app.get("/v1/admin/users/ghost", Some(&admin)).await.status, StatusCode::NOT_FOUND);
     assert_eq!(app.get("/v1/admin/users/alice", Some(&owner)).await.status, StatusCode::FORBIDDEN);
 }
+
+#[sqlx::test]
+async fn admins_grant_and_revoke_admin_rights(pool: PgPool) {
+    let (app, owner, admin) = setup(pool).await;
+    let alice = app.get("/v1/me", Some(&owner)).await.json();
+    let alice_id = alice["github_id"].as_i64().unwrap();
+    let grant = |id: i64, admin_flag: bool| json!({ "admin": admin_flag, "note": format!("set {id}") });
+
+    assert_eq!(app.put(&format!("/v1/admin/users/{alice_id}/role"), Some(&owner), grant(alice_id, true)).await.status, StatusCode::FORBIDDEN);
+    assert_eq!(app.put(&format!("/v1/admin/users/{alice_id}/role"), Some(&admin), json!({ "admin": true })).await.error(), "note_required");
+    assert_eq!(app.put(&format!("/v1/admin/users/{alice_id}/role"), Some(&admin), grant(alice_id, true)).await.status, StatusCode::NO_CONTENT);
+    assert_eq!(app.get("/v1/me", Some(&owner)).await.json()["role"], "admin", "at once, without a new login");
+
+    // The grant survives a new login, unlike a role that only came from ADMIN_GITHUB_IDS.
+    let again = app.login(1, "alice").await;
+    assert_eq!(app.get("/v1/me", Some(&again)).await.json()["role"], "admin");
+    let admins: Vec<String> = app.get("/v1/admin/admins", Some(&admin)).await.json().as_array().unwrap().iter().map(|a| a["login"].as_str().unwrap().to_string()).collect();
+    assert_eq!(admins, ["alice", "root"]);
+
+    assert_eq!(app.put("/v1/admin/users/99/role", Some(&again), grant(99, false)).await.error(), "admin_by_config", "set in ADMIN_GITHUB_IDS");
+    assert_eq!(app.put(&format!("/v1/admin/users/{alice_id}/role"), Some(&again), grant(alice_id, false)).await.error(), "cannot_demote_self");
+    assert_eq!(app.put(&format!("/v1/admin/users/{alice_id}/role"), Some(&admin), grant(alice_id, false)).await.status, StatusCode::NO_CONTENT);
+    assert_eq!(app.get("/v1/me", Some(&again)).await.json()["role"], "user");
+    assert_eq!(app.put("/v1/admin/users/12345/role", Some(&admin), grant(12345, true)).await.status, StatusCode::NOT_FOUND);
+
+    let audit = app.get("/v1/admin/audit?action=user_role", Some(&admin)).await.json();
+    assert_eq!(audit["entries"].as_array().map(Vec::len), Some(2), "{audit}");
+}

@@ -183,15 +183,36 @@ pub async fn users(State(state): State<AppState>, jar: PrivateCookieJar, Extensi
         }
     };
     let not_found = !login.trim().is_empty() && found.is_none();
-    Ok(render(&AdminUsersPage { user: Some(user), csrf: csrf.0, login, found, not_found, msg: flash.msg, error: flash.error }))
+    let admins = state
+        .api
+        .get("/v1/admin/admins", Some(&token))
+        .await?
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|a| crate::templates::AdminRow { github_id: a["github_id"].as_i64().unwrap_or(0), login: s(&a["login"]), by_config: a["by_config"] == true })
+        .collect();
+    Ok(render(&AdminUsersPage { user: Some(user), csrf: csrf.0, admins, login, found, not_found, msg: flash.msg, error: flash.error }))
 }
 
+/// `ban`, `unban`, `make-admin` and `remove-admin` for one user.
 pub async fn ban(State(state): State<AppState>, jar: PrivateCookieJar, Path((github_id, action)): Path<(i64, String)>, Form(form): Form<NoteForm>) -> WebResult<Response> {
     let (_, token) = admin(&state, &jar).await?;
-    let method = if action == "unban" { Method::DELETE } else { Method::POST };
-    let result = state.api.call(method, &format!("/v1/admin/users/{github_id}/ban"), Some(&token), Some(&json!({ "note": form.note }))).await;
-    let page = format!("/admin/users?login={}", form.login);
-    back(&page, result, if action == "unban" { "Ban lifted." } else { "User banned." })
+    let (result, done) = match action.as_str() {
+        "ban" | "unban" => {
+            let method = if action == "unban" { Method::DELETE } else { Method::POST };
+            let result = state.api.call(method, &format!("/v1/admin/users/{github_id}/ban"), Some(&token), Some(&json!({ "note": form.note }))).await;
+            (result, if action == "unban" { "Ban lifted." } else { "User banned." })
+        }
+        "make-admin" | "remove-admin" => {
+            let body = json!({ "admin": action == "make-admin", "note": form.note });
+            let result = state.api.call(Method::PUT, &format!("/v1/admin/users/{github_id}/role"), Some(&token), Some(&body)).await;
+            (result, if action == "make-admin" { "Admin rights granted." } else { "Admin rights taken." })
+        }
+        _ => return Err(WebError::NotFound),
+    };
+    let page = if form.login.is_empty() { "/admin/users".to_string() } else { format!("/admin/users?login={}", form.login) };
+    back(&page, result, done)
 }
 
 pub async fn addon(

@@ -101,7 +101,8 @@ pub async fn callback(State(state): State<AppState>, Query(query): Query<Callbac
     let (user_id, banned): (i64, bool) = sqlx::query_as(
         "INSERT INTO users (github_id, login, avatar_url, role, last_login_at) VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (github_id) DO UPDATE
-             SET login = EXCLUDED.login, avatar_url = EXCLUDED.avatar_url, role = EXCLUDED.role,
+             SET login = EXCLUDED.login, avatar_url = EXCLUDED.avatar_url,
+                 role = CASE WHEN users.admin_granted THEN 'admin' ELSE EXCLUDED.role END,
                  last_login_at = EXCLUDED.last_login_at
          RETURNING id, banned_at IS NOT NULL",
     )

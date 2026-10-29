@@ -9,7 +9,7 @@ use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use serde::Deserialize;
-use serde_json::json;
+use serde_json::{Value, json};
 
 #[derive(Deserialize, Default)]
 pub struct Note {
@@ -112,6 +112,53 @@ pub async fn ban(State(state): State<AppState>, AdminUser(admin): AdminUser, Pat
     .rows_affected();
     let details = json!({ "blocked_addons": blocked });
     finish(&state, tx, Entry { admin_id: admin.id, action: "ban_user", target_type: "user", target_id: github_id.to_string(), note, details }).await
+}
+
+#[derive(Deserialize)]
+pub struct RoleChange {
+    admin: bool,
+    #[serde(default)]
+    note: String,
+}
+
+/// `PUT /v1/admin/users/{github_id}/role`: grants or takes admin rights. Admins from
+/// `ADMIN_GITHUB_IDS` and the acting admin keep theirs, so nobody locks the site out.
+pub async fn set_role(State(state): State<AppState>, AdminUser(admin): AdminUser, Path(github_id): Path<i64>, Json(body): Json<RoleChange>) -> ApiResult<StatusCode> {
+    let note = note_required(&body.note)?;
+    let banned: Option<bool> = sqlx::query_scalar("SELECT banned_at IS NOT NULL FROM users WHERE github_id = $1").bind(github_id).fetch_optional(&state.pool).await?;
+    let banned = banned.ok_or_else(ApiError::not_found)?;
+    let by_config = state.config.admin_github_ids.contains(&github_id);
+    if !body.admin && by_config {
+        return Err(ApiError::new(StatusCode::CONFLICT, "admin_by_config", "This admin is set in ADMIN_GITHUB_IDS; remove the ID there"));
+    }
+    if !body.admin && github_id == admin.github_id {
+        return Err(ApiError::new(StatusCode::CONFLICT, "cannot_demote_self", "Another admin has to take your admin rights"));
+    }
+    if body.admin && banned {
+        return Err(ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "banned", "Lift the ban first"));
+    }
+    let mut tx = state.pool.begin().await?;
+    sqlx::query("UPDATE users SET admin_granted = $2, role = CASE WHEN $2 OR $3 THEN 'admin' ELSE 'user' END WHERE github_id = $1")
+        .bind(github_id)
+        .bind(body.admin)
+        .bind(by_config)
+        .execute(&mut *tx)
+        .await?;
+    let entry = Entry { admin_id: admin.id, action: "user_role", target_type: "user", target_id: github_id.to_string(), note, details: json!({ "admin": body.admin }) };
+    finish(&state, tx, entry).await
+}
+
+/// `GET /v1/admin/admins`: every admin, and whether the configuration or an admin made them one.
+pub async fn admins(State(state): State<AppState>, AdminUser(_): AdminUser) -> ApiResult<Json<Value>> {
+    let list: Value = sqlx::query_scalar(
+        "SELECT coalesce(json_agg(json_build_object('github_id', github_id, 'login', login::text,
+                    'by_config', github_id = ANY($1), 'granted', admin_granted) ORDER BY lower(login::text)), '[]')
+         FROM users WHERE role = 'admin'",
+    )
+    .bind(&state.config.admin_github_ids)
+    .fetch_one(&state.pool)
+    .await?;
+    Ok(Json(list))
 }
 
 pub async fn unban(State(state): State<AppState>, AdminUser(admin): AdminUser, Path(github_id): Path<i64>, body: Option<Json<Note>>) -> ApiResult<StatusCode> {

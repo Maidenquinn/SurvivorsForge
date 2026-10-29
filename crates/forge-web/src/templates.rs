@@ -418,11 +418,19 @@ pub struct UserRow {
 pub struct AdminUsersPage {
     pub user: Option<Visitor>,
     pub csrf: String,
+    pub admins: Vec<AdminRow>,
     pub login: String,
     pub found: Option<UserRow>,
     pub not_found: bool,
     pub msg: Option<String>,
     pub error: Option<String>,
+}
+
+pub struct AdminRow {
+    pub github_id: i64,
+    pub login: String,
+    /// From ADMIN_GITHUB_IDS: only the configuration can take it away.
+    pub by_config: bool,
 }
 
 #[derive(Template)]

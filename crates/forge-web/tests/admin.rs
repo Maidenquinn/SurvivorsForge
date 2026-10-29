@@ -23,6 +23,13 @@ async fn expect(web: &TestWeb, verb: &str, route: &str, body: Value) {
 async fn as_admin() -> TestWeb {
     let mut web = TestWeb::new().await;
     web.login_as("tok", me("root", "admin")).await;
+    // Low priority: a test can mount its own list.
+    Mock::given(method("GET"))
+        .and(path("/v1/admin/admins"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([{ "github_id": 99, "login": "root", "by_config": true, "granted": false }])))
+        .with_priority(10)
+        .mount(&web.api)
+        .await;
     get_json(&web, "/v1/admin/reports", json!([
         { "id": 3, "target_type": "addon", "target_id": 1, "addon": "lucky", "reason": "malware", "text": "Deletes files", "reporter": "eve", "created_at": "2026-05-01T10:00:00Z" }
     ]))
@@ -152,4 +159,26 @@ async fn audit_filters() {
         .await;
     let page = web.get("/admin/audit?action=ban_user").await;
     assert!(page.body.contains("ban_user") && page.body.contains("user 5") && page.body.contains("spam"));
+}
+
+#[tokio::test]
+async fn admins_are_listed_and_granted_on_the_users_page() {
+    let mut web = as_admin().await;
+    get_json(&web, "/v1/admin/admins", json!([
+        { "github_id": 99, "login": "root", "by_config": true, "granted": false },
+        { "github_id": 7, "login": "mia", "by_config": false, "granted": true },
+    ]))
+    .await;
+    get_json(&web, "/v1/admin/users/eve", json!({ "github_id": 5, "login": "eve", "role": "user", "banned": false, "addons": 0 })).await;
+    let page = web.get("/admin/users?login=eve").await;
+    assert!(page.body.contains("root") && page.body.contains("ADMIN_GITHUB_IDS"), "{}", page.body);
+    assert!(page.body.contains("/admin/users/7/remove-admin"), "granted admins can lose the right");
+    assert!(!page.body.contains("/admin/users/99/remove-admin"), "config admins cannot");
+    assert!(page.body.contains("Make eve an admin"));
+
+    expect(&web, "PUT", "/v1/admin/users/5/role", json!({ "admin": true, "note": "helps out" })).await;
+    let done = web.post_form("/admin/users/5/make-admin", &[("note", "helps out"), ("login", "eve")]).await;
+    assert!(done.location().starts_with("/admin/users?login=eve&msg="), "{}", done.location());
+    expect(&web, "PUT", "/v1/admin/users/7/role", json!({ "admin": false, "note": "left" })).await;
+    web.post_form("/admin/users/7/remove-admin", &[("note", "left"), ("login", "")]).await;
 }

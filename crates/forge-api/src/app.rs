@@ -85,6 +85,8 @@ pub fn router(state: AppState) -> Router {
             post(routes::admin_moderation::block_version).delete(routes::admin_moderation::unblock_version),
         )
         .route("/v1/admin/users/{user}/ban", post(routes::admin_moderation::ban).delete(routes::admin_moderation::unban))
+        .route("/v1/admin/users/{user}/role", axum::routing::put(routes::admin_moderation::set_role))
+        .route("/v1/admin/admins", get(routes::admin_moderation::admins))
         .route("/v1/admin/versions/{id}/accept-source", post(routes::admin_verify::accept_source))
         .route("/v1/addons/{slug}/claim", post(routes::addons::claim))
         .route("/v1/admin/addons", post(routes::addons::admin_create))
