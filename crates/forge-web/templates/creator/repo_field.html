@@ -13,7 +13,7 @@
       hx-get="/addons/new/repos" hx-trigger="input changed delay:300ms, focus once" hx-target="#repo-suggestions" hx-include="#repo-field">
     <input type="hidden" name="page" value="{{ repo.page }}">
   </div>
-  {% if !repo.editable %}<p class="muted">New releases show up here within a day; with the SurvivorsForge App <a href="{{ repo.install_url }}" rel="noopener"><span data-i18n="repo_installed">installed on the repo</span></a> they show up at once.{% if repo.accounts.len() > 1 %} Repos of an organization need the App and your admin rights there.{% endif %}</p>{% endif %}
+  {% if !repo.editable %}<p class="muted"><span data-i18n="creator_releases_hint">New releases appear here within a day; with the SurvivorsForge App installed on the repository, they appear immediately.</span> <a href="{{ repo.install_url }}" rel="noopener" data-i18n="repo_install_app">Install the SurvivorsForge App</a>.{% if repo.accounts.len() > 1 %} <span data-i18n="creator_org_hint">Organization repositories require the App and your admin rights.</span>{% endif %}</p>{% endif %}
   <div id="repo-suggestions" class="suggestions">{% include "creator/repo_suggestions.html" %}</div>
   {% if repo.picked %}<p><a class="button secondary" href="{% if repo.page == "admin" %}/admin{% endif %}/addons/new?repo={{ repo.owner }}/{{ repo.name }}">Fill in from this repo</a></p>{% endif %}
 </div>
