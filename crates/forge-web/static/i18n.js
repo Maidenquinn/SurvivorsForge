@@ -1461,6 +1461,10 @@
       var key = el.getAttribute("data-i18n-title");
       el.title = translations[locale][key] || translations.en[key] || key;
     });
+    document.querySelectorAll("[data-l10n-option-en]").forEach(function (el) {
+      var original = el.getAttribute("data-l10n-option-en");
+      el.textContent = locale === "fr" ? (el.getAttribute("data-l10n-option-fr") || original) : original;
+    });
     document.querySelectorAll("[data-l10n-en]").forEach(function (el) {
       var original = el.getAttribute("data-l10n-en");
       var value = locale === "fr" ? el.getAttribute("data-l10n-fr") : original;
