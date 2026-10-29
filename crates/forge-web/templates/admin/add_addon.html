@@ -23,7 +23,7 @@
   <input id="summary" name="summary" value="{{ form.base.summary }}" maxlength="200">
   <label for="category"><span data-i18n="category">Category</span></label>
   <select id="category" name="category">
-    {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(form.base.category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
+    {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(form.base.category) %}selected{% endif %} data-category-label="{{ c.name }}">{{ c.label }}</option>{% endfor %}
   </select>
   <label for="source_type"><span data-i18n="creator_source">Downloads come from</span></label>
   <select id="source_type" name="source_type">
