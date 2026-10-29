@@ -286,3 +286,14 @@ async fn searching_shows_that_it_loads() {
     }
     assert!(web.get("/static/app.css").await.body.contains("#results.htmx-request"));
 }
+
+#[tokio::test]
+async fn a_failed_reload_says_so() {
+    // htmx keeps the old results when the reload fails; the script puts a message above them.
+    let mut web = TestWeb::new().await;
+    let script = web.get("/static/view.js").await.body;
+    for event in ["htmx:responseError", "htmx:sendError"] {
+        assert!(script.contains(event), "{event} not handled");
+    }
+    assert!(script.contains("Could not load the results"));
+}
