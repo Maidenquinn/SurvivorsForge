@@ -404,7 +404,15 @@
     "addon_launcher_free": "free for Windows, Linux and Steam Deck.",
     "addon_without_launcher": "Without the launcher: extract the download into the game's",
     "addon_folder": "folder.",
-    "addon_check_game": "Game version:"
+    "addon_check_game": "Game version:",
+    "role_owner": "owner",
+    "role_editor": "editor",
+    "role_contributor": "contributor",
+    "trust_verified_author": "Verified author",
+    "trust_unavailable": "Unavailable",
+    "admin_ban_user": "Ban",
+    "admin_make_admin": "Make an admin",
+    "admin_banned": "Banned"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -808,7 +816,15 @@
     "addon_launcher_free": "gratuit sur Windows, Linux et Steam Deck.",
     "addon_without_launcher": "Sans le lanceur : décompressez l'archive dans le dossier",
     "addon_folder": "du jeu.",
-    "addon_check_game": "Version du jeu :"
+    "addon_check_game": "Version du jeu :",
+    "role_owner": "propriétaire",
+    "role_editor": "éditeur",
+    "role_contributor": "contributeur",
+    "trust_verified_author": "Auteur vérifié",
+    "trust_unavailable": "Indisponible",
+    "admin_ban_user": "Bannir",
+    "admin_make_admin": "Nommer administrateur",
+    "admin_banned": "Banni"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1212,7 +1228,15 @@
     "addon_launcher_free": "bezpłatny na Windows, Linux i Steam Deck.",
     "addon_without_launcher": "Bez launchera: rozpakuj pobrane pliki do folderu",
     "addon_folder": "w grze.",
-    "addon_check_game": "Wersja gry:"
+    "addon_check_game": "Wersja gry:",
+    "role_owner": "właściciel",
+    "role_editor": "redaktor",
+    "role_contributor": "współtwórca",
+    "trust_verified_author": "Zweryfikowany autor",
+    "trust_unavailable": "Niedostępne",
+    "admin_ban_user": "Zbanuj",
+    "admin_make_admin": "Nadaj prawa administratora",
+    "admin_banned": "Zbanowany"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1616,7 +1640,15 @@
     "addon_launcher_free": "zdarma pro Windows, Linux a Steam Deck.",
     "addon_without_launcher": "Bez spouštěče rozbalte archiv do složky",
     "addon_folder": "ve hře.",
-    "addon_check_game": "Verze hry:"
+    "addon_check_game": "Verze hry:",
+    "role_owner": "vlastník",
+    "role_editor": "editor",
+    "role_contributor": "přispěvatel",
+    "trust_verified_author": "Ověřený autor",
+    "trust_unavailable": "Nedostupné",
+    "admin_ban_user": "Zakázat",
+    "admin_make_admin": "Jmenovat správcem",
+    "admin_banned": "Zakázaný"
   },
   "de": {
     "tiles": "Tiles",
@@ -2020,7 +2052,15 @@
     "addon_launcher_free": "kostenlos für Windows, Linux und Steam Deck.",
     "addon_without_launcher": "Ohne Launcher: Entpacke den Download in den Ordner",
     "addon_folder": "des Spiels.",
-    "addon_check_game": "Spielversion:"
+    "addon_check_game": "Spielversion:",
+    "role_owner": "Besitzer",
+    "role_editor": "Bearbeiter",
+    "role_contributor": "Mitwirkender",
+    "trust_verified_author": "Verifizierter Autor",
+    "trust_unavailable": "Nicht verfügbar",
+    "admin_ban_user": "Sperren",
+    "admin_make_admin": "Zum Administrator machen",
+    "admin_banned": "Gesperrt"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2424,7 +2464,15 @@
     "addon_launcher_free": "gratuito para Windows, Linux e Steam Deck.",
     "addon_without_launcher": "Sem o launcher: extraia o arquivo para a pasta",
     "addon_folder": "do jogo.",
-    "addon_check_game": "Versão do jogo:"
+    "addon_check_game": "Versão do jogo:",
+    "role_owner": "proprietário",
+    "role_editor": "editor",
+    "role_contributor": "colaborador",
+    "trust_verified_author": "Autor verificado",
+    "trust_unavailable": "Indisponível",
+    "admin_ban_user": "Banir",
+    "admin_make_admin": "Tornar administrador",
+    "admin_banned": "Banido"
   },
   "es": {
     "tiles": "Tiles",
@@ -2828,7 +2876,15 @@
     "addon_launcher_free": "gratis para Windows, Linux y Steam Deck.",
     "addon_without_launcher": "Sin el lanzador: descomprime el archivo en la carpeta",
     "addon_folder": "del juego.",
-    "addon_check_game": "Versión del juego:"
+    "addon_check_game": "Versión del juego:",
+    "role_owner": "propietario",
+    "role_editor": "editor",
+    "role_contributor": "colaborador",
+    "trust_verified_author": "Autor verificado",
+    "trust_unavailable": "No disponible",
+    "admin_ban_user": "Bloquear",
+    "admin_make_admin": "Nombrar administrador",
+    "admin_banned": "Bloqueado"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3232,7 +3288,15 @@
     "addon_launcher_free": "gratuit pentru Windows, Linux și Steam Deck.",
     "addon_without_launcher": "Fără lansator: dezarhivează descărcarea în dosarul",
     "addon_folder": "al jocului.",
-    "addon_check_game": "Versiunea jocului:"
+    "addon_check_game": "Versiunea jocului:",
+    "role_owner": "proprietar",
+    "role_editor": "editor",
+    "role_contributor": "colaborator",
+    "trust_verified_author": "Autor verificat",
+    "trust_unavailable": "Indisponibil",
+    "admin_ban_user": "Interzice",
+    "admin_make_admin": "Numire administrator",
+    "admin_banned": "Interzis"
   },
   "tr": {
     "tiles": "Tiles",
@@ -3636,7 +3700,15 @@
     "addon_launcher_free": "Windows, Linux ve Steam Deck için ücretsiz.",
     "addon_without_launcher": "Başlatıcı olmadan arşivi oyunun",
     "addon_folder": "klasörüne çıkarın.",
-    "addon_check_game": "Oyun sürümü:"
+    "addon_check_game": "Oyun sürümü:",
+    "role_owner": "sahip",
+    "role_editor": "editör",
+    "role_contributor": "katkıda bulunan",
+    "trust_verified_author": "Doğrulanmış yazar",
+    "trust_unavailable": "Kullanılamıyor",
+    "admin_ban_user": "Yasakla",
+    "admin_make_admin": "Yönetici yap",
+    "admin_banned": "Yasaklandı"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4040,7 +4112,15 @@
     "addon_launcher_free": "бесплатно для Windows, Linux и Steam Deck.",
     "addon_without_launcher": "Без лаунчера распакуйте архив в папку",
     "addon_folder": "игры.",
-    "addon_check_game": "Версия игры:"
+    "addon_check_game": "Версия игры:",
+    "role_owner": "владелец",
+    "role_editor": "редактор",
+    "role_contributor": "участник",
+    "trust_verified_author": "Проверенный автор",
+    "trust_unavailable": "Недоступно",
+    "admin_ban_user": "Заблокировать",
+    "admin_make_admin": "Назначить администратором",
+    "admin_banned": "Забанен"
   },
   "uk": {
     "tiles": "Tiles",
@@ -4444,7 +4524,15 @@
     "addon_launcher_free": "безкоштовно для Windows, Linux і Steam Deck.",
     "addon_without_launcher": "Без лаунчера розпакуйте архів до теки",
     "addon_folder": "гри.",
-    "addon_check_game": "Версія гри:"
+    "addon_check_game": "Версія гри:",
+    "role_owner": "власник",
+    "role_editor": "редактор",
+    "role_contributor": "учасник",
+    "trust_verified_author": "Перевірений автор",
+    "trust_unavailable": "Недоступно",
+    "admin_ban_user": "Заблокувати",
+    "admin_make_admin": "Призначити адміністратором",
+    "admin_banned": "Забанений"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -4848,7 +4936,15 @@
     "addon_launcher_free": "支持 Windows、Linux 和 Steam Deck，免费使用。",
     "addon_without_launcher": "不使用启动器时，请将下载文件解压到游戏的",
     "addon_folder": "文件夹。",
-    "addon_check_game": "游戏版本："
+    "addon_check_game": "游戏版本：",
+    "role_owner": "所有者",
+    "role_editor": "编辑者",
+    "role_contributor": "贡献者",
+    "trust_verified_author": "已验证作者",
+    "trust_unavailable": "不可用",
+    "admin_ban_user": "封禁",
+    "admin_make_admin": "设为管理员",
+    "admin_banned": "已封禁"
   },
   "ja": {
     "tiles": "Tiles",
@@ -5252,7 +5348,15 @@
     "addon_launcher_free": "Windows、Linux、Steam Deck 向けに無料で提供。",
     "addon_without_launcher": "ランチャーを使わない場合、ファイルをゲームの",
     "addon_folder": "フォルダーへ展開してください。",
-    "addon_check_game": "ゲームバージョン："
+    "addon_check_game": "ゲームバージョン：",
+    "role_owner": "所有者",
+    "role_editor": "編集者",
+    "role_contributor": "共同制作者",
+    "trust_verified_author": "認証済み作者",
+    "trust_unavailable": "利用不可",
+    "admin_ban_user": "停止する",
+    "admin_make_admin": "管理者にする",
+    "admin_banned": "停止中"
   },
   "ko": {
     "tiles": "Tiles",
@@ -5656,7 +5760,15 @@
     "addon_launcher_free": "Windows, Linux, Steam Deck에서 무료입니다.",
     "addon_without_launcher": "런처 없이 설치하려면 파일을 게임의",
     "addon_folder": "폴더에 압축 해제하세요.",
-    "addon_check_game": "게임 버전:"
+    "addon_check_game": "게임 버전:",
+    "role_owner": "소유자",
+    "role_editor": "편집자",
+    "role_contributor": "기여자",
+    "trust_verified_author": "검증된 작성자",
+    "trust_unavailable": "사용할 수 없음",
+    "admin_ban_user": "차단",
+    "admin_make_admin": "관리자로 지정",
+    "admin_banned": "차단됨"
   }
 };
   var supported = Object.keys(translations);
