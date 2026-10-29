@@ -3,9 +3,9 @@
     {% if let Some(icon) = c.icon_url %}<img class="icon" src="{{ icon }}" alt="" width="48" height="48">{% endif %}
     <div>
       <h2><a href="/addons/{{ c.slug }}">{{ c.name }}</a></h2>
-      <p class="muted">by {{ c.author }} · <a href="/addons?category={{ c.category|urlencode }}">{{ c.category }}</a></p>
+      <p class="muted"><span data-i18n="pub_by">by</span> {{ c.author }} · <a href="/addons?category={{ c.category|urlencode }}" data-category-label="{{ c.category }}">{{ c.category }}</a></p>
     </div>
   </div>
   <p>{{ c.summary }}</p>
-  <p><span class="badge {{ c.notice.class }}" data-i18n-enum="trust" data-i18n-value="{{ c.notice.badge }}">{{ c.notice.badge }}</span> <span class="muted">{% match c.downloads %}{% when Some with (n) %}{{ n }} downloads{% when None %}Updated {{ c.updated }}{% endmatch %}</span></p>
+  <p><span class="badge {{ c.notice.class }}" data-i18n-enum="trust" data-i18n-value="{{ c.notice.badge }}">{{ c.notice.badge }}</span> <span class="muted">{% match c.downloads %}{% when Some with (n) %}{{ n }} <span data-i18n="pub_downloads">downloads</span>{% when None %}<span data-i18n="pub_updated">Updated</span> {{ c.updated }}{% endmatch %}</span></p>
 </article>
