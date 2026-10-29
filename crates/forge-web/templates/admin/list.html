@@ -14,7 +14,7 @@
   {% endif %}
   <button type="submit">Add</button>
 </form>
-<section class="panel">
+<section class="panel list">
   {% if rows.is_empty() %}<p class="muted">Empty.</p>{% endif %}
   {% for (key, name, sort, parent) in rows %}
   <div class="member">

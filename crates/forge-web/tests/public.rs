@@ -64,7 +64,8 @@ async fn list_renders_items_without_js() {
         .await;
     let page = web.get("/addons?q=lucky").await;
     assert_eq!(page.status, StatusCode::OK, "{}", page.body);
-    for text in ["Lucky Odds", "by alice", "42 downloads", "Flagged", "<form class=\"search\" method=\"get\" action=\"/addons\""] {
+    // Only the results scroll; search and filters stay in view.
+    for text in ["Lucky Odds", "by alice", "42 downloads", "Flagged", "<form class=\"search\" method=\"get\" action=\"/addons\"", "<div id=\"results\" class=\"list\">"] {
         assert!(page.body.contains(text), "missing {text}");
     }
 

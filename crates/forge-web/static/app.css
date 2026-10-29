@@ -52,9 +52,12 @@
 * { box-sizing: border-box; }
 
 html { background: var(--bg); }
+/* The page itself never scrolls: the header stays, main scrolls below it. On pages with a list
+   (.list as a child of main) only that list scrolls, so title, search and filters stay in view. */
 body {
   margin: 0;
-  min-height: 100vh;
+  height: 100vh; height: 100dvh;
+  display: flex; flex-direction: column; overflow: hidden;
   background: var(--bg-glow) no-repeat, var(--bg);
   color: var(--text);
   font: var(--body)/1.55 var(--font-body);
@@ -65,11 +68,15 @@ a:hover { color: var(--gold-bright); }
 :focus-visible { outline: 2px solid var(--outline-active); outline-offset: 2px; }
 ::selection { background: var(--outline); color: var(--gold-bright); }
 
-main { max-width: 1080px; margin: 0 auto; padding: 24px 16px; }
+main { flex: 1; min-height: 0; overflow-y: auto; padding: 24px max(16px, calc((100% - 1048px) / 2)); }
+main:has(> .list) { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+main:has(> .list) > * { flex: none; }
+main:has(> .list) > .list { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; }
+main:has(> .list) > .bottom { padding: 8px 16px; }
 
 /* Header: the uncial logo above tab-like navigation, as in the launcher */
 .top {
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  flex: none; display: flex; flex-direction: column; align-items: center; gap: 12px;
   padding: 20px 16px 16px; border-bottom: 1px solid var(--line);
 }
 .top nav { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
@@ -83,7 +90,8 @@ main { max-width: 1080px; margin: 0 auto; padding: 24px 16px; }
   background: var(--gold-heading); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .brand:hover { color: transparent; }
-.bottom { color: var(--muted); font-size: var(--meta); text-align: center; padding: 24px 16px; border-top: 1px solid var(--line); }
+.bottom { color: var(--muted); font-size: var(--meta); text-align: center; padding: 24px 16px 0; margin-top: 24px; border-top: 1px solid var(--line); }
+.bottom p { margin: 0; }
 
 /* Headings: uncial gold between two fading rules, like "Class" and "Zone" in the game */
 h1, h2, h3 { font-weight: 400; line-height: 1.25; }
@@ -232,6 +240,12 @@ input[readonly] { color: var(--gold-bright); }
 input.narrow { width: 6em; flex: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+/* Too low for a fixed frame (phone held sideways): main scrolls as a whole again */
+@media (max-height: 560px) {
+  main:has(> .list) { display: block; overflow-y: auto; padding-bottom: 24px; }
+  main:has(> .list) > .list { overflow-y: visible; }
+}
+
 @media (max-width: 640px) {
   .brand { font-size: 32px; }
   h1 { font-size: 24px; gap: 10px; }
@@ -239,6 +253,10 @@ input.narrow { width: 6em; flex: none; }
   .hero { padding: 24px 0; }
   .hero h1 { font-size: 1.6rem; }
   .top nav > a:not(.button) { padding: 8px 12px; font-size: var(--body); }
+  /* Leave the list as much room as possible: filters side by side, no footer under it */
+  .search .filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .search .filters > div { min-width: 0; }
+  main:has(> .list) > .bottom { display: none; }
 }
 
 /* Touch screens: controls of at least 44px, like the launcher in Game Mode */

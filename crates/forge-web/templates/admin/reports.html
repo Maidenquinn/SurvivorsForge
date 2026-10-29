@@ -5,6 +5,7 @@
 <h1>Open reports</h1>
 {% include "admin/flash.html" %}
 {% if rows.is_empty() %}<section class="panel"><p>No open reports.</p></section>{% endif %}
+<div class="list">
 {% for r in rows %}
 <section class="panel">
   <h2>{{ r.reason }}: <a href="/addons/{{ r.addon }}">{{ r.addon }}</a> <span class="muted">({{ r.target }})</span></h2>
@@ -20,4 +21,5 @@
   </form>
 </section>
 {% endfor %}
+</div>
 {% endblock %}

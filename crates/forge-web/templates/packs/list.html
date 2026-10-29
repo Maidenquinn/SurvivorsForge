@@ -10,7 +10,7 @@
 {% if rows.is_empty() %}
   <section class="panel"><p>No pack is listed yet. Build one and tick "Show it on the public pack list".</p></section>
 {% else %}
-<div class="grid">
+<div class="grid list">
   {% for p in rows %}
   <article class="panel card">
     <h2><a href="/packs/{{ p.id }}">{{ p.name }}</a></h2>

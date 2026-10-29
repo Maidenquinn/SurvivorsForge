@@ -38,7 +38,7 @@
   <noscript><button type="submit">Search</button></noscript>
 </form>
 
-<div id="results">
+<div id="results" class="list">
   <p class="muted">{{ total }} addon{% if total != 1 %}s{% endif %}{% if category != "" %} in {{ category }} (<a href="/addons">all categories</a>){% endif %}</p>
   {% if cards.is_empty() %}
     <section class="panel"><p>No addon matches. Try fewer words or another filter.</p></section>
