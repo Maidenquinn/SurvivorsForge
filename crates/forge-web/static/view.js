@@ -487,7 +487,7 @@ document.addEventListener("DOMContentLoaded", function () {
         notice.dataset.commentError = "";
         old.prepend(notice);
       }
-      notice.textContent = "Could not update comments: " + err.message;
+      notice.textContent = window.ForgeI18n ? window.ForgeI18n.t("comment_update_error") : "Could not update comments. Check your connection and try again.";
     } finally { busy = false; }
   }
   document.addEventListener("submit", function (event) {
