@@ -52,6 +52,12 @@
 * { box-sizing: border-box; }
 
 html { background: var(--bg); }
+/* Scrollbars like the launcher's scroll panels: a thin gold-brown thumb on the dark field colour */
+* { scrollbar-width: thin; scrollbar-color: var(--outline) var(--field); }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--field); }
+::-webkit-scrollbar-thumb { background: var(--outline); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--outline-hover); }
 /* The page itself never scrolls: the header stays, main scrolls below it. On pages with a list
    (.list as a child of main) only that list scrolls, so title, search and filters stay in view. */
 body {

@@ -249,3 +249,11 @@ async fn file_pickers_look_like_the_site() {
     let css = web.get("/static/app.css").await.body;
     assert!(css.contains("::file-selector-button"), "no style for the file picker button");
 }
+
+#[tokio::test]
+async fn scrollbars_use_the_theme() {
+    // Thin gold-brown thumbs on the dark field colour, like the launcher's scroll panels.
+    let mut web = TestWeb::new().await;
+    let css = web.get("/static/app.css").await.body;
+    assert!(css.contains("scrollbar-color: var(--outline) var(--field)"), "no themed scrollbars");
+}
