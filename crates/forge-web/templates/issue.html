@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}#{{ id }} {{ title }} - {{ name }}{% endblock %}
+{% block content %}
+<p><a href="/addons/{{ slug }}/issues">← All issues for {{ name }}</a></p>
+<h1>#{{ id }} {{ title }}</h1>
+<p><span class="badge">{{ status }}</span> · {{ kind }} · opened by {{ author }}</p>
+<section class="panel"><p style="white-space:pre-wrap">{{ body }}</p></section>
+{% if can_manage %}
+<section class="panel">
+  <form method="post" action="/addons/{{ slug }}/issues/{{ id }}/status">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Status <select name="status">
+      <option value="open">Open</option><option value="in_progress">In progress</option>
+      <option value="resolved">Resolved</option><option value="closed">Closed</option>
+    </select></label>
+    <button type="submit">Update status</button>
+  </form>
+</section>
+{% endif %}
+<h2>Discussion</h2>
+{% for comment in comments %}
+<section class="panel"><strong>{{ comment.author }}</strong><p style="white-space:pre-wrap">{{ comment.body }}</p></section>
+{% endfor %}
+{% if user.is_some() %}
+<form method="post" action="/addons/{{ slug }}/issues/{{ id }}/comments" class="panel">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>Reply <textarea name="body" required maxlength="10000" rows="4"></textarea></label>
+  <p><button type="submit">Post reply</button></p>
+</form>
+{% else %}<p><a href="/login">Log in</a> to reply.</p>{% endif %}
+{% endblock %}
