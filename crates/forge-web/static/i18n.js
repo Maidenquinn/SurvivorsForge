@@ -20,7 +20,15 @@
     "issues": "Issues",
     "gallery": "Gallery",
     "versions": "Versions",
-    "comments_tab": "Comments"
+    "comments_tab": "Comments",
+    "comments_intro": "Discuss this addon with its creator and community.",
+    "comment_placeholder": "Share your feedback...",
+    "anonymous_read": "You can read comments without signing in.",
+    "login_participate": "Log in to participate",
+    "edited": "edited",
+    "confirm_delete": "Delete this comment?",
+    "empty_comments": "No comments yet. Start the discussion!",
+    "older_comments": "Older comments →"
   },
   "fr": {
     "addons": "Extensions",
@@ -40,7 +48,15 @@
     "issues": "Signalements",
     "gallery": "Galerie",
     "versions": "Versions",
-    "comments_tab": "Commentaires"
+    "comments_tab": "Commentaires",
+    "comments_intro": "Discutez de cet addon avec son créateur et la communauté.",
+    "comment_placeholder": "Partagez votre avis...",
+    "anonymous_read": "Vous pouvez lire les commentaires sans vous connecter.",
+    "login_participate": "Connectez-vous pour participer",
+    "edited": "modifié",
+    "confirm_delete": "Supprimer ce commentaire ?",
+    "empty_comments": "Aucun commentaire pour le moment. Lancez la discussion !",
+    "older_comments": "Commentaires précédents →"
   },
   "pl": {
     "addons": "Dodatki",
@@ -60,7 +76,15 @@
     "issues": "Zgłoszenia",
     "gallery": "Galeria",
     "versions": "Wersje",
-    "comments_tab": "Komentarze"
+    "comments_tab": "Komentarze",
+    "comments_intro": "Porozmawiaj o dodatku z twórcą i społecznością.",
+    "comment_placeholder": "Podziel się opinią...",
+    "anonymous_read": "Komentarze można czytać bez logowania.",
+    "login_participate": "Zaloguj się, aby wziąć udział",
+    "edited": "edytowano",
+    "confirm_delete": "Usunąć ten komentarz?",
+    "empty_comments": "Brak komentarzy. Rozpocznij dyskusję!",
+    "older_comments": "Starsze komentarze →"
   },
   "cs": {
     "addons": "Doplňky",
@@ -80,7 +104,15 @@
     "issues": "Hlášení",
     "gallery": "Galerie",
     "versions": "Verze",
-    "comments_tab": "Komentáře"
+    "comments_tab": "Komentáře",
+    "comments_intro": "Diskutujte o doplňku s autorem a komunitou.",
+    "comment_placeholder": "Podělte se o názor...",
+    "anonymous_read": "Komentáře můžete číst bez přihlášení.",
+    "login_participate": "Přihlaste se a zapojte se",
+    "edited": "upraveno",
+    "confirm_delete": "Smazat tento komentář?",
+    "empty_comments": "Zatím žádné komentáře. Začněte diskusi!",
+    "older_comments": "Starší komentáře →"
   },
   "de": {
     "addons": "Addons",
@@ -100,7 +132,15 @@
     "issues": "Probleme",
     "gallery": "Galerie",
     "versions": "Versionen",
-    "comments_tab": "Kommentare"
+    "comments_tab": "Kommentare",
+    "comments_intro": "Diskutiere mit dem Entwickler und der Community über dieses Addon.",
+    "comment_placeholder": "Teile deine Meinung...",
+    "anonymous_read": "Kommentare kannst du ohne Anmeldung lesen.",
+    "login_participate": "Zum Mitmachen anmelden",
+    "edited": "bearbeitet",
+    "confirm_delete": "Diesen Kommentar löschen?",
+    "empty_comments": "Noch keine Kommentare. Starte die Diskussion!",
+    "older_comments": "Ältere Kommentare →"
   },
   "pt-BR": {
     "addons": "Complementos",
@@ -120,7 +160,15 @@
     "issues": "Problemas",
     "gallery": "Galeria",
     "versions": "Versões",
-    "comments_tab": "Comentários"
+    "comments_tab": "Comentários",
+    "comments_intro": "Converse sobre este complemento com o criador e a comunidade.",
+    "comment_placeholder": "Compartilhe sua opinião...",
+    "anonymous_read": "Você pode ler os comentários sem entrar.",
+    "login_participate": "Entre para participar",
+    "edited": "editado",
+    "confirm_delete": "Excluir este comentário?",
+    "empty_comments": "Ainda não há comentários. Comece a conversa!",
+    "older_comments": "Comentários anteriores →"
   },
   "es": {
     "addons": "Complementos",
@@ -140,7 +188,15 @@
     "issues": "Incidencias",
     "gallery": "Galería",
     "versions": "Versiones",
-    "comments_tab": "Comentarios"
+    "comments_tab": "Comentarios",
+    "comments_intro": "Habla sobre este complemento con su creador y la comunidad.",
+    "comment_placeholder": "Comparte tu opinión...",
+    "anonymous_read": "Puedes leer los comentarios sin iniciar sesión.",
+    "login_participate": "Inicia sesión para participar",
+    "edited": "editado",
+    "confirm_delete": "¿Eliminar este comentario?",
+    "empty_comments": "Aún no hay comentarios. ¡Inicia la conversación!",
+    "older_comments": "Comentarios anteriores →"
   },
   "ro": {
     "addons": "Suplimente",
@@ -160,7 +216,15 @@
     "issues": "Probleme",
     "gallery": "Galerie",
     "versions": "Versiuni",
-    "comments_tab": "Comentarii"
+    "comments_tab": "Comentarii",
+    "comments_intro": "Discută despre acest supliment cu autorul și comunitatea.",
+    "comment_placeholder": "Spune-ne părerea ta...",
+    "anonymous_read": "Poți citi comentariile fără autentificare.",
+    "login_participate": "Autentifică-te pentru a participa",
+    "edited": "editat",
+    "confirm_delete": "Ștergi acest comentariu?",
+    "empty_comments": "Nu există comentarii. Începe discuția!",
+    "older_comments": "Comentarii mai vechi →"
   },
   "tr": {
     "addons": "Eklentiler",
@@ -180,7 +244,15 @@
     "issues": "Sorunlar",
     "gallery": "Galeri",
     "versions": "Sürümler",
-    "comments_tab": "Yorumlar"
+    "comments_tab": "Yorumlar",
+    "comments_intro": "Bu eklentiyi geliştiricisi ve toplulukla tartışın.",
+    "comment_placeholder": "Görüşünüzü paylaşın...",
+    "anonymous_read": "Giriş yapmadan yorumları okuyabilirsiniz.",
+    "login_participate": "Katılmak için giriş yapın",
+    "edited": "düzenlendi",
+    "confirm_delete": "Bu yorum silinsin mi?",
+    "empty_comments": "Henüz yorum yok. Tartışmayı başlatın!",
+    "older_comments": "Eski yorumlar →"
   },
   "ru": {
     "addons": "Аддоны",
@@ -200,7 +272,15 @@
     "issues": "Проблемы",
     "gallery": "Галерея",
     "versions": "Версии",
-    "comments_tab": "Комментарии"
+    "comments_tab": "Комментарии",
+    "comments_intro": "Обсудите аддон с автором и сообществом.",
+    "comment_placeholder": "Поделитесь мнением...",
+    "anonymous_read": "Читать комментарии можно без входа.",
+    "login_participate": "Войдите, чтобы участвовать",
+    "edited": "изменено",
+    "confirm_delete": "Удалить этот комментарий?",
+    "empty_comments": "Комментариев пока нет. Начните обсуждение!",
+    "older_comments": "Старые комментарии →"
   },
   "uk": {
     "addons": "Аддони",
@@ -220,7 +300,15 @@
     "issues": "Проблеми",
     "gallery": "Галерея",
     "versions": "Версії",
-    "comments_tab": "Коментарі"
+    "comments_tab": "Коментарі",
+    "comments_intro": "Обговоріть аддон з автором і спільнотою.",
+    "comment_placeholder": "Поділіться думкою...",
+    "anonymous_read": "Читати коментарі можна без входу.",
+    "login_participate": "Увійдіть, щоб долучитися",
+    "edited": "змінено",
+    "confirm_delete": "Видалити цей коментар?",
+    "empty_comments": "Коментарів поки немає. Почніть обговорення!",
+    "older_comments": "Старіші коментарі →"
   },
   "zh-Hans": {
     "addons": "插件",
@@ -240,7 +328,15 @@
     "issues": "问题",
     "gallery": "图库",
     "versions": "版本",
-    "comments_tab": "评论"
+    "comments_tab": "评论",
+    "comments_intro": "与作者和社区讨论此插件。",
+    "comment_placeholder": "分享你的反馈...",
+    "anonymous_read": "无需登录即可阅读评论。",
+    "login_participate": "登录后参与讨论",
+    "edited": "已编辑",
+    "confirm_delete": "删除这条评论？",
+    "empty_comments": "暂无评论，来发起讨论吧！",
+    "older_comments": "更早的评论 →"
   },
   "ja": {
     "addons": "アドオン",
@@ -260,7 +356,15 @@
     "issues": "問題",
     "gallery": "ギャラリー",
     "versions": "バージョン",
-    "comments_tab": "コメント"
+    "comments_tab": "コメント",
+    "comments_intro": "作者やコミュニティとこのアドオンについて話しましょう。",
+    "comment_placeholder": "感想を共有...",
+    "anonymous_read": "ログインせずにコメントを読めます。",
+    "login_participate": "ログインして参加",
+    "edited": "編集済み",
+    "confirm_delete": "このコメントを削除しますか？",
+    "empty_comments": "まだコメントがありません。最初のコメントを投稿しましょう！",
+    "older_comments": "過去のコメント →"
   },
   "ko": {
     "addons": "애드온",
@@ -280,7 +384,15 @@
     "issues": "문제",
     "gallery": "갤러리",
     "versions": "버전",
-    "comments_tab": "댓글"
+    "comments_tab": "댓글",
+    "comments_intro": "제작자 및 커뮤니티와 이 애드온에 대해 이야기하세요.",
+    "comment_placeholder": "의견을 공유하세요...",
+    "anonymous_read": "로그인하지 않아도 댓글을 읽을 수 있습니다.",
+    "login_participate": "로그인하여 참여",
+    "edited": "수정됨",
+    "confirm_delete": "이 댓글을 삭제할까요?",
+    "empty_comments": "아직 댓글이 없습니다. 대화를 시작하세요!",
+    "older_comments": "이전 댓글 →"
   }
 };
   var supported = Object.keys(translations);
@@ -299,6 +411,14 @@
       var key = el.getAttribute("data-i18n");
       var text = translations[locale][key] || translations.en[key];
       if (text) el.textContent = text;
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+      var key = el.getAttribute("data-i18n-placeholder");
+      el.setAttribute("placeholder", translations[locale][key] || translations.en[key] || "");
+    });
+    document.querySelectorAll("[data-i18n-confirm]").forEach(function (el) {
+      var key = el.getAttribute("data-i18n-confirm");
+      el.setAttribute("data-confirm-delete", translations[locale][key] || translations.en[key] || "");
     });
     var select = document.getElementById("forge-locale");
     if (select) select.value = locale;
