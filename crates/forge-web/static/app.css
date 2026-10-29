@@ -512,3 +512,40 @@ button.suggestion:hover { border-color: var(--outline-hover); background: var(--
   object-fit: contain;
 }
 .gallery-lightbox:fullscreen [data-gallery-caption] { flex: 0 0 auto; }
+
+/* Expanded gallery works even when the Fullscreen API is blocked for <dialog>. */
+.gallery-lightbox.gallery-expanded,
+.gallery-lightbox:fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  padding: 12px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #090705 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+.gallery-lightbox.gallery-expanded [data-gallery-image],
+.gallery-lightbox:fullscreen [data-gallery-image] {
+  display: block !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  max-width: none !important;
+  flex: 1 1 auto !important;
+  margin: 8px auto !important;
+  object-fit: contain !important;
+}
+.gallery-lightbox.gallery-expanded .gallery-lightbox-actions,
+.gallery-lightbox:fullscreen .gallery-lightbox-actions { flex: 0 0 auto; }
+.gallery-lightbox.gallery-expanded [data-gallery-caption],
+.gallery-lightbox:fullscreen [data-gallery-caption] { flex: 0 0 auto; }
