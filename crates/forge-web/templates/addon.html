@@ -50,9 +50,11 @@
 </section>
 {% endif %}
 
+{% if !description_html.trim().is_empty() %}
 <section class="panel description">
   {{ description_html|safe }}
 </section>
+{% endif %}
 
 {% if !deps.is_empty() %}
 <section class="panel">

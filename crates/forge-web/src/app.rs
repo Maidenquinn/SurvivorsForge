@@ -20,7 +20,7 @@ use sha2::Digest;
 use std::sync::Arc;
 use tower_http::set_header::SetResponseHeaderLayer;
 
-pub const CSP: &str = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https://avatars.githubusercontent.com; \
+pub const CSP: &str = "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' https://avatars.githubusercontent.com; \
                        form-action 'self'; frame-ancestors 'none'; base-uri 'none'; connect-src 'self'";
 
 #[derive(Clone)]
@@ -108,6 +108,9 @@ pub fn router(state: AppState) -> Router {
         .route("/logout", post(logout))
         .route("/static/htmx.min.js", get(|| async { asset("text/javascript", include_str!("../static/htmx.min.js")) }))
         .route("/static/app.css", get(|| async { asset("text/css", include_str!("../static/app.css")) }))
+        // The launcher's fonts (SIL OFL, licenses next to them in ui/fonts).
+        .route("/static/fonts/marcellus.ttf", get(|| async { font(include_bytes!("../../../ui/fonts/Marcellus-Regular.ttf")) }))
+        .route("/static/fonts/uncial-antiqua.ttf", get(|| async { font(include_bytes!("../../../ui/fonts/UncialAntiqua-Regular.ttf")) }))
         .fallback(|| async { WebError::NotFound })
         .layer(middleware::from_fn_with_state(state.clone(), csrf::middleware));
     let limiter = Arc::new(RateLimiter::new(state.config.rate_limit_per_minute, state.config.trusted_proxies.clone()));
@@ -122,6 +125,10 @@ pub fn router(state: AppState) -> Router {
         .layer(SetResponseHeaderLayer::overriding(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY")))
         .layer(SetResponseHeaderLayer::overriding(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff")))
         .layer(SetResponseHeaderLayer::overriding(header::REFERRER_POLICY, HeaderValue::from_static("strict-origin-when-cross-origin")))
+}
+
+fn font(body: &'static [u8]) -> Response {
+    ([(header::CONTENT_TYPE, "font/ttf"), (header::CACHE_CONTROL, "public, max-age=604800, immutable")], body).into_response()
 }
 
 fn asset(content_type: &'static str, body: &'static str) -> Response {
