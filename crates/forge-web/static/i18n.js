@@ -15,7 +15,12 @@
     "edit": "Edit",
     "delete": "Delete",
     "cancel": "Cancel",
-    "save": "Save changes"
+    "save": "Save changes",
+    "overview": "Overview",
+    "issues": "Issues",
+    "gallery": "Gallery",
+    "versions": "Versions",
+    "comments_tab": "Comments"
   },
   "fr": {
     "addons": "Extensions",
@@ -30,7 +35,12 @@
     "edit": "Modifier",
     "delete": "Supprimer",
     "cancel": "Annuler",
-    "save": "Enregistrer"
+    "save": "Enregistrer",
+    "overview": "Présentation",
+    "issues": "Signalements",
+    "gallery": "Galerie",
+    "versions": "Versions",
+    "comments_tab": "Commentaires"
   },
   "pl": {
     "addons": "Dodatki",
@@ -45,7 +55,12 @@
     "edit": "Edytuj",
     "delete": "Usuń",
     "cancel": "Anuluj",
-    "save": "Zapisz zmiany"
+    "save": "Zapisz zmiany",
+    "overview": "Przegląd",
+    "issues": "Zgłoszenia",
+    "gallery": "Galeria",
+    "versions": "Wersje",
+    "comments_tab": "Komentarze"
   },
   "cs": {
     "addons": "Doplňky",
@@ -60,7 +75,12 @@
     "edit": "Upravit",
     "delete": "Smazat",
     "cancel": "Zrušit",
-    "save": "Uložit změny"
+    "save": "Uložit změny",
+    "overview": "Přehled",
+    "issues": "Hlášení",
+    "gallery": "Galerie",
+    "versions": "Verze",
+    "comments_tab": "Komentáře"
   },
   "de": {
     "addons": "Addons",
@@ -75,7 +95,12 @@
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "cancel": "Abbrechen",
-    "save": "Änderungen speichern"
+    "save": "Änderungen speichern",
+    "overview": "Übersicht",
+    "issues": "Probleme",
+    "gallery": "Galerie",
+    "versions": "Versionen",
+    "comments_tab": "Kommentare"
   },
   "pt-BR": {
     "addons": "Complementos",
@@ -90,7 +115,12 @@
     "edit": "Editar",
     "delete": "Excluir",
     "cancel": "Cancelar",
-    "save": "Salvar alterações"
+    "save": "Salvar alterações",
+    "overview": "Visão geral",
+    "issues": "Problemas",
+    "gallery": "Galeria",
+    "versions": "Versões",
+    "comments_tab": "Comentários"
   },
   "es": {
     "addons": "Complementos",
@@ -105,7 +135,12 @@
     "edit": "Editar",
     "delete": "Eliminar",
     "cancel": "Cancelar",
-    "save": "Guardar cambios"
+    "save": "Guardar cambios",
+    "overview": "Resumen",
+    "issues": "Incidencias",
+    "gallery": "Galería",
+    "versions": "Versiones",
+    "comments_tab": "Comentarios"
   },
   "ro": {
     "addons": "Suplimente",
@@ -120,7 +155,12 @@
     "edit": "Editează",
     "delete": "Șterge",
     "cancel": "Anulează",
-    "save": "Salvează modificările"
+    "save": "Salvează modificările",
+    "overview": "Prezentare",
+    "issues": "Probleme",
+    "gallery": "Galerie",
+    "versions": "Versiuni",
+    "comments_tab": "Comentarii"
   },
   "tr": {
     "addons": "Eklentiler",
@@ -135,7 +175,12 @@
     "edit": "Düzenle",
     "delete": "Sil",
     "cancel": "İptal",
-    "save": "Değişiklikleri kaydet"
+    "save": "Değişiklikleri kaydet",
+    "overview": "Genel bakış",
+    "issues": "Sorunlar",
+    "gallery": "Galeri",
+    "versions": "Sürümler",
+    "comments_tab": "Yorumlar"
   },
   "ru": {
     "addons": "Аддоны",
@@ -150,7 +195,12 @@
     "edit": "Изменить",
     "delete": "Удалить",
     "cancel": "Отмена",
-    "save": "Сохранить изменения"
+    "save": "Сохранить изменения",
+    "overview": "Обзор",
+    "issues": "Проблемы",
+    "gallery": "Галерея",
+    "versions": "Версии",
+    "comments_tab": "Комментарии"
   },
   "uk": {
     "addons": "Аддони",
@@ -165,7 +215,12 @@
     "edit": "Редагувати",
     "delete": "Видалити",
     "cancel": "Скасувати",
-    "save": "Зберегти зміни"
+    "save": "Зберегти зміни",
+    "overview": "Огляд",
+    "issues": "Проблеми",
+    "gallery": "Галерея",
+    "versions": "Версії",
+    "comments_tab": "Коментарі"
   },
   "zh-Hans": {
     "addons": "插件",
@@ -180,7 +235,12 @@
     "edit": "编辑",
     "delete": "删除",
     "cancel": "取消",
-    "save": "保存更改"
+    "save": "保存更改",
+    "overview": "概览",
+    "issues": "问题",
+    "gallery": "图库",
+    "versions": "版本",
+    "comments_tab": "评论"
   },
   "ja": {
     "addons": "アドオン",
@@ -195,7 +255,12 @@
     "edit": "編集",
     "delete": "削除",
     "cancel": "キャンセル",
-    "save": "変更を保存"
+    "save": "変更を保存",
+    "overview": "概要",
+    "issues": "問題",
+    "gallery": "ギャラリー",
+    "versions": "バージョン",
+    "comments_tab": "コメント"
   },
   "ko": {
     "addons": "애드온",
@@ -210,7 +275,12 @@
     "edit": "수정",
     "delete": "삭제",
     "cancel": "취소",
-    "save": "변경 사항 저장"
+    "save": "변경 사항 저장",
+    "overview": "개요",
+    "issues": "문제",
+    "gallery": "갤러리",
+    "versions": "버전",
+    "comments_tab": "댓글"
   }
 };
   var supported = Object.keys(translations);
