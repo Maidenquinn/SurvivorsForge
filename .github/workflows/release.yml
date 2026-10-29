@@ -124,8 +124,11 @@ jobs:
       # What a server needs besides the images (docs/self-hosting.md).
       - name: Add the server files
         run: cp compose.yaml assets/ && cp .env.example assets/env.example
-      # Fixed names for direct links (releases/latest/download/<name>). Copies only: the launcher's
-      # self-update looks for the versioned names, so those stay as they are.
+      # Fixed names for direct links (releases/latest/download/<name>). Copies only: launchers before
+      # 0.4.0 update from the versioned names, 0.4.0 and later from the fixed ones.
+      # TODO: drop the versioned names some releases after 0.4.0 (rename here instead of copy). A
+      # launcher older than 0.4.0 that never ran while 0.4.0 or a later release with them was the
+      # latest then stops finding updates and must be downloaded again by hand.
       - name: Add the stable launcher names
         env:
           VERSION: ${{ needs.version.outputs.version }}
