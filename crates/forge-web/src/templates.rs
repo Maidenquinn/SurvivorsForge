@@ -617,3 +617,40 @@ pub struct PackBuildingPage {
     pub csrf: String,
     pub id: String,
 }
+
+pub struct IssueItem {
+    pub id: i64,
+    pub title: String,
+    pub kind: String,
+    pub status: String,
+    pub author: String,
+}
+pub struct IssueComment {
+    pub author: String,
+    pub body: String,
+}
+#[derive(Template)]
+#[template(path = "issues.html")]
+pub struct IssuesPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub name: String,
+    pub issues: Vec<IssueItem>,
+}
+#[derive(Template)]
+#[template(path = "issue.html")]
+pub struct IssuePage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub name: String,
+    pub id: i64,
+    pub title: String,
+    pub body: String,
+    pub kind: String,
+    pub status: String,
+    pub author: String,
+    pub comments: Vec<IssueComment>,
+    pub can_manage: bool,
+}
