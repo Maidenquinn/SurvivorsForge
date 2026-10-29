@@ -177,6 +177,8 @@ pub struct LatestBlock {
 #[derive(Template)]
 #[template(path = "addon.html")]
 pub struct AddonPage {
+    pub tab: String,
+    pub issues: Vec<IssueItem>,
     pub user: Option<Visitor>,
     pub csrf: String,
     pub canonical: String,
