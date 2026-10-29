@@ -450,6 +450,9 @@ async fn screenshots_without_caption_still_have_a_text() {
     mock(&web, "/v1/addons/lucky/versions", versions("scanned", "available")).await;
     let page = web.get("/addons/lucky").await.body;
     assert!(page.contains(r#"alt="Screenshot 1 of Lucky Odds""#), "{page}");
+    // A click opens the viewer on the page; without script the link still opens the image.
+    assert!(page.contains(r#"<a href="https://web.test/img/a.webp" data-lightbox>"#), "{page}");
+    assert!(page.contains(r#"<dialog class="lightbox""#), "{page}");
 }
 
 #[tokio::test]
