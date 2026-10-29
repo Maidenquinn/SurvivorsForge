@@ -24,20 +24,20 @@
   <header class="top">
     <a class="brand" href="/">SurvivorsForge</a>
     <nav>
-      <a href="/addons">Addons</a>
-      <a href="/packs">Packs</a>
+      <a href="/addons" data-i18n="addons">Addons</a>
+      <a href="/packs" data-i18n="packs">Packs</a>
       {% match user %}
       {% when Some with (u) %}
-        <a href="/me/addons">My addons</a>
-        {% if u.admin %}<a href="/admin">Admin</a>{% endif %}
+        <a href="/me/addons" data-i18n="my_addons">My addons</a>
+        {% if u.admin %}<a href="/admin" data-i18n="admin">Admin</a>{% endif %}
         <form method="post" action="/logout" class="inline">
           <input type="hidden" name="csrf" value="{{ csrf }}">
           <button type="submit" class="link">Log out {{ u.login }}</button>
         </form>
       {% when None %}
-        <a href="/login" class="button">Log in with GitHub</a>
+        <a href="/login" class="button" data-i18n="login">Log in with GitHub</a>
       {% endmatch %}
-      <label class="forge-locale-label" for="forge-locale">Language <select id="forge-locale" aria-label="Choose language">
+      <label class="forge-locale-label" for="forge-locale"><span data-i18n="language">Language</span> <select id="forge-locale" aria-label="Choose language">
         <option value="en">English</option><option value="pl">Polski</option><option value="cs">Čeština</option><option value="de">Deutsch</option><option value="pt-BR">Português (Brasil)</option><option value="es">Español</option><option value="fr">Français</option><option value="ro">Română</option><option value="tr">Türkçe</option><option value="ru">Русский</option><option value="uk">Українська</option><option value="zh-Hans">简体中文</option><option value="ja">日本語</option><option value="ko">한국어</option>
       </select></label>
     </nav>
