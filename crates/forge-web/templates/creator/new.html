@@ -34,7 +34,7 @@
 
   <label for="category"><span data-i18n="category">Category</span></label>
   <select id="category" name="category">
-    {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(form.category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
+    {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(form.category) %}selected{% endif %} data-category-label="{{ c.name }}">{{ c.label }}</option>{% endfor %}
   </select>
   {% if errors.get("category") != "" %}<p class="field-error">{{ errors.get("category") }}</p>{% endif %}
 
