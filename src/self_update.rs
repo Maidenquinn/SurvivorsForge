@@ -127,6 +127,10 @@ mod tests {
         assert!(!is_newer("0.1.0", "v0.1.0"));
         assert!(!is_newer("0.1.0", "v0.0.9"));
         assert!(!is_newer("0.1.0", "nightly"));
+        // A tester on a release candidate gets the final version; nobody goes back to a candidate.
+        assert!(is_newer("0.4.0-rc.1", "v0.4.0"));
+        assert!(is_newer("0.4.0-rc.1", "v0.4.0-rc.2"));
+        assert!(!is_newer("0.4.0", "v0.4.0-rc.2"));
     }
 
     #[test]

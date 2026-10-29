@@ -260,6 +260,12 @@ run it: [docs/local-setup.md](docs/local-setup.md) on your own machine, [docs/se
 3. Publishes one GitHub release with both assets, only if both builds succeeded:
    - `SurvivorsForge-<version>-x86_64-pc-windows-msvc.zip`
    - `SurvivorsForge-<version>-x86_64.AppImage`
+4. Pushes the platform images to ghcr.io and attaches `compose.yaml` and `env.example`.
+
+A tag with a hyphen, e.g. `v0.4.0-rc.1` (with `version = "0.4.0-rc.1"` in `Cargo.toml`), makes a
+pre-release for testing: installed launchers do not update to it, and the images get only the tag
+`0.4.0-rc.1`, not `latest`. Run it on a server with `FORGE_VERSION=0.4.0-rc.1`. The final `v0.4.0`
+later updates everyone, the testers included.
 
 To cut a release: bump `version` in `Cargo.toml`, commit, then tag and push:
 

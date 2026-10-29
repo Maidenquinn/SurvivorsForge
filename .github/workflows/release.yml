@@ -91,7 +91,8 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest
+          # `latest` (and `{{major}}.{{minor}}`) only for final versions, never for v0.4.0-rc.1 and the like.
+          flavor: latest=auto
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -117,11 +118,15 @@ jobs:
       # What a server needs besides the images (docs/self-hosting.md).
       - name: Add the server files
         run: cp compose.yaml assets/ && cp .env.example assets/env.example
+      # A tag with a hyphen (v0.4.0-rc.1) becomes a pre-release: GitHub's latest release, which the
+      # launcher's self-update reads, skips it.
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" assets/* \
+          prerelease=()
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" assets/* "${prerelease[@]}" \
             --repo "$GITHUB_REPOSITORY" \
             --title "SurvivorsForge ${{ needs.version.outputs.version }}" \
             --generate-notes
