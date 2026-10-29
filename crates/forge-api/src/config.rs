@@ -35,6 +35,18 @@ pub struct Config {
     pub source_check_batch: i64,
     /// Where uploaded images are stored; the reverse proxy serves it as `public_image_url`.
     pub image_dir: String,
+    /// Where built addon packs are stored; the reverse proxy serves it as `public_pack_url`.
+    pub pack_dir: String,
+    pub public_pack_url: String,
+    pub pack_max_addons: i64,
+    /// Largest pack zip in bytes.
+    pub pack_max_bytes: u64,
+    /// New packs per user and hour.
+    pub packs_per_hour: i64,
+    /// Days a pack zip is kept without a download.
+    pub pack_retention_days: i64,
+    /// All pack zips together; the least recently downloaded go first.
+    pub pack_storage_bytes: u64,
 }
 
 #[derive(Debug, PartialEq)]
@@ -69,6 +81,13 @@ impl Config {
         "GITHUB_WEBHOOK_SECRET",
         "SOURCE_CHECK_BATCH",
         "IMAGE_DIR",
+        "PACK_DIR",
+        "PUBLIC_PACK_URL",
+        "PACK_MAX_ADDONS",
+        "PACK_MAX_MB",
+        "PACKS_PER_HOUR",
+        "PACK_RETENTION_DAYS",
+        "PACK_STORAGE_MB",
     ];
 
     pub fn from_env() -> Result<Config, ConfigError> {
@@ -80,6 +99,10 @@ impl Config {
         let required = |name: &str| get(name).map(str::to_string).ok_or_else(|| ConfigError(format!("{name} is not set")));
         let parse = |name: &str, default: &str| -> Result<String, ConfigError> { Ok(get(name).unwrap_or(default).to_string()) };
         let invalid = |name: &str, value: &str| ConfigError(format!("{name} has an invalid value: {value}"));
+        let number = |name: &str, default: &str| -> Result<u32, ConfigError> {
+            let value = parse(name, default)?;
+            value.parse().map_err(|_| invalid(name, &value))
+        };
 
         let bind = parse("BIND_ADDR", "0.0.0.0:8080")?;
         let migrate = parse("MIGRATE_ON_START", "false")?;
@@ -115,6 +138,13 @@ impl Config {
                 batch.parse().map_err(|_| invalid("SOURCE_CHECK_BATCH", &batch))?
             },
             image_dir: parse("IMAGE_DIR", "/data/images")?,
+            pack_dir: parse("PACK_DIR", "/data/packs")?,
+            public_pack_url: required("PUBLIC_PACK_URL")?.trim_end_matches('/').to_string(),
+            pack_max_addons: number("PACK_MAX_ADDONS", "20")?.into(),
+            pack_max_bytes: u64::from(number("PACK_MAX_MB", "50")?) * 1_000_000,
+            packs_per_hour: number("PACKS_PER_HOUR", "10")?.into(),
+            pack_retention_days: number("PACK_RETENTION_DAYS", "7")?.into(),
+            pack_storage_bytes: u64::from(number("PACK_STORAGE_MB", "2048")?) * 1_000_000,
         })
     }
 
@@ -143,6 +173,13 @@ impl Config {
             github_webhook_secret: "webhook-secret".into(),
             source_check_batch: 200,
             image_dir: std::env::temp_dir().join("forge-test-images").to_string_lossy().into_owned(),
+            pack_dir: std::env::temp_dir().join("forge-test-packs").to_string_lossy().into_owned(),
+            public_pack_url: "https://web.test/packs-files".into(),
+            pack_max_addons: 20,
+            pack_max_bytes: 50_000_000,
+            packs_per_hour: 10,
+            pack_retention_days: 7,
+            pack_storage_bytes: 2_048_000_000,
         }
     }
 }
@@ -168,14 +205,15 @@ mod tests {
         ("GITHUB_CLIENT_SECRET", "s"),
         ("PUBLIC_IMAGE_URL", "https://web.example.com/img"),
         ("GITHUB_WEBHOOK_SECRET", "w"),
+        ("PUBLIC_PACK_URL", "https://web.example.com/packs-files/"),
     ];
 
     #[test]
     fn missing_database_url_names_variable() {
-        let err = Config::from_map(&env(&[("PUBLIC_API_URL", "https://a"), ("GITHUB_APP_ID", "1"), ("GITHUB_CLIENT_ID", "c"), ("GITHUB_CLIENT_SECRET", "s"), ("PUBLIC_IMAGE_URL", "https://i"), ("GITHUB_WEBHOOK_SECRET", "w")])).unwrap_err();
+        let err = Config::from_map(&env(&[("PUBLIC_API_URL", "https://a"), ("GITHUB_APP_ID", "1"), ("GITHUB_CLIENT_ID", "c"), ("GITHUB_CLIENT_SECRET", "s"), ("PUBLIC_IMAGE_URL", "https://i"), ("GITHUB_WEBHOOK_SECRET", "w"), ("PUBLIC_PACK_URL", "https://p")])).unwrap_err();
         assert!(err.0.contains("DATABASE_URL"), "{}", err.0);
         let err =
-            Config::from_map(&env(&[("DATABASE_URL", "postgres://x"), ("PUBLIC_API_URL", " "), ("GITHUB_APP_ID", "1"), ("GITHUB_CLIENT_ID", "c"), ("GITHUB_CLIENT_SECRET", "s"), ("PUBLIC_IMAGE_URL", "https://i"), ("GITHUB_WEBHOOK_SECRET", "w")])).unwrap_err();
+            Config::from_map(&env(&[("DATABASE_URL", "postgres://x"), ("PUBLIC_API_URL", " "), ("GITHUB_APP_ID", "1"), ("GITHUB_CLIENT_ID", "c"), ("GITHUB_CLIENT_SECRET", "s"), ("PUBLIC_IMAGE_URL", "https://i"), ("GITHUB_WEBHOOK_SECRET", "w"), ("PUBLIC_PACK_URL", "https://p")])).unwrap_err();
         assert!(err.0.contains("PUBLIC_API_URL"), "{}", err.0);
     }
 
@@ -185,6 +223,9 @@ mod tests {
         assert!(!config.migrate_on_start);
         assert_eq!(config.rate_limit_per_minute, 120);
         assert_eq!(config.cache_seconds, 60);
+        assert_eq!((config.pack_max_addons, config.pack_max_bytes, config.packs_per_hour), (20, 50_000_000, 10));
+        assert_eq!((config.pack_retention_days, config.pack_storage_bytes), (7, 2_048_000_000));
+        assert_eq!(config.public_pack_url, "https://web.example.com/packs-files");
         assert_eq!(config.public_api_url, "https://api.example.com");
         let mut on = env(MINIMAL);
         on.insert("MIGRATE_ON_START".into(), "true".into());
@@ -196,6 +237,9 @@ mod tests {
         let mut bad = env(MINIMAL);
         bad.insert("TRUSTED_PROXIES".into(), "10.0.0.1, nope".into());
         assert!(Config::from_map(&bad).unwrap_err().0.contains("TRUSTED_PROXIES"));
+        let mut bad = env(MINIMAL);
+        bad.insert("PACK_MAX_MB".into(), "lots".into());
+        assert!(Config::from_map(&bad).unwrap_err().0.contains("PACK_MAX_MB"));
         let mut bad = env(MINIMAL);
         bad.insert("ADMIN_GITHUB_IDS".into(), "12, octocat".into());
         assert!(Config::from_map(&bad).unwrap_err().0.contains("ADMIN_GITHUB_IDS"));

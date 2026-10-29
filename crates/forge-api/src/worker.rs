@@ -28,7 +28,9 @@ pub fn platform(state: AppState) -> Worker {
     let sync_state = state.clone();
     let poll_state = state.clone();
     let scan_state = state.clone();
-    let source_state = state;
+    let source_state = state.clone();
+    let pack_state = state.clone();
+    let prune_state = state;
     Worker::default()
         .handle(sync::SYNC_ADDON, move |job| {
             let state = sync_state.clone();
@@ -49,7 +51,16 @@ pub fn platform(state: AppState) -> Worker {
             let state = source_state.clone();
             async move { crate::source_check::check_sources(&state, state.config.source_check_batch).await }
         })
+        .handle(crate::pack_job::KIND, move |job| {
+            let state = pack_state.clone();
+            async move { crate::pack_job::build(&state, &job.payload).await }
+        })
+        .handle(crate::pack_job::PRUNE, move |_| {
+            let state = prune_state.clone();
+            async move { crate::pack_job::prune(&state).await }
+        })
         .every(sync::POLL_RELEASES, Duration::days(1))
+        .every(crate::pack_job::PRUNE, Duration::hours(1))
         .every(crate::source_check::CHECK_SOURCES, Duration::hours(6))
 }
 

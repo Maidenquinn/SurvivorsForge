@@ -72,6 +72,9 @@ services:
     tmpfs:
       - /tmp
     mem_limit: 1g
+    # Builds addon packs; the only volume it writes.
+    volumes:
+      - packs:/data/packs
     networks:
       - backend
       - edge
@@ -119,6 +122,7 @@ services:
     volumes:
       - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - images:/srv/img:ro
+      - packs:/srv/packs:ro
       - caddy-data:/data
       - caddy-config:/config
     networks:
@@ -146,6 +150,7 @@ networks:
 volumes:
   postgres:
   images:
+  packs:
   caddy-data:
   caddy-config:
 

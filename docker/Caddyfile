@@ -10,6 +10,14 @@
 		header X-Content-Type-Options nosniff
 		file_server
 	}
+	# Built addon packs; the name is the SHA-256 of the pack's versions, so the file never changes.
+	handle_path /packs-files/* {
+		root * /srv/packs
+		header Cache-Control "public, max-age=86400"
+		header X-Content-Type-Options nosniff
+		header Content-Disposition "attachment; filename=\"SurvivorsForge-pack.zip\""
+		file_server
+	}
 	handle {
 		reverse_proxy web:8080
 	}

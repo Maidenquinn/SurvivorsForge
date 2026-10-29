@@ -85,6 +85,13 @@ Your own GitHub user ID for `ADMIN_GITHUB_IDS` is the `id` field of
 | `PUBLIC_API_URL` | yes | Public base URL of the API, no trailing slash | `https://api.forge.example.com` |
 | `PUBLIC_IMAGE_URL` | yes | Public base URL of uploaded images | `https://forge.example.com/img` |
 | `IMAGE_DIR` | no, set by Compose | Folder the API stores images in | `/data/images` |
+| `PUBLIC_PACK_URL` | yes | Public base URL of built addon packs; Caddy serves them under `/packs-files/` | `https://forge.example.com/packs-files` |
+| `PACK_DIR` | no | Folder the worker stores built packs in | `/data/packs` |
+| `PACK_MAX_ADDONS` | no | Most addons in one pack | `20` |
+| `PACK_MAX_MB` | no | Largest pack zip in MB; all verified addons together are about 37 MB | `50` |
+| `PACKS_PER_HOUR` | no | New packs a user may create per hour | `10` |
+| `PACK_RETENTION_DAYS` | no | Days a built pack is kept without a download; the next download builds it again | `7` |
+| `PACK_STORAGE_MB` | no | All built packs together; above it the least recently downloaded are deleted | `2048` |
 | `BIND_ADDR` | no | Address the API listens on in its container | `0.0.0.0:8080` |
 | `MIGRATE_ON_START` | no | Apply database migrations when the API starts | `true` |
 | `RATE_LIMIT_PER_MINUTE` | no | Requests per minute and client IP, for the API and the website each | `120` |
@@ -154,7 +161,8 @@ docker compose exec api forge-api rescan --all
 
 ## 5. Backups
 
-Two things hold data: the database and the image volume.
+Two things hold data: the database and the image volume. The `packs` volume needs no backup:
+the worker builds every pack again on its next download.
 
 ```bash
 # Database, e.g. daily from cron
@@ -186,10 +194,28 @@ address:
 SURVIVORSFORGE_API_URL=https://api.forge.example.com cargo build --release
 ```
 
-In the release workflow, set `SURVIVORSFORGE_API_URL` as an environment variable of the build
-step. Without it the build uses the placeholder `https://api.survivorsforge.invalid`, which never
-answers. The same variable at run time overrides the built-in address, for testing against a local
+Set `SURVIVORSFORGE_WEB_URL=https://forge.example.com` as well: "Share as link" opens the
+website's pack builder there.
+
+In the release workflow, set both as environment variables of the build step. Without them the
+build uses the placeholders `https://api.survivorsforge.invalid` and `https://survivorsforge.invalid`,
+which never answer. The same variables at run time override the built-in addresses, for testing against a local
 API. When the API cannot be reached, the launcher shows its cached list and installs nothing.
+
+## 7. Addon packs
+
+Players of the browser version upload one zip with all their addons. On the website
+(*Build a pack*) and in the launcher (tick boxes in *Browse*) they pick addons; logged-in users
+get a link like `https://forge.example.com/packs/k5G6tFV3H1` that anyone can open to see the
+addons and versions and download the zip. Only checked or verified versions with a known hash go
+into a pack.
+
+The worker builds a pack's zip on its first download: it fetches each version from GitHub,
+checks its SHA-256 against the scanned one and puts every addon folder at the root of one zip.
+Packs with the same versions share the file. Builds run one after the other; the limits above
+bound their size and number. An hourly job deletes zips that nobody downloaded for
+`PACK_RETENTION_DAYS` and, above `PACK_STORAGE_MB`, the least recently downloaded ones. The
+launcher's *Save as zip* builds the same zip on the player's computer and needs no server space.
 
 ## Running only the API
 
