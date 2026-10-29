@@ -5366,16 +5366,28 @@
       var key = el.getAttribute("data-i18n-aria-label");
       el.setAttribute("aria-label", translations[locale][key] || translations.en[key] || "");
     });
-    var categoryFr = {"All Classes":"Toutes les classes","Warrior":"Guerrier","Paladin":"Paladin","Hunter":"Chasseur","Rogue":"Voleur","Priest":"Prêtre","Shaman":"Chaman","Mage":"Mage","Warlock":"Démoniste","Druid":"Druide","Combat":"Combat","Libraries":"Bibliothèques","Unit Frames":"Cadres d'unités","Action Bars":"Barres d'action","Miscellaneous":"Divers","Classes":"Classes"};
+    var categoryKeys = {
+      "Classes":"cat_classes", "All Classes":"cat_all_classes",
+      "Warrior":"cat_warrior", "Paladin":"cat_paladin",
+      "Hunter":"cat_hunter", "Rogue":"cat_rogue",
+      "Priest":"cat_priest", "Shaman":"cat_shaman",
+      "Mage":"cat_mage", "Warlock":"cat_warlock", "Druid":"cat_druid",
+      "Combat":"cat_combat", "Libraries":"cat_libraries",
+      "Unit Frames":"cat_unit_frames", "Action Bars":"cat_action_bars",
+      "Miscellaneous":"cat_miscellaneous"
+    };
+    function categoryName(name) {
+      var key = categoryKeys[name];
+      return key ? (translations[locale][key] || translations.en[key] || name) : name;
+    }
     document.querySelectorAll("[data-category-label]").forEach(function (el) {
-      var original = el.getAttribute("data-category-label");
-      var translated = locale === "fr" ? (categoryFr[original] || original) : original;
-      if (el.tagName === "OPTGROUP") el.label = translated;
-      else el.textContent = translated;
+      var value = categoryName(el.getAttribute("data-category-label"));
+      if (el.tagName === "OPTGROUP") el.label = value;
+      else el.textContent = value;
     });
     document.querySelectorAll("[data-category-all]").forEach(function (el) {
       var original = el.getAttribute("data-category-all");
-      el.textContent = locale === "fr" ? "Toutes les catégories : " + (categoryFr[original] || original) : "All " + original;
+      el.textContent = categoryName("All Classes") + ": " + categoryName(original);
     });
     document.querySelectorAll("[data-i18n-title]").forEach(function (el) {
       var key = el.getAttribute("data-i18n-title");
