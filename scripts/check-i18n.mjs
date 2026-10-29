@@ -32,6 +32,7 @@ for (const filename of fs.readdirSync(templates).filter(name => name.endsWith(".
 if (unknown.length) throw new Error("Unknown translation keys:\n" + unknown.join("\n"));
 vm.runInNewContext(source, {
   document: {addEventListener() {}},
+  window: {},
   navigator: {language:"en"},
   localStorage: {getItem() {return null}},
 });
