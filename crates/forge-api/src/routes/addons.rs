@@ -74,28 +74,20 @@ fn map_unique(e: sqlx::Error) -> ApiError {
     e.into()
 }
 
-/// Checks that the App is installed on the public repo `full_name` and that `user` is its admin.
-async fn verify_repo(state: &AppState, user: &CurrentUser, full_name: &str) -> ApiResult<(crate::github::types::Repo, i64)> {
-    let full_name = full_name.trim();
-    let valid = full_name.split('/').count() == 2 && full_name.split('/').all(|p| !p.is_empty()) && full_name.len() <= 140;
-    if !valid {
-        return Err(unprocessable("invalid_repo", "The repo must be owner/name"));
+/// Proves the repo is the user's: a repo of the account GitHub logged them in as is theirs (the
+/// owner's id counts, not a name that may change hands); any other needs the App on the repo and
+/// admin rights there. The installation, if there is one, keeps updates instant.
+async fn verify_repo(state: &AppState, user: &CurrentUser, full_name: &str) -> ApiResult<(crate::github::types::Repo, Option<i64>)> {
+    let (repo, installation) = public_repo(state, full_name).await?;
+    if repo.owner.id == user.github_id {
+        return Ok((repo, installation));
     }
-    let installation = state
-        .github
-        .installation_for_repo(full_name)
-        .await
-        .map_err(github_error)?
-        .ok_or_else(|| unprocessable("app_not_installed", "Install the SurvivorsForge GitHub App on this repo first"))?;
-    let repo = state.github.repo_by_name(Some(installation), full_name).await.map_err(github_error)?;
-    if repo.private {
-        return Err(unprocessable("repo_private", "Only public repos can be published"));
-    }
+    let installation = installation.ok_or_else(|| unprocessable("app_not_installed", "Install the SurvivorsForge GitHub App on this repo first"))?;
     let permission = state.github.user_permission(installation, repo.id, &user.login).await.map_err(github_error)?;
     if permission != "admin" {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "not_repo_admin", "You need admin rights on this repo"));
     }
-    Ok((repo, installation))
+    Ok((repo, Some(installation)))
 }
 
 /// Addons go into a category without subcategories (Warrior, not Classes).
@@ -262,7 +254,7 @@ pub async fn insert_addon(
 pub async fn create(State(state): State<AppState>, user: CurrentUser, Json(body): Json<CreateAddon>) -> ApiResult<(StatusCode, Json<Value>)> {
     validate_slug(&body.slug)?;
     let (repo, installation) = verify_repo(&state, &user, &body.repo).await?;
-    let id = insert_addon(&state, &body, Some(user.id), &repo, Some(installation)).await?;
+    let id = insert_addon(&state, &body, Some(user.id), &repo, installation).await?;
     Ok((StatusCode::CREATED, Json(addon_view(&state, id).await?)))
 }
 
@@ -413,7 +405,7 @@ pub async fn update(
     let (repo_id, repo_full_name, installation) = match &body.repo {
         Some(repo) => {
             let (repo, installation) = verify_repo(&state, &user, repo).await?;
-            (repo.id, repo.full_name, Some(installation))
+            (repo.id, repo.full_name, installation)
         }
         None => (addon.repo_id, addon.repo_full_name.clone(), addon.installation_id),
     };

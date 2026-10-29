@@ -257,6 +257,35 @@ async fn admin_adds_addon_without_app() {
 }
 
 #[tokio::test]
+async fn admins_search_and_fill_in_repos_of_any_account() {
+    let mut web = as_admin().await;
+    get_json(&web, "/v1/categories", json!([{ "name": "Miscellaneous", "parent": null, "selectable": true, "sort_key": 60 }])).await;
+    let page = web.get("/admin/addons/new").await;
+    assert!(page.body.contains(r#"<input name="repo_owner""#) && page.body.contains(r#"name="repo_name""#), "the owner is editable: {}", page.body);
+
+    Mock::given(method("GET"))
+        .and(path("/v1/me/repos"))
+        .and(wiremock::matchers::query_param("owner", "cadoky"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "owner": "cadoky", "repos": [{ "full_name": "cadoky/LuckyOdds", "description": null }] })))
+        .mount(&web.api)
+        .await;
+    let found = web.get("/addons/new/repos?repo_owner=cadoky&repo_name=&page=admin").await;
+    assert!(found.body.contains("cadoky/LuckyOdds"), "{}", found.body);
+    let picked = web.get("/addons/new/repo?repo=cadoky/LuckyOdds&page=admin").await;
+    assert!(picked.body.contains(r#"href="/admin/addons/new?repo=cadoky/LuckyOdds""#), "{}", picked.body);
+
+    get_json(&web, "/v1/me/repos/cadoky/LuckyOdds/suggestion", json!({
+        "repo": "cadoky/LuckyOdds", "name": "Lucky Odds", "slug": "luckyodds", "summary": "Odds", "source_type": "release",
+        "asset_pattern": "LuckyOdds-v*.zip", "folders": ["LuckyOdds"], "read_from": "release v0.7.0, LuckyOdds-v0.7.0.zip"
+    }))
+    .await;
+    let filled = web.get("/admin/addons/new?repo=cadoky/LuckyOdds").await;
+    for text in [r#"value="cadoky""#, r#"value="LuckyOdds""#, r#"value="Lucky Odds""#, "release v0.7.0"] {
+        assert!(filled.body.contains(text), "missing {text}: {}", filled.body);
+    }
+}
+
+#[tokio::test]
 async fn audit_filters() {
     let mut web = as_admin().await;
     Mock::given(method("GET"))

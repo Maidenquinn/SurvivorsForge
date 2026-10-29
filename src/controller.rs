@@ -356,6 +356,20 @@ pub fn category_choices(platform: &[Category], registry: &Registry) -> Vec<Categ
     names.into_iter().map(|name| Category { name, parent: None }).collect()
 }
 
+/// How each choice reads in the open category list, as on the website: a category with
+/// subcategories heads its group (1), the subcategories go below it by their own name (2), the rest
+/// stay plain (0).
+pub fn list_entries(choices: &[Category]) -> Vec<(String, i32)> {
+    choices
+        .iter()
+        .map(|c| match &c.parent {
+            Some(_) => (c.name.clone(), 2),
+            None if choices.iter().any(|o| o.parent.as_deref().is_some_and(|p| p.eq_ignore_ascii_case(&c.name))) => (c.name.clone(), 1),
+            None => (c.name.clone(), 0),
+        })
+        .collect()
+}
+
 /// An addon of `category` passes the filter `wanted` when it is that category or one of its
 /// subcategories.
 pub fn in_category(category: &str, wanted: &str, categories: &[Category]) -> bool {
@@ -367,6 +381,74 @@ pub fn in_category(category: &str, wanted: &str, categories: &[Category]) -> boo
 /// verified current version with a known SHA-256.
 pub fn packable(addon: &VerifiedAddon) -> bool {
     addon.latest.as_ref().is_some_and(|l| matches!(l.trust, Trust::Scanned | Trust::Verified) && l.sha256.is_some())
+}
+
+/// What the detail view tells about an addon besides its row; empty where nothing is known.
+#[derive(Debug, Default, PartialEq)]
+pub struct Details {
+    pub category: String,
+    /// What the check of the newest version means for the user.
+    pub safety: String,
+    pub game: String,
+    pub folders: String,
+    pub needs: String,
+}
+
+/// The facts for the detail view: from the platform's entry when there is one, else only the
+/// installed `folders` (GitHub and zip addons).
+pub fn details(addon: Option<&VerifiedAddon>, registry: &Registry, folders: &[String]) -> Details {
+    let Some(addon) = addon else { return Details { folders: folders.join(", "), ..Details::default() } };
+    let latest = addon.latest.as_ref();
+    let safety = match latest.map(|l| l.trust) {
+        Some(Trust::Verified) => "An admin checked this exact file by hand.",
+        Some(Trust::Scanned) if addon.verified_author == Some(true) => {
+            "An admin verified an earlier version of this author; this one was checked automatically."
+        }
+        Some(Trust::Scanned) => "The automatic check found nothing. No admin has looked at it by hand.",
+        Some(Trust::Flagged) => "The automatic check found something suspicious. You are asked before it is installed.",
+        Some(Trust::Unscanned) => "The automatic check has not run yet. You are asked before it is installed.",
+        Some(Trust::Blocked) => "An admin blocked this version. It cannot be installed.",
+        Some(Trust::SourceChanged) => "The file on GitHub changed after it was checked. It cannot be installed until an admin looks at it.",
+        None => "",
+    };
+    let game = match latest.map(|l| (l.game_min.as_deref(), l.game_max.as_deref())) {
+        Some((Some(min), Some(max))) => format!("{min} to {max}"),
+        Some((Some(min), None)) => format!("{min} and later"),
+        Some((None, Some(max))) => format!("up to {max}"),
+        Some((None, None)) => "Every version".into(),
+        None => String::new(),
+    };
+    let needs: Vec<String> = addon
+        .dependencies
+        .iter()
+        .map(|d| {
+            let name = registry.get(&d.id).map_or(d.id.as_str(), |a| a.name.as_str());
+            format!("{name} ({})", if d.required { "required" } else { "optional" })
+        })
+        .collect();
+    Details { category: addon.category.clone(), safety: safety.into(), game, folders: addon.folders.join(", "), needs: needs.join(", ") }
+}
+
+/// An addon's Markdown description as plain text for the launcher: no heading marks, emphasis,
+/// code ticks or images, links as their text.
+// ponytail: line-based, no nested or reference links; a Markdown parser if descriptions need more.
+pub fn plain_text(md: &str) -> String {
+    let lines: Vec<String> = md
+        .lines()
+        .filter(|l| !l.trim_start().starts_with("!["))
+        .map(|l| {
+            let mut line = l.trim_start_matches('#').trim_start().replace("**", "").replace("__", "").replace('`', "");
+            while let (Some(open), Some(mid)) = (line.find('['), line.find("](")) {
+                let Some(close) = line[mid..].find(')').map(|c| mid + c) else { break };
+                if open > mid {
+                    break;
+                }
+                line = format!("{}{}{}", &line[..open], &line[open + 1..mid], &line[close + 1..]);
+            }
+            line
+        })
+        .collect();
+    lines.join("\n").trim().to_string()
 }
 
 /// The website's pack builder with `ids` ticked.
@@ -647,6 +729,45 @@ mod tests {
         addon
     }
 
+    #[test]
+    fn details_of_an_addon() {
+        let mut registry = crate::registry::embedded();
+        let mut addon = latest(Trust::Flagged, true, Some("0.68"), None);
+        addon.category = "Bags".into();
+        addon.folders = vec!["Lucky".into(), "LuckyLib".into()];
+        let mut lib = addon.clone();
+        lib.id = "lib".into();
+        lib.name = "Lib".into();
+        addon.dependencies = vec![
+            forge_core::registry::DependencyRef { id: "lib".into(), required: true },
+            forge_core::registry::DependencyRef { id: "gone".into(), required: false },
+        ];
+        registry.addons = vec![addon.clone(), lib];
+
+        let facts = details(Some(&addon), &registry, &[]);
+        assert_eq!(facts.category, "Bags");
+        assert!(facts.safety.contains("found something") && facts.safety.contains("asked"), "{}", facts.safety);
+        assert_eq!(facts.game, "0.68 and later");
+        assert_eq!(facts.folders, "Lucky, LuckyLib");
+        assert_eq!(facts.needs, "Lib (required), gone (optional)");
+
+        let mut both = latest(Trust::Verified, true, Some("0.68"), Some("0.69"));
+        both.dependencies.clear();
+        let facts = details(Some(&both), &registry, &[]);
+        assert_eq!((facts.game.as_str(), facts.needs.as_str()), ("0.68 to 0.69", ""));
+        assert!(facts.safety.contains("by hand"));
+        assert_eq!(details(Some(&latest(Trust::Verified, true, None, Some("0.69"))), &registry, &[]).game, "up to 0.69");
+
+        let own = details(None, &registry, &["Mine".to_string()]);
+        assert_eq!((own.folders.as_str(), own.safety.as_str(), own.game.as_str()), ("Mine", "", ""), "a GitHub or zip addon: what the folder tells");
+    }
+
+    #[test]
+    fn markdown_reads_as_text() {
+        let md = "# Lucky\n\nRolls **twice** as `/lucky`, see [the wiki](https://x.test).\n![shot](https://x.test/a.png)\n- one\n- two";
+        assert_eq!(plain_text(md), "Lucky\n\nRolls twice as /lucky, see the wiki.\n- one\n- two");
+    }
+
     fn games() -> Vec<GameVersion> {
         vec![GameVersion { name: "0.68".into(), sort_key: 1 }, GameVersion { name: "0.69".into(), sort_key: 2 }]
     }
@@ -781,5 +902,9 @@ mod tests {
         assert_eq!(category_choices(&categories, &registry), categories);
         let offline: Vec<String> = category_choices(&[], &registry).into_iter().map(|c| c.name).collect();
         assert_eq!(offline, ["Action Bars", "Combat", "Miscellaneous", "Unit Frames"], "from the built-in list");
+
+        // In the open list a parent heads its group and the subcategories sit below it.
+        let list = list_entries(&categories);
+        assert_eq!(list, [("Classes".to_string(), 1), ("Warrior".to_string(), 2), ("Combat".to_string(), 0)]);
     }
 }

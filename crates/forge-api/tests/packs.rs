@@ -226,6 +226,20 @@ async fn only_listed_and_available_packs_are_public(pool: PgPool) {
     let mine = list["packs"].as_array().unwrap().iter().find(|p| p["id"] == listed.as_str()).unwrap();
     assert_eq!((mine["created_by"].as_str(), mine["addons"].clone()), (Some("alice"), json!(["Addon lucky", "Addon odds"])));
 
+    // Search: by the pack's name or the name of an addon in it, any case.
+    let found = |q: &str| {
+        let app = &app;
+        let q = q.to_string();
+        async move {
+            let list = app.get(&format!("/v1/packs?q={q}"), None).await.json();
+            list["packs"].as_array().unwrap().iter().map(|p| p["name"].as_str().unwrap().to_string()).collect::<Vec<_>>()
+        }
+    };
+    assert_eq!(found("my%20ui").await, ["My UI"]);
+    assert_eq!(found("LUCKY").await, ["My UI"], "by an addon of the pack");
+    assert_eq!(found("odds").await, ["Odds only", "My UI"]);
+    assert!(found("nothing").await.is_empty());
+
     sqlx::query("UPDATE addons SET blocked_at = now() WHERE slug = 'odds'").execute(&app.pool).await.unwrap();
     let names: Vec<String> = app.get("/v1/packs", None).await.json()["packs"].as_array().unwrap().iter().map(|p| p["name"].as_str().unwrap().to_string()).collect();
     assert!(names.is_empty(), "packs that cannot be downloaded are not offered: {names:?}");

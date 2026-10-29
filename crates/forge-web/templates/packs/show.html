@@ -8,31 +8,35 @@
 <section class="panel download">
   {% if available %}
     <p><a class="button" href="/packs/{{ id }}/download">Download the pack{% if let Some(s) = size %} ({{ s }}){% endif %}</a></p>
-    <p class="muted">One zip, every addon in its own folder. Upload it in the browser version of the game.</p>
+    <p class="muted">One zip, every addon in its own folder. Upload it in the browser version of the game.{% if size.is_none() %} Packed on the first download, which takes up to a minute.{% endif %}</p>
   {% else %}
-    <div class="notice bad" role="alert">An addon of this pack is no longer available, so the pack cannot be downloaded. Build a new one.</div>
+    <div class="notice bad">An addon of this pack is no longer available, so the pack cannot be downloaded. <a href="{{ rebuild }}">Build a new one</a> without it.</div>
   {% endif %}
   <label for="link">Link to share</label>
-  <input id="link" value="{{ link }}" readonly>
+  <div class="copy-row">
+    <input id="link" value="{{ link }}" readonly>
+    <button type="button" class="secondary" data-copy="link" hidden>Copy</button>
+  </div>
+  <p class="muted" role="status" data-copied="link"></p>
 </section>
 
 <section class="panel">
   <h2>In this pack</h2>
   <div class="table-wrap">
-    <table>
-      <thead><tr><th>Addon</th><th>Version</th><th>Check</th><th>Folders</th></tr></thead>
+    <table class="pack-table">
+      <thead><tr><th>Addon</th><th>Version</th><th>Safety check</th><th>Folders</th></tr></thead>
       <tbody>
         {% for e in entries %}
         <tr>
           <td><a href="/addons/{{ e.slug }}">{{ e.name }}</a></td>
           <td>{{ e.tag }}</td>
-          <td>{% if e.available %}<span class="badge {{ e.notice.class }}">{{ e.notice.badge }}</span>{% else %}<span class="badge bad">Unavailable</span>{% endif %}</td>
-          <td class="muted">{{ e.folders }}</td>
+          <td class="check">{% if e.available %}<span class="badge {{ e.notice.class }}">{{ e.notice.badge }}</span>{% else %}<span class="badge bad">Unavailable</span>{% endif %}</td>
+          <td>{{ e.folders }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </section>
-<p><a href="/packs/new{% for e in entries %}{% if loop.first %}?{% else %}&amp;{% endif %}addon={{ e.slug }}{% endfor %}">Build your own pack from this one</a></p>
+<p><a href="{{ rebuild }}">Build your own pack from this one</a></p>
 {% endblock %}

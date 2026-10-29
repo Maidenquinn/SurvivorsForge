@@ -14,7 +14,7 @@ use reqwest::StatusCode;
 use reqwest::header::{ACCEPT, ETAG, HeaderMap, IF_NONE_MATCH, USER_AGENT};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use types::{Installation, InstallationToken, Permission, Release, Repo, Tag, User};
+use types::{Installation, InstallationToken, Owner, Permission, Release, Repo, Tag, User};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GitHubError {
@@ -67,10 +67,10 @@ pub type GitHubResult<T> = Result<T, GitHubError>;
 pub trait GitHubApi: Send + Sync {
     /// The installation of the App on `owner/name`; `None` when the App is not installed there.
     async fn installation_for_repo(&self, full_name: &str) -> GitHubResult<Option<i64>>;
-    /// The installation of the App on the personal account `login`; `None` when there is none.
-    async fn installation_for_user(&self, login: &str) -> GitHubResult<Option<i64>>;
-    /// The repos the owner gave `installation` access to.
-    async fn installation_repos(&self, installation: i64) -> GitHubResult<Vec<Repo>>;
+    /// The public repos of an account, newest push first; no App installation needed.
+    async fn user_repos(&self, login: &str) -> GitHubResult<Vec<Repo>>;
+    /// The organizations the user is a public member of.
+    async fn user_orgs(&self, login: &str) -> GitHubResult<Vec<String>>;
     async fn repo(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo>;
     async fn repo_by_name(&self, installation: Option<i64>, full_name: &str) -> GitHubResult<Repo>;
     /// `admin`, `maintain`, `write`, `triage`, `read` or `none`.
@@ -103,6 +103,8 @@ pub struct GitHubClient {
     /// URL -> (ETag, body) of the last `200`, for conditional requests.
     etags: Mutex<HashMap<String, (String, String)>>,
     oauth: Option<OAuthApp>,
+    /// Sent with requests outside an installation: 5000 instead of 60 requests per hour.
+    read_token: Option<String>,
 }
 
 /// The OAuth side of the GitHub App, for user logins.
@@ -132,10 +134,17 @@ impl GitHubClient {
             tokens: Mutex::new(HashMap::new()),
             etags: Mutex::new(HashMap::new()),
             oauth: None,
+            read_token: None,
         }
     }
 
     /// Other download hosts than GitHub's, for tests against a local server.
+    /// A token for public reads outside an installation (`GITHUB_READ_TOKEN`).
+    pub fn with_read_token(mut self, token: Option<String>) -> GitHubClient {
+        self.read_token = token.filter(|t| !t.trim().is_empty());
+        self
+    }
+
     pub fn with_download_hosts(mut self, hosts: &[&str]) -> GitHubClient {
         self.download_hosts = hosts.iter().map(|h| h.to_string()).collect();
         self.downloads = download_client(self.download_hosts.clone());
@@ -174,18 +183,23 @@ impl GitHubClient {
     }
 
     /// GET with an installation token and `If-None-Match`; a `304` answers from the cache.
-    // ponytail: without an installation GitHub allows 60 requests/h per IP; enough for a daily poll of
-    // the unclaimed addons, not for many more.
+    // Without an installation GitHub allows 60 requests per hour and IP, or 5000 with `read_token`.
     async fn get_json<T: serde::de::DeserializeOwned>(&self, installation: Option<i64>, path: &str) -> GitHubResult<T> {
         let url = format!("{}{path}", self.api_url);
         let mut builder = match installation {
             Some(installation) => self.request(self.http.get(&url), &self.installation_token(installation).await?),
-            None => self
-                .http
-                .get(&url)
-                .header(ACCEPT, "application/vnd.github+json")
-                .header("X-GitHub-Api-Version", "2022-11-28")
-                .header(USER_AGENT, "SurvivorsForge"),
+            None => {
+                let builder = self
+                    .http
+                    .get(&url)
+                    .header(ACCEPT, "application/vnd.github+json")
+                    .header("X-GitHub-Api-Version", "2022-11-28")
+                    .header(USER_AGENT, "SurvivorsForge");
+                match &self.read_token {
+                    Some(token) => builder.bearer_auth(token),
+                    None => builder,
+                }
+            }
         };
         let cached = self.etags.lock().unwrap().get(&url).cloned();
         if let Some((etag, _)) = &cached {
@@ -280,20 +294,14 @@ impl GitHubApi for GitHubClient {
         Ok(optional(installation)?.map(|i| i.id))
     }
 
-    async fn installation_for_user(&self, login: &str) -> GitHubResult<Option<i64>> {
-        let url = format!("{}/users/{login}/installation", self.api_url);
-        let response = self.request(self.http.get(&url), &self.app_jwt()?).send().await.map_err(network)?;
-        let installation: GitHubResult<Installation> = match check(response).await {
-            Ok(response) => parse(response).await,
-            Err(e) => Err(e),
-        };
-        Ok(optional(installation)?.map(|i| i.id))
+    async fn user_orgs(&self, login: &str) -> GitHubResult<Vec<String>> {
+        let orgs: Vec<Owner> = self.get_json(None, &format!("/users/{login}/orgs?per_page=100")).await?;
+        Ok(orgs.into_iter().map(|o| o.login).collect())
     }
 
-    async fn installation_repos(&self, installation: i64) -> GitHubResult<Vec<Repo>> {
-        // ponytail: first 100 repos only; paginate if someone gives the App more.
-        let list: types::InstallationRepos = self.get_json(Some(installation), "/installation/repositories?per_page=100").await?;
-        Ok(list.repositories)
+    async fn user_repos(&self, login: &str) -> GitHubResult<Vec<Repo>> {
+        // The 100 newest repos: publishing forms look for active addons.
+        self.get_json(None, &format!("/users/{login}/repos?per_page=100&sort=pushed")).await
     }
 
     async fn repo(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo> {
@@ -318,8 +326,18 @@ impl GitHubApi for GitHubClient {
     }
 
     async fn releases(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Vec<Release>> {
-        // ponytail: newest 100 releases only; paginate if an addon ever keeps more.
-        self.get_json(installation, &format!("/repositories/{repo_id}/releases?per_page=100")).await
+        // Page by page: a release missing from the list counts as deleted on GitHub.
+        const PAGE: usize = 100;
+        let mut all = Vec::new();
+        for page in 1..=20 {
+            let batch: Vec<Release> = self.get_json(installation, &format!("/repositories/{repo_id}/releases?per_page={PAGE}&page={page}")).await?;
+            let full = batch.len() == PAGE;
+            all.extend(batch);
+            if !full {
+                break;
+            }
+        }
+        Ok(all)
     }
 
     async fn release(&self, installation: Option<i64>, repo_id: i64, release_id: i64) -> GitHubResult<Option<Release>> {

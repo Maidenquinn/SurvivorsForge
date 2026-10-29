@@ -19,11 +19,38 @@ async fn creator(app: &TestApp, github_id: i64, login: &str, repo_id: i64, repo:
 }
 
 #[sqlx::test]
+async fn repos_of_the_own_account_need_no_app(pool: PgPool) {
+    // GitHub logged her in as this account, so its repos are hers; the owner's id counts, not a name.
+    let app = TestApp::new(pool);
+    let alice = app.login(1, "alice").await;
+    app.github.add_own_repo(20, "alice/lucky", 1);
+    let reply = app.post("/v1/addons", Some(&alice), addon("lucky", "alice/lucky", &["Lucky"])).await;
+    assert_eq!(reply.status, StatusCode::CREATED, "{}", reply.body);
+    assert_eq!(reply.json()["owner"]["login"], "alice");
+
+    app.github.add_own_repo(21, "alice/renamed", 7);
+    let reply = app.post("/v1/addons", Some(&alice), addon("renamed", "alice/renamed", &["Renamed"])).await;
+    assert_eq!(reply.error(), "app_not_installed", "same name, other account");
+
+    // An addon an admin added from her repo: she claims it without the App too.
+    app.github.add_own_repo(22, "alice/orphan", 1);
+    app.post("/v1/addons", Some(&alice), addon("orphan", "alice/orphan", &["Orphan"])).await;
+    sqlx::query("UPDATE addons SET owner_id = NULL, installation_id = NULL WHERE slug = 'orphan'").execute(&app.pool).await.unwrap();
+    let reply = app.post("/v1/addons/orphan/claim", Some(&alice), json!({})).await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+}
+
+#[sqlx::test]
 async fn create_requires_installation_public_repo_and_admin(pool: PgPool) {
     let app = TestApp::new(pool);
     let token = app.login(1, "alice").await;
 
     let reply = app.post("/v1/addons", Some(&token), addon("lucky", "alice/lucky", &["Lucky"])).await;
+    assert_eq!((reply.status, reply.error().as_str()), (StatusCode::UNPROCESSABLE_ENTITY, "repo_not_found"));
+
+    // A repo of another account: the App and admin rights there prove it is hers.
+    app.github.add_own_repo(11, "bob/other", 2);
+    let reply = app.post("/v1/addons", Some(&token), addon("other", "bob/other", &["Other"])).await;
     assert_eq!((reply.status, reply.error().as_str()), (StatusCode::UNPROCESSABLE_ENTITY, "app_not_installed"));
 
     app.github.add_repo(10, "alice/lucky", "someone-else");
@@ -144,7 +171,7 @@ async fn description_is_served_as_sanitized_html_and_limited(pool: PgPool) {
     let view = app.patch("/v1/addons/lucky", Some(&token), json!({ "description_md": md })).await.json();
     assert_eq!(view["description_md"], md);
     let html = view["description_html"].as_str().unwrap();
-    assert!(html.contains("<h1>Lucky</h1>"), "{html}");
+    assert!(html.contains("<h2>Lucky</h2>"), "{html}");
     assert!(html.contains("https://web.test/img/a.webp"), "{html}");
     assert!(!html.contains("<script"), "{html}");
 
@@ -179,7 +206,7 @@ async fn the_long_description_can_come_with_the_new_addon(pool: PgPool) {
     assert_eq!(app.post("/v1/addons", Some(&token), body.clone()).await.status, StatusCode::CREATED);
     let shown = app.get("/v1/addons/lucky", None).await.json();
     assert_eq!(shown["description_md"], "## Features\n\n- Odds on the minimap");
-    assert!(shown["description_html"].as_str().unwrap().contains("<h2>Features</h2>"), "{shown}");
+    assert!(shown["description_html"].as_str().unwrap().contains("<h3>Features</h3>"), "{shown}");
 
     app.github.add_repo(101, "alice/big", "alice");
     let mut big = addon("big", "alice/big", &["Big"]);

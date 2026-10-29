@@ -1,8 +1,42 @@
 {% extends "base.html" %}
+{% block head %}<meta name="description" content="Addons for Azeroth Survivors, checked for harmful code. Install them with the SurvivorsForge launcher or as one pack for the browser version.">{% endblock %}
 {% block content %}
 <section class="hero">
-  <h1>Addons for Azeroth Survivors</h1>
-  <p>Find addons, see how they were checked and download them straight from GitHub.</p>
-  <p><a class="button" href="/addons">Browse addons</a></p>
+  <h1>Addons, checked</h1>
+  <p class="lead">For Azeroth Survivors. The SurvivorsForge launcher installs, updates and removes addons with one click. Every release is checked for harmful code first.</p>
+  <p class="actions center">
+    <a class="button large" href="https://github.com/Rezondes/SurvivorsForge/releases/latest" rel="external noopener">Download the launcher</a>
+    <a class="button secondary" href="/addons">Browse addons</a>
+  </p>
+  <p class="muted">Windows · Linux &amp; Steam Deck. Free and open source.</p>
+</section>
+
+<section class="home-points" aria-label="How addons are checked">
+  <div><h3>Checked automatically</h3><p>Every release is scanned for harmful code before it is listed.</p></div>
+  <div><h3>Verified by hand</h3><p>Admins look at files themselves; the Verified badge shows it.</p></div>
+  <div><h3>Straight from GitHub</h3><p>Nothing is repacked. The launcher installs a file only when its hash matches the checked one.</p></div>
+</section>
+
+<section class="panel home-section">
+  <h2>Playing in the browser?</h2>
+  <p>The browser version takes one zip with all your addons. Pick the addons you want and get them as one pack: checked versions only, every addon folder in place.</p>
+  <p class="actions"><a class="button" href="/packs/new">Build an addon pack</a> <a class="button secondary" href="/packs">Browse packs</a></p>
+</section>
+
+{% if !popular.is_empty() %}
+<section class="home-section">
+  <div class="title-row"><h2>Popular addons</h2><a href="/addons">All addons</a></div>
+  <div class="grid">
+    {% for c in popular %}
+    {% include "card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="panel home-section">
+  <h2>Made an addon?</h2>
+  <p>Log in with GitHub, pick your repo and the form fills itself in. Every new release shows up here and in the launcher, checked first.</p>
+  <p><a class="button secondary" href="/addons/new">Publish it from your GitHub repo</a></p>
 </section>
 {% endblock %}

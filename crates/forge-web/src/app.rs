@@ -97,8 +97,11 @@ pub fn router(state: AppState) -> Router {
                 .post(crate::creator::create_addon)
                 .layer(axum::extract::DefaultBodyLimit::max(crate::csrf::MAX_UPLOAD_FORM)),
         )
+        .route("/addons/new/repos", get(crate::creator::repo_suggestions))
+        .route("/addons/new/repo", get(crate::creator::repo_pick))
         .route("/addons/{slug}/edit", get(crate::creator::edit_addon).post(crate::creator::save_addon))
         .route("/addons/{slug}/preview", post(crate::creator::preview))
+        .route("/addons/{slug}/claim", post(crate::creator::claim))
         .route(
             "/addons/{slug}/images",
             get(crate::creator::images)
@@ -132,8 +135,9 @@ pub fn router(state: AppState) -> Router {
         .route("/login", get(login))
         .route("/auth/callback", get(callback))
         .route("/logout", post(logout))
-        .route("/static/htmx.min.js", get(|| async { asset("text/javascript", include_str!("../static/htmx.min.js")) }))
-        .route("/static/app.css", get(|| async { asset("text/css", include_str!("../static/app.css")) }))
+        .route("/static/htmx.min.js", get(|| async { asset("text/javascript", HTMX_JS) }))
+        .route("/static/app.css", get(|| async { asset("text/css", APP_CSS) }))
+        .route("/static/view.js", get(|| async { asset("text/javascript", VIEW_JS) }))
         // The launcher's fonts (SIL OFL, licenses next to them in ui/fonts).
         // The launcher's icon, as tab icon and home screen icon.
         .route("/static/icon.png", get(|| async { binary("image/png", include_bytes!("../../../assets/icon.png")) }))
@@ -164,6 +168,20 @@ fn font(body: &'static [u8]) -> Response {
     ([(header::CONTENT_TYPE, "font/ttf"), (header::CACHE_CONTROL, "public, max-age=604800, immutable")], body).into_response()
 }
 
+const HTMX_JS: &str = include_str!("../static/htmx.min.js");
+const APP_CSS: &str = include_str!("../static/app.css");
+const VIEW_JS: &str = include_str!("../static/view.js");
+
+/// Goes into the links to the stylesheet and scripts (`?v=`) and changes with their content, so a
+/// deploy reaches browsers that still cache the old files.
+pub fn asset_version() -> &'static str {
+    static VERSION: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+        let hash = sha2::Sha256::new().chain_update(HTMX_JS).chain_update(APP_CSS).chain_update(VIEW_JS).finalize();
+        hash[..6].iter().map(|b| format!("{b:02x}")).collect()
+    });
+    &VERSION
+}
+
 fn asset(content_type: &'static str, body: &'static str) -> Response {
     ([(header::CONTENT_TYPE, content_type), (header::CACHE_CONTROL, "public, max-age=86400")], body).into_response()
 }
@@ -178,16 +196,23 @@ async fn healthz(State(state): State<AppState>) -> Response {
 
 async fn index(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>) -> WebResult<Html<String>> {
     let user = visitor(&state, &jar).await?.map(|(v, _)| v);
-    Ok(render(&IndexPage { user, csrf: csrf.0 }))
+    // A teaser only: without the API the page still loads, without it.
+    let popular = match state.api.get("/v1/addons?sort=downloads&per_page=6", None).await {
+        Ok(list) => list["addons"].as_array().into_iter().flatten().map(crate::public::card).collect(),
+        Err(_) => Vec::new(),
+    };
+    Ok(render(&IndexPage { user, csrf: csrf.0, popular }))
 }
 
-async fn login(State(state): State<AppState>) -> Redirect {
+async fn login(State(state): State<AppState>, jar: PrivateCookieJar) -> Response {
     let url = reqwest::Url::parse_with_params(
         &format!("{}/v1/auth/github/start", state.config.public_api_url),
         &[("return_to", state.config.callback_url())],
     )
     .expect("valid API URL");
-    Redirect::to(url.as_str())
+    // Lives until the callback removes it or the browser closes.
+    let started = session::cookie(session::LOGIN_COOKIE, "1".into(), state.secure_cookies());
+    (jar.add(started), Redirect::to(url.as_str())).into_response()
 }
 
 #[derive(Deserialize)]
@@ -196,10 +221,12 @@ struct CallbackQuery {
     error: Option<String>,
 }
 
-// ponytail: no own login state, so a forged callback could log a visitor in as someone else; add a
-// nonce cookie bound into return_to if that ever matters.
+/// The end of a GitHub login. Counts only when the login started in this browser (`LOGIN_COOKIE`).
 async fn callback(State(state): State<AppState>, jar: PrivateCookieJar, Query(query): Query<CallbackQuery>) -> Response {
+    let started = jar.get(session::LOGIN_COOKIE).is_some();
+    let jar = jar.remove(session::removal(session::LOGIN_COOKIE));
     let message = match (query.code, query.error.as_deref()) {
+        (Some(_), None) if !started => "This login was not started here. Please log in again.".into(),
         (Some(code), None) => {
             let body = json!({ "code": code, "return_to": state.config.callback_url() });
             match state.api.post("/v1/auth/exchange", None, &body).await {
@@ -215,7 +242,7 @@ async fn callback(State(state): State<AppState>, jar: PrivateCookieJar, Query(qu
         (_, Some("denied")) => "The login was cancelled on GitHub.".into(),
         _ => "The login did not work. Please try again.".into(),
     };
-    error_page(StatusCode::BAD_REQUEST, "Login failed", &message)
+    (jar, error_page(StatusCode::BAD_REQUEST, "Login failed", &message)).into_response()
 }
 
 async fn logout(State(state): State<AppState>, jar: PrivateCookieJar) -> Response {

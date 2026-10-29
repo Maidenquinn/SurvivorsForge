@@ -381,16 +381,39 @@ pub struct AdminAddonForm {
     pub author_name: String,
 }
 
-pub async fn add_addon_page(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>) -> WebResult<Html<String>> {
-    let (user, _) = admin(&state, &jar).await?;
+#[derive(Deserialize, Default)]
+pub struct AddAddonQuery {
+    repo: Option<String>,
+}
+
+/// `GET /admin/addons/new?repo=owner/name`: the form, filled in from the repo when one is given.
+pub async fn add_addon_page(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Extension(csrf): Extension<CsrfToken>,
+    Query(query): Query<AddAddonQuery>,
+) -> WebResult<Html<String>> {
+    let (user, token) = admin(&state, &jar).await?;
     let categories = crate::app::selectable_categories(&state).await?;
     let mut form = AdminAddonForm::default();
     form.base.source_type = "release".into();
-    Ok(render(&AdminAddAddonPage { user: Some(user), csrf: csrf.0, categories, form, error: None }))
+    let mut filled = None;
+    if let Some(repo) = query.repo.as_deref().map(str::trim).filter(|r| r.split('/').count() == 2) {
+        let (base, result) = crate::creator::filled_in(&state, &token, repo).await;
+        form = AdminAddonForm { author_name: repo.split('/').next().unwrap_or_default().to_string(), base };
+        filled = Some(result);
+    }
+    let (owner, name) = form.base.repo.split_once('/').unwrap_or_default();
+    let repo = crate::creator::repo_field(owner, name, true, false);
+    Ok(render(&AdminAddAddonPage { user: Some(user), csrf: csrf.0, repo, filled, categories, form, error: None }))
 }
 
 pub async fn add_addon(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Form(form): Form<AdminAddonForm>) -> WebResult<Response> {
     let (user, token) = admin(&state, &jar).await?;
+    let mut form = form;
+    if !form.base.repo_name.trim().is_empty() {
+        form.base.repo = format!("{}/{}", form.base.repo_owner.trim(), form.base.repo_name.trim());
+    }
     let f = &form.base;
     let folders: Vec<String> = f.folders.split([',', '\n']).map(str::trim).filter(|x| !x.is_empty()).map(str::to_string).collect();
     let body = json!({
@@ -401,7 +424,9 @@ pub async fn add_addon(State(state): State<AppState>, jar: PrivateCookieJar, Ext
         Ok(created) => Ok(Redirect::to(&format!("/addons/{}", s(&created["slug"]))).into_response()),
         Err(ApiError::Api { message, status, .. }) if status < 500 && status != 403 => {
             let categories = crate::app::selectable_categories(&state).await?;
-            Ok(render(&AdminAddAddonPage { user: Some(user), csrf: csrf.0, categories, form, error: Some(message) }).into_response())
+            let (owner, name) = form.base.repo.split_once('/').unwrap_or_default();
+            let repo = crate::creator::repo_field(owner, name, true, false);
+            Ok(render(&AdminAddAddonPage { user: Some(user), csrf: csrf.0, repo, filled: None, categories, form, error: Some(message) }).into_response())
         }
         Err(e) => Err(e.into()),
     }

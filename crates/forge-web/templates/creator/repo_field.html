@@ -1,0 +1,19 @@
+<div id="repo-field">
+  <label for="repo_name">GitHub repo</label>
+  <div class="repo-input">
+    {% if repo.editable %}<input name="repo_owner" value="{{ repo.owner }}" aria-label="Account" placeholder="account" required autocomplete="off"
+      hx-get="/addons/new/repos" hx-trigger="input changed delay:300ms" hx-target="#repo-suggestions" hx-include="#repo-field">
+    {% else if repo.accounts.len() > 1 %}<select name="repo_owner" aria-label="Account" class="repo-account"
+      hx-get="/addons/new/repos" hx-trigger="change" hx-target="#repo-suggestions" hx-include="#repo-field">
+      {% for a in repo.accounts %}<option value="{{ a }}"{% if a.eq_ignore_ascii_case(repo.owner) %} selected{% endif %}>{{ a }}</option>{% endfor %}
+    </select>
+    {% else %}<span class="repo-owner">{{ repo.owner }}</span><input type="hidden" name="repo_owner" value="{{ repo.owner }}">{% endif %}
+    <span class="repo-slash">/</span>
+    <input id="repo_name" name="repo_name" value="{{ repo.name }}" placeholder="repo name" required autocomplete="off"
+      hx-get="/addons/new/repos" hx-trigger="input changed delay:300ms, focus once" hx-target="#repo-suggestions" hx-include="#repo-field">
+    <input type="hidden" name="page" value="{{ repo.page }}">
+  </div>
+  {% if !repo.editable %}<p class="muted">New releases show up here within a day; with the SurvivorsForge App <a href="{{ repo.install_url }}" rel="noopener">installed on the repo</a> they show up at once.{% if repo.accounts.len() > 1 %} Repos of an organization need the App and your admin rights there.{% endif %}</p>{% endif %}
+  <div id="repo-suggestions" class="suggestions">{% include "creator/repo_suggestions.html" %}</div>
+  {% if repo.picked %}<p><a class="button secondary" href="{% if repo.page == "admin" %}/admin{% endif %}/addons/new?repo={{ repo.owner }}/{{ repo.name }}">Fill in from this repo</a></p>{% endif %}
+</div>

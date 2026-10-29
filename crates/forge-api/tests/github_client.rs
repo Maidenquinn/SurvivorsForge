@@ -5,7 +5,7 @@ use rsa::pkcs8::{EncodePrivateKey, LineEnding};
 use serde_json::json;
 use std::sync::{Arc, Mutex, OnceLock};
 use tokio::io::AsyncWriteExt;
-use wiremock::matchers::{header, method, path};
+use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// Generated per test run, never stored in the repo.
@@ -130,28 +130,52 @@ async fn installation_lookup_uses_app_jwt_and_404_is_none() {
 }
 
 #[tokio::test]
-async fn installation_repos_use_the_installation_token() {
+async fn releases_beyond_the_first_page_are_read() {
+    // GitHub sends at most 100 per page; a sync must not take older releases for deleted.
     let server = MockServer::start().await;
-    mount_token(&server, Utc::now() + chrono::Duration::hours(1)).await;
-    Mock::given(method("GET"))
-        .and(path("/installation/repositories"))
-        .and(header("authorization", "Bearer inst-token"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "total_count": 1, "repositories": [repo_json()] })))
-        .mount(&server)
-        .await;
+    let page = |from: i64, n: i64| -> Vec<serde_json::Value> {
+        (from..from + n).map(|i| json!({ "id": i, "tag_name": format!("v{i}"), "draft": false, "prerelease": false, "assets": [] })).collect()
+    };
+    for (number, body) in [("1", page(0, 100)), ("2", page(100, 3))] {
+        Mock::given(method("GET"))
+            .and(path("/repositories/9/releases"))
+            .and(query_param("page", number))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .expect(1)
+            .mount(&server)
+            .await;
+    }
     let gh = client(&server, Arc::new(Mutex::new(Utc::now())));
-    let repos = gh.installation_repos(1).await.unwrap();
-    assert_eq!(repos.iter().map(|r| r.full_name.as_str()).collect::<Vec<_>>(), ["o/r"]);
+    assert_eq!(gh.releases(None, 9).await.unwrap().len(), 103);
 }
 
 #[tokio::test]
-async fn account_installation_lookup() {
+async fn a_read_token_lifts_the_limit_without_installation() {
+    // GitHub allows 60 requests per hour without a token and 5000 with one.
     let server = MockServer::start().await;
-    Mock::given(method("GET")).and(path("/users/alice/installation")).respond_with(ResponseTemplate::new(200).set_body_json(json!({ "id": 5 }))).mount(&server).await;
-    Mock::given(method("GET")).and(path("/users/bob/installation")).respond_with(ResponseTemplate::new(404)).mount(&server).await;
+    Mock::given(method("GET"))
+        .and(path("/users/o/repos"))
+        .and(header("authorization", "Bearer read-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([repo_json()])))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let gh = client(&server, Arc::new(Mutex::new(Utc::now()))).with_read_token(Some("read-token".into()));
+    assert_eq!(gh.user_repos("o").await.unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn user_repos_need_no_installation() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/users/o/repos"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([repo_json()])))
+        .mount(&server)
+        .await;
     let gh = client(&server, Arc::new(Mutex::new(Utc::now())));
-    assert_eq!(gh.installation_for_user("alice").await.unwrap(), Some(5));
-    assert_eq!(gh.installation_for_user("bob").await.unwrap(), None);
+    let repos = gh.user_repos("o").await.unwrap();
+    assert_eq!(repos.iter().map(|r| r.full_name.as_str()).collect::<Vec<_>>(), ["o/r"]);
+    assert!(!server.received_requests().await.unwrap()[0].headers.contains_key("authorization"), "public data, no token");
 }
 
 #[tokio::test]

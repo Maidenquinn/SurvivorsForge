@@ -44,6 +44,8 @@ pub struct ErrorPage {
 pub struct IndexPage {
     pub user: Option<Visitor>,
     pub csrf: String,
+    /// The most downloaded addons; empty when the API cannot tell.
+    pub popular: Vec<Card>,
 }
 
 pub use crate::trust::Notice;
@@ -78,6 +80,18 @@ impl CategoryOption {
             })
             .collect()
     }
+
+    /// The top-level categories, each with its subcategories (empty for a plain one), in order.
+    pub fn groups(list: Vec<CategoryOption>) -> Vec<(CategoryOption, Vec<CategoryOption>)> {
+        let mut groups: Vec<(CategoryOption, Vec<CategoryOption>)> = Vec::new();
+        for c in list {
+            match groups.iter_mut().find(|(top, _)| !c.parent.is_empty() && top.name.eq_ignore_ascii_case(&c.parent)) {
+                Some((_, children)) => children.push(c),
+                None => groups.push((c, Vec::new())),
+            }
+        }
+        groups
+    }
 }
 
 pub struct Card {
@@ -88,8 +102,8 @@ pub struct Card {
     pub icon_url: Option<String>,
     pub category: String,
     pub notice: Notice,
-    /// `None` for addons from tags: GitHub counts only release downloads.
-    pub downloads: Option<i64>,
+    /// Grouped like `24,365`; `None` for addons from tags: GitHub counts only release downloads.
+    pub downloads: Option<String>,
     /// `YYYY-MM-DD`, shown where there is no download count.
     pub updated: String,
 }
@@ -105,7 +119,8 @@ pub struct AddonsPage {
     pub sort: String,
     pub total: i64,
     /// For the filter, all of them.
-    pub categories: Vec<CategoryOption>,
+    /// Top-level categories with their subcategories, for the grouped filter.
+    pub categories: Vec<(CategoryOption, Vec<CategoryOption>)>,
     pub cards: Vec<Card>,
     pub prev: Option<String>,
     pub next: Option<String>,
@@ -121,6 +136,8 @@ pub struct FindingRow {
 
 pub struct VersionRow {
     pub tag: String,
+    /// The tag cut to 18 characters and `…` when it is longer (commit hashes), for headings.
+    pub tag_short: String,
     pub name: String,
     pub published: String,
     pub prerelease: bool,
@@ -131,6 +148,8 @@ pub struct VersionRow {
     pub game: String,
     pub critical: i64,
     pub warn: i64,
+    /// Grouped like `1,234`; `None` when GitHub counted nothing (versions from tags have no count).
+    pub downloads: Option<String>,
 }
 
 pub struct Shot {
@@ -175,6 +194,11 @@ pub struct AddonPage {
     pub contributors: Vec<String>,
     pub deps: Vec<Dep>,
     pub latest: Option<LatestBlock>,
+    /// Unclaimed, and the repo belongs to the visitor's GitHub account.
+    pub can_claim: bool,
+    pub install_url: String,
+    /// Why a claim failed.
+    pub error: Option<String>,
 }
 
 #[derive(Template)]
@@ -254,7 +278,13 @@ pub struct MyAddon {
 pub struct MyAddonsPage {
     pub user: Option<Visitor>,
     pub csrf: String,
+    /// Owned, shared and `claimable` (added by an admin from a repo of the visitor) addons.
     pub rows: Vec<MyAddon>,
+    /// Some row can be claimed: the page explains what a claim checks.
+    pub claimable: bool,
+    pub install_url: String,
+    pub msg: Option<String>,
+    pub error: Option<String>,
 }
 
 #[derive(Template)]
@@ -263,15 +293,45 @@ pub struct NewAddonPage {
     pub user: Option<Visitor>,
     pub csrf: String,
     pub install_url: String,
-    /// Where the visitor picks the repos of their App installation; `None` when it is not installed.
-    pub manage_url: Option<String>,
-    /// (full name, description) of the visitor's repos that can still become an addon.
-    pub repos: Vec<(String, String)>,
+    pub repo: RepoField,
     /// What the form was filled in from, or why it could not be.
     pub filled: Option<Result<String, String>>,
     pub categories: Vec<CategoryOption>,
     pub form: crate::creator::NewAddonForm,
     pub errors: Errors,
+}
+
+/// The repo input of the publish forms: the account (fixed for creators, editable for admins)
+/// and the repo name, which suggests matching public repos while typing. `page` is `admin` on
+/// the admin form, so a pick leads back there.
+pub struct RepoField {
+    pub owner: String,
+    pub name: String,
+    pub editable: bool,
+    /// The creator's account and public organizations to choose from (admins type any).
+    pub accounts: Vec<String>,
+    /// Where to install the App, which repos of an organization need.
+    pub install_url: String,
+    pub page: String,
+    /// Picked from the suggestions: offer to fill in the form from it.
+    pub picked: bool,
+    /// (full name, description).
+    pub suggestions: Vec<(String, String)>,
+    pub error: String,
+}
+
+/// The repo field alone, for htmx when a suggestion is picked.
+#[derive(Template)]
+#[template(path = "creator/repo_field_fragment.html")]
+pub struct RepoFieldFragment {
+    pub repo: RepoField,
+}
+
+/// The suggestions alone, for htmx while the name is typed.
+#[derive(Template)]
+#[template(path = "creator/repo_suggestions_fragment.html")]
+pub struct RepoSuggestionsFragment {
+    pub repo: RepoField,
 }
 
 #[derive(Template)]
@@ -502,6 +562,9 @@ pub struct AdminAddonsPage {
 pub struct AdminAddAddonPage {
     pub user: Option<Visitor>,
     pub csrf: String,
+    pub repo: RepoField,
+    /// What the form was filled in from, or why it could not be.
+    pub filled: Option<Result<String, String>>,
     pub categories: Vec<CategoryOption>,
     pub form: crate::admin::AdminAddonForm,
     pub error: Option<String>,
@@ -589,6 +652,8 @@ pub struct PackPage {
     pub available: bool,
     pub size: Option<String>,
     pub entries: Vec<PackEntry>,
+    /// The picker with the addons of this pack that are still available.
+    pub rebuild: String,
 }
 
 pub struct PackListRow {
@@ -606,8 +671,11 @@ pub struct PacksPage {
     pub user: Option<Visitor>,
     pub csrf: String,
     pub rows: Vec<PackListRow>,
+    pub total: i64,
     pub prev: Option<String>,
     pub next: Option<String>,
+    /// The search text.
+    pub q: String,
 }
 
 #[derive(Template)]
@@ -616,6 +684,10 @@ pub struct PackBuildingPage {
     pub user: Option<Visitor>,
     pub csrf: String,
     pub id: String,
+    /// Why the build failed; the page then stops asking.
+    pub failed: Option<String>,
+    /// The try the page asks for next; `None` once it gave up waiting.
+    pub next_try: Option<u32>,
 }
 
 pub struct IssueItem {

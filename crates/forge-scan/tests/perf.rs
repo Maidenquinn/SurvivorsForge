@@ -9,5 +9,7 @@ fn large_file_is_fast() {
     let started = std::time::Instant::now();
     let mut report = Report::default();
     lua_rules::check("big.lua", source.as_bytes(), 0, &mut report);
-    assert!(started.elapsed().as_secs_f64() < 2.0, "took {:?}", started.elapsed());
+    // About 1 s on a desktop and up to 2 s on a shared CI runner; a regex that backtracks across
+    // the file takes minutes, so the margin stays wide without hiding one.
+    assert!(started.elapsed().as_secs_f64() < 5.0, "took {:?}", started.elapsed());
 }

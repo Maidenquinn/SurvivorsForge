@@ -113,6 +113,7 @@ Your own GitHub user ID for `ADMIN_GITHUB_IDS` is the `id` field of
 | `WEBSITE_IP` | no, set by Compose | The website's address; it limits each visitor itself, so the API does not count its requests again | `FORGE_WEB_IP` |
 | `SOURCE_CHECK_BATCH` | no | Versions compared with GitHub per 6-hourly run | `200` |
 | `GITHUB_API_URL` | no | GitHub REST API | `https://api.github.com` |
+| `GITHUB_READ_TOKEN` | no | Token for public reads of repos without the App; GitHub then allows 5000 instead of 60 requests per hour. A fine-grained token with *Public repositories (read-only)* and no permissions | `github_pat_...` |
 | `GITHUB_APP_ID` | yes | App ID from step 1 | `123456` |
 | `GITHUB_APP_PRIVATE_KEY` | no | The key as text (newlines as `\n`) instead of a file | empty |
 | `GITHUB_APP_PRIVATE_KEY_FILE` | no, set by Compose | Path of the key inside the container | `/run/secrets/github-app.pem` |
@@ -130,7 +131,7 @@ Your own GitHub user ID for `ADMIN_GITHUB_IDS` is the `id` field of
 | `API_INTERNAL_URL` | yes, set by Compose | How the website reaches the API | `http://api:8080` |
 | `PUBLIC_WEB_URL` | yes | Public base URL of the website | `https://forge.example.com` |
 | `COOKIE_KEY` | yes | At least 32 random characters, encrypts the session cookies | output of `openssl rand -hex 32` |
-| `GITHUB_APP_SLUG` | yes | URL name of the App, for the "install the App" link | `survivorsforge` |
+| `GITHUB_APP_SLUG` | yes | URL name of the App, for the "install the App" links (organization repos, instant updates) | `survivorsforge` |
 | `WEB_BIND_ADDR` | no | Address the website listens on in its container | `0.0.0.0:8080` |
 
 ## 3. First start

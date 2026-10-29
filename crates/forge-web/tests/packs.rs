@@ -74,9 +74,26 @@ async fn the_pack_page_is_public_and_shows_the_content_and_the_link() {
     Mock::given(method("GET")).and(path("/v1/packs/AbCdE12345")).respond_with(ResponseTemplate::new(200).set_body_json(pack(true))).mount(&web.api).await;
     let page = web.get("/packs/AbCdE12345").await;
     assert_eq!(page.status, StatusCode::OK, "{}", page.body);
-    for text in ["My UI", "by alice", "Lucky", "v1", "Lucky, LuckyLib", "https://web.test/packs/AbCdE12345", "Download the pack (3.1 MB)"] {
+    for text in ["My UI", "by alice", "Lucky", "v1", "Lucky, LuckyLib", "https://web.test/packs/AbCdE12345", "Download the pack (3.1 MB)", r#"data-copy="link""#] {
         assert!(page.body.contains(text), "{text}");
     }
+    assert!(!page.body.contains("Packed on the first download"), "already built");
+    assert!(page.body.contains("29 October 2026"), "date in words");
+    assert!(page.body.contains("<td>Lucky, LuckyLib</td>"), "the folders read as content, not muted");
+
+    let mut new = pack(true);
+    new["file"] = json!({ "status": "none", "size": null, "error": null });
+    Mock::given(method("GET")).and(path("/v1/packs/NotBuilt12")).respond_with(ResponseTemplate::new(200).set_body_json(new)).mount(&web.api).await;
+    let page = web.get("/packs/NotBuilt12").await;
+    assert!(page.body.contains("Packed on the first download"), "says the first download waits");
+
+    let mut unnamed = pack(true);
+    unnamed["name"] = json!("");
+    unnamed["addons"].as_array_mut().unwrap().push(json!({ "slug": "odds", "name": "Odds", "tag": "v2", "trust": "verified", "available": true, "folders": ["Odds"] }));
+    Mock::given(method("GET")).and(path("/v1/packs/Unnamed123")).respond_with(ResponseTemplate::new(200).set_body_json(unnamed)).mount(&web.api).await;
+    let page = web.get("/packs/Unnamed123").await;
+    assert!(page.body.contains("<title>Lucky and 1 more - SurvivorsForge</title>") && page.body.contains("<h1>Lucky and 1 more</h1>"), "{}", page.body);
+
     assert_eq!(web.get("/packs/not-an-id").await.status, StatusCode::NOT_FOUND);
     assert_eq!(web.get("/packs/AbCdE12345%2F..").await.status, StatusCode::NOT_FOUND);
 }
@@ -87,6 +104,14 @@ async fn an_unavailable_pack_offers_no_download() {
     Mock::given(method("GET")).and(path("/v1/packs/AbCdE12345")).respond_with(ResponseTemplate::new(200).set_body_json(pack(false))).mount(&web.api).await;
     let page = web.get("/packs/AbCdE12345").await;
     assert!(page.body.contains("no longer available") && !page.body.contains("Download the pack"));
+    assert!(!page.body.contains(r#"role="alert""#), "a state of the page, not an event");
+
+    let mut mixed = pack(false);
+    mixed["addons"].as_array_mut().unwrap().push(json!({ "slug": "odds", "name": "Odds", "tag": "v2", "trust": "verified", "available": true, "folders": ["Odds"] }));
+    Mock::given(method("GET")).and(path("/v1/packs/Mixed12345")).respond_with(ResponseTemplate::new(200).set_body_json(mixed)).mount(&web.api).await;
+    let page = web.get("/packs/Mixed12345").await;
+    assert!(page.body.contains(r#"<a href="/packs/new?addon=odds">Build a new one</a>"#), "{}", page.body);
+    assert!(!page.body.contains("addon=lucky"), "the new pack leaves out what is gone");
 }
 
 #[tokio::test]
@@ -107,7 +132,22 @@ async fn download_follows_the_api_or_waits_for_the_build() {
         .await;
     let building = web.get("/packs/Building12/download").await;
     assert_eq!(building.status, StatusCode::OK);
-    assert!(building.body.contains(r#"http-equiv="refresh""#) && building.body.contains("Building the pack"));
+    assert!(building.body.contains(r#"content="3;url=/packs/Building12/download?try=1""#) && building.body.contains("Building the pack"));
+    let later = web.get("/packs/Building12/download?try=7").await;
+    assert!(later.body.contains("download?try=8"), "counts the tries");
+    let long = web.get("/packs/Building12/download?try=40").await;
+    assert!(!long.body.contains(r#"http-equiv="refresh""#) && long.body.contains("longer than usual"), "stops asking after two minutes");
+    assert!(long.body.contains(r#"href="/packs/Building12/download""#), "can check again");
+
+    Mock::given(method("GET"))
+        .and(path("/v1/packs/Failed1234/download"))
+        .respond_with(ResponseTemplate::new(422).set_body_json(json!({ "error": "build_failed", "message": "GitHub did not answer" })))
+        .mount(&web.api)
+        .await;
+    let failed = web.get("/packs/Failed1234/download").await;
+    assert_eq!(failed.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert!(!failed.body.contains(r#"http-equiv="refresh""#) && failed.body.contains("could not be built") && failed.body.contains("GitHub did not answer"));
+    assert!(failed.body.contains(r#"href="/packs/Failed1234""#), "leads back to the pack");
 }
 
 #[tokio::test]
@@ -126,6 +166,23 @@ async fn the_public_pack_list() {
         assert!(page.body.contains(text), "missing {text}");
     }
     assert!(page.body.contains("<a href=\"/packs\">Packs</a>"), "in the top navigation");
+}
+
+#[tokio::test]
+async fn packs_can_be_searched() {
+    let mut web = TestWeb::new().await;
+    Mock::given(method("GET"))
+        .and(path("/v1/packs"))
+        .and(wiremock::matchers::query_param("q", "lucky"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "total": 41, "page": 1, "per_page": 20, "packs": [
+            { "id": "AbCdE12345", "name": "My UI", "created_at": "2026-05-01T10:00:00Z", "created_by": "alice", "addons": ["Lucky"] }
+        ] })))
+        .mount(&web.api)
+        .await;
+    let page = web.get("/packs?q=lucky").await;
+    for text in [r#"<form class="search" method="get" action="/packs""#, r#"name="q" value="lucky""#, "My UI", r#"href="/packs?q=lucky&#38;page=2""#] {
+        assert!(page.body.contains(text), "missing {text}: {}", page.body);
+    }
 }
 
 #[tokio::test]

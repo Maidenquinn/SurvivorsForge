@@ -7,21 +7,35 @@
   <a class="button" href="/packs/new">Build a pack</a>
 </div>
 <p class="muted">Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show.</p>
-{% if rows.is_empty() %}
-  <section class="panel"><p>No pack is listed yet. Build one and tick "Show it on the public pack list".</p></section>
-{% else %}
-<div class="grid list">
-  {% for p in rows %}
-  <article class="panel card">
-    <h2><a href="/packs/{{ p.id }}">{{ p.name }}</a></h2>
-    <p class="muted">{% if p.created_by != "" %}by {{ p.created_by }} · {% endif %}{{ p.created }}</p>
-    <p>{{ p.addons }}</p>
-  </article>
-  {% endfor %}
+<form class="search" method="get" action="/packs" role="search"
+      hx-get="/packs" hx-trigger="input changed delay:300ms from:input, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results" hx-select-oob="#result-status" hx-swap="innerHTML scroll:top">
+  <label for="q">Search</label>
+  <input id="q" type="search" name="q" value="{{ q }}" placeholder="Pack name or an addon in it" autocomplete="off">
+  <noscript><button type="submit">Search</button></noscript>
+</form>
+
+<p id="result-status" class="sr-only" role="status">{{ total }} pack{% if total != 1 %}s{% endif %}</p>
+<div id="results" class="list">
+  <div class="result-bar">
+    <p class="muted">{{ total }} pack{% if total != 1 %}s{% endif %}</p>
+    {% include "view_toggle.html" %}
+  </div>
+  {% if rows.is_empty() %}
+    <section class="panel">{% if q != "" %}<p>No pack matches. Try a shorter name.</p><p><a href="/packs">Show all packs</a></p>{% else %}<p>No pack is listed yet. Build one and tick "Show it on the public pack list".</p>{% endif %}</section>
+  {% else %}
+  <div class="grid">
+    {% for p in rows %}
+    <article class="panel card">
+      <h2><a href="/packs/{{ p.id }}">{{ p.name }}</a></h2>
+      <p class="muted">{% if p.created_by != "" %}by {{ p.created_by }} · {% endif %}{{ p.created }}</p>
+      <p>{{ p.addons }}</p>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <nav class="pager">
+    {% if let Some(p) = prev %}<a href="{{ p }}">Previous</a>{% endif %}
+    {% if let Some(n) = next %}<a href="{{ n }}">Next</a>{% endif %}
+  </nav>
 </div>
-{% endif %}
-<nav class="pager">
-  {% if let Some(p) = prev %}<a href="{{ p }}">Previous</a>{% endif %}
-  {% if let Some(n) = next %}<a href="{{ n }}">Next</a>{% endif %}
-</nav>
 {% endblock %}

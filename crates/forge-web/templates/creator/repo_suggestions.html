@@ -1,0 +1,4 @@
+{% for (full, about) in repo.suggestions %}
+<button type="button" class="suggestion" hx-get="/addons/new/repo?repo={{ full }}&page={{ repo.page }}" hx-target="#repo-field" hx-swap="outerHTML">{{ full }}{% if about != "" %} <span class="muted">{{ about }}</span>{% endif %}</button>
+{% endfor %}
+{% if repo.error != "" %}<p class="muted">{{ repo.error }}</p>{% endif %}

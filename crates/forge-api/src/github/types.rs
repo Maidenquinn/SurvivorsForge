@@ -5,6 +5,9 @@ use serde::{Deserialize, Deserializer};
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Owner {
+    /// The account's GitHub id; unlike the login it never changes.
+    #[serde(default)]
+    pub id: i64,
     pub login: String,
 }
 
@@ -16,12 +19,6 @@ pub struct Repo {
     pub owner: Owner,
     #[serde(default)]
     pub description: Option<String>,
-}
-
-/// `GET /installation/repositories`.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct InstallationRepos {
-    pub repositories: Vec<Repo>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]

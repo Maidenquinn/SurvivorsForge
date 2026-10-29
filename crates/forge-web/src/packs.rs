@@ -8,6 +8,7 @@ use crate::error::{WebError, WebResult};
 use crate::templates::{NewPackPage, PackBuildingPage, PackChoice, PackEntry, PackListRow, PackPage, PacksPage, render};
 use crate::trust::notice;
 use axum::extract::{Path, RawQuery, State};
+use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::Extension;
 use axum_extra::extract::PrivateCookieJar;
@@ -22,6 +23,19 @@ fn s(v: &Value) -> String {
 
 fn megabytes(bytes: i64) -> String {
     format!("{:.1} MB", bytes as f64 / 1_000_000.0)
+}
+
+/// `2026-10-29T10:00:00Z` as `29 October 2026`; anything else as it came.
+fn long_date(iso: &str) -> String {
+    const MONTHS: [&str; 12] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    let parts: Vec<&str> = iso.get(..10).unwrap_or(iso).split('-').collect();
+    match parts[..] {
+        [y, m, d] => match (m.parse::<usize>(), d.parse::<u32>()) {
+            (Ok(m @ 1..=12), Ok(d)) => format!("{d} {} {y}", MONTHS[m - 1]),
+            _ => iso.into(),
+        },
+        _ => iso.into(),
+    }
 }
 
 /// Every addon whose current version can go into a pack, ticked when in `picked`.
@@ -84,7 +98,16 @@ pub async fn create_pack(State(state): State<AppState>, jar: PrivateCookieJar, E
 pub async fn packs(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, RawQuery(raw): RawQuery) -> WebResult<Html<String>> {
     let user = visitor(&state, &jar).await?.map(|(v, _)| v);
     let page: i64 = values(raw.as_deref(), "page").pop().and_then(|p| p.parse().ok()).unwrap_or(1).max(1);
-    let list = state.api.get(&format!("/v1/packs?page={page}"), None).await?;
+    let q = values(raw.as_deref(), "q").pop().unwrap_or_default().trim().to_string();
+    // The search and a page as a query string, for the API and the pager.
+    let query = |page: i64| {
+        let mut pairs = vec![("page", page.to_string())];
+        if !q.is_empty() {
+            pairs.insert(0, ("q", q.clone()));
+        }
+        reqwest::Url::parse_with_params("http://x/", &pairs).map(|u| u.query().unwrap_or_default().to_string()).unwrap_or_default()
+    };
+    let list = state.api.get(&format!("/v1/packs?{}", query(page)), None).await?;
     let rows = list["packs"]
         .as_array()
         .into_iter()
@@ -103,8 +126,10 @@ pub async fn packs(State(state): State<AppState>, jar: PrivateCookieJar, Extensi
         user,
         csrf: csrf.0,
         rows,
-        prev: (page > 1).then(|| format!("/packs?page={}", page - 1)),
-        next: (page * per_page < total).then(|| format!("/packs?page={}", page + 1)),
+        total,
+        prev: (page > 1).then(|| format!("/packs?{}", query(page - 1))),
+        next: (page * per_page < total).then(|| format!("/packs?{}", query(page + 1))),
+        q,
     }))
 }
 
@@ -130,14 +155,24 @@ pub async fn pack(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
             notice: notice(a["trust"].as_str().unwrap_or_default(), false, false),
             folders: a["folders"].as_array().into_iter().flatten().map(s).collect::<Vec<_>>().join(", "),
         })
-        .collect();
+        .collect::<Vec<PackEntry>>();
+    let kept: Vec<String> = entries.iter().filter(|e| e.available).map(|e| format!("addon={}", e.slug)).collect();
+    let rebuild = if kept.is_empty() { "/packs/new".into() } else { format!("/packs/new?{}", kept.join("&")) };
+    // A pack without a name is called after its addons, so several open packs can be told apart.
+    let name = match (s(&p["name"]), entries.as_slice()) {
+        (name, _) if !name.is_empty() => name,
+        (_, [only]) => only.name.clone(),
+        (_, [first, rest @ ..]) => format!("{} and {} more", first.name, rest.len()),
+        (_, []) => String::new(),
+    };
     Ok(render(&PackPage {
+        rebuild,
         user,
         csrf: csrf.0,
         link: format!("{}/packs/{id}", state.config.public_web_url),
-        name: s(&p["name"]),
+        name,
         created_by: s(&p["created_by"]),
-        created: s(&p["created_at"]).chars().take(10).collect(),
+        created: long_date(&s(&p["created_at"])),
         available: p["available"] == true,
         size: p["file"]["size"].as_i64().map(megabytes),
         entries,
@@ -145,14 +180,40 @@ pub async fn pack(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
     }))
 }
 
-/// `GET /packs/{id}/download`: to the zip when it is built, else a page that asks again.
-pub async fn download(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(id): Path<String>) -> WebResult<Response> {
+/// How often the building page asks again (every 3 seconds) before it stops: about two minutes.
+const MAX_TRIES: u32 = 40;
+
+/// `GET /packs/{id}/download?try=`: to the zip when it is built, else a page that asks again, until
+/// the build fails or takes longer than `MAX_TRIES`.
+pub async fn download(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Extension(csrf): Extension<CsrfToken>,
+    Path(id): Path<String>,
+    RawQuery(raw): RawQuery,
+) -> WebResult<Response> {
     valid_id(&id)?;
-    match state.api.get_or_redirect(&format!("/v1/packs/{id}/download")).await? {
-        Err(location) => Ok(Redirect::to(&location).into_response()),
-        Ok(_) => {
-            let user = visitor(&state, &jar).await?.map(|(v, _)| v);
-            Ok(render(&PackBuildingPage { user, csrf: csrf.0, id }).into_response())
-        }
+    let tries: u32 = values(raw.as_deref(), "try").first().and_then(|t| t.parse().ok()).unwrap_or(0);
+    let (status, failed) = match state.api.get_or_redirect(&format!("/v1/packs/{id}/download")).await {
+        Ok(Err(location)) => return Ok(Redirect::to(&location).into_response()),
+        Ok(Ok(_)) => (StatusCode::OK, None),
+        Err(ApiError::Api { code, message, .. }) if code == "build_failed" => (StatusCode::UNPROCESSABLE_ENTITY, Some(message)),
+        Err(e) => return Err(e.into()),
+    };
+    let user = visitor(&state, &jar).await?.map(|(v, _)| v);
+    let next_try = (failed.is_none() && tries < MAX_TRIES).then_some(tries + 1);
+    Ok((status, render(&PackBuildingPage { user, csrf: csrf.0, id, failed, next_try })).into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::long_date;
+
+    #[test]
+    fn dates_in_words() {
+        assert_eq!(long_date("2026-10-29T10:00:00Z"), "29 October 2026");
+        assert_eq!(long_date("2026-01-05"), "5 January 2026");
+        assert_eq!(long_date("2026-13-05"), "2026-13-05", "no such month");
+        assert_eq!(long_date(""), "");
     }
 }

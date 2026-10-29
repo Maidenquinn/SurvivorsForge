@@ -22,6 +22,21 @@ async fn my_addons_lists_own_and_shared(pool: PgPool) {
 }
 
 #[sqlx::test]
+async fn my_addons_offer_unclaimed_addons_of_my_repos(pool: PgPool) {
+    // An addon an admin added without owner, from a repo of alice (GitHub logins ignore case).
+    let app = TestApp::new(pool);
+    app.publish(3, "carol", "orphan").await;
+    app.publish(4, "dave", "foreign").await;
+    sqlx::query("UPDATE addons SET owner_id = NULL, repo_full_name = 'ALICE/orphan' WHERE slug = 'orphan'").execute(&app.pool).await.unwrap();
+    sqlx::query("UPDATE addons SET owner_id = NULL WHERE slug = 'foreign'").execute(&app.pool).await.unwrap();
+    let alice = app.login(1, "alice").await;
+
+    let mine = app.get("/v1/me/addons", Some(&alice)).await.json();
+    let rows: Vec<(String, String)> = mine.as_array().unwrap().iter().map(|a| (a["slug"].as_str().unwrap().into(), a["role"].as_str().unwrap().into())).collect();
+    assert_eq!(rows, [("orphan".to_string(), "claimable".to_string())], "only unclaimed addons of her own repos");
+}
+
+#[sqlx::test]
 async fn permissions_and_categories(pool: PgPool) {
     let app = TestApp::new(pool);
     let alice = app.publish(1, "alice", "lucky").await;
@@ -55,19 +70,6 @@ async fn addons_go_into_categories_without_subcategories(pool: PgPool) {
     assert_eq!(app.patch("/v1/addons/lucky", Some(&alice), json!({ "category": "warlock" })).await.status, StatusCode::OK);
 }
 
-#[sqlx::test]
-async fn whether_the_app_is_installed_on_my_account(pool: PgPool) {
-    let app = TestApp::new(pool);
-    let alice = app.login(1, "alice").await;
-    assert_eq!(app.get("/v1/me/installation", None).await.status, StatusCode::UNAUTHORIZED);
-    let none = app.get("/v1/me/installation", Some(&alice)).await.json();
-    assert_eq!(none, json!({ "installed": false, "manage_url": null }));
-
-    app.github.data().installations.insert("alice/lucky".into(), 77);
-    let mine = app.get("/v1/me/installation", Some(&alice)).await.json();
-    assert_eq!(mine, json!({ "installed": true, "manage_url": "https://github.com/settings/installations/77" }));
-}
-
 fn addon_zip(entries: &[(&str, &str)]) -> Vec<u8> {
     use std::io::Write;
     let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
@@ -88,16 +90,26 @@ fn gh_release(tag: &str, asset: &str) -> forge_api::github::types::Release {
 
 #[sqlx::test]
 async fn my_repos_and_what_the_form_can_fill_in(pool: PgPool) {
-    let app = TestApp::new(pool);
+    let app = TestApp::with_config(pool, |c| c.admin_github_ids = vec![99]);
     let alice = app.publish(1, "alice", "taken").await;
     app.github.add_repo(101, "alice/LuckyOdds", "alice");
     app.github.add_repo(102, "alice/TagAddon", "alice");
     app.github.add_repo(103, "bob/Other", "bob");
-    app.github.data().installations.insert("bob/other".into(), 2);
+    // GitHub's public list: the App need not be installed on a repo to find it.
+    app.github.data().installations.clear();
 
-    let repos = app.get("/v1/me/repos", Some(&alice)).await.json();
-    let names: Vec<&str> = repos["repos"].as_array().unwrap().iter().map(|r| r["full_name"].as_str().unwrap()).collect();
-    assert_eq!(names, ["alice/LuckyOdds", "alice/TagAddon"], "own installation, without repos that already have an addon");
+    let names = |reply: serde_json::Value| -> Vec<String> { reply["repos"].as_array().unwrap().iter().map(|r| r["full_name"].as_str().unwrap().to_string()).collect() };
+    assert_eq!(names(app.get("/v1/me/repos", Some(&alice)).await.json()), ["alice/LuckyOdds", "alice/TagAddon"], "own account, without repos that already have an addon");
+    assert_eq!(names(app.get("/v1/me/repos?q=tag", Some(&alice)).await.json()), ["alice/TagAddon"], "by part of the name");
+    assert_eq!(app.get("/v1/me/repos?owner=bob", Some(&alice)).await.status, StatusCode::FORBIDDEN, "only admins search other accounts");
+    // Her public organizations count as her accounts too; their repos still need the App to publish.
+    app.github.add_own_repo(104, "guild/GuildAddon", 500);
+    app.github.data().orgs.insert("alice".into(), vec!["guild".into()]);
+    assert_eq!(app.get("/v1/me/accounts", Some(&alice)).await.json(), json!(["alice", "guild"]));
+    assert_eq!(names(app.get("/v1/me/repos?owner=Guild", Some(&alice)).await.json()), ["guild/GuildAddon"]);
+    assert_eq!(app.get("/v1/me/repos/guild/GuildAddon/suggestion", Some(&alice)).await.status, StatusCode::OK);
+    let root = app.login(99, "root").await;
+    assert_eq!(names(app.get("/v1/me/repos?owner=bob", Some(&root)).await.json()), ["bob/Other"], "admins add addons of any account");
 
     {
         let mut data = app.github.data();
@@ -123,7 +135,7 @@ async fn my_repos_and_what_the_form_can_fill_in(pool: PgPool) {
     let t = app.get("/v1/me/repos/alice/TagAddon/suggestion", Some(&alice)).await.json();
     assert_eq!((t["source_type"].as_str(), t["folders"].clone()), (Some("tag"), json!(["TagAddon"])));
 
-    assert_eq!(app.get("/v1/me/repos/bob/Other/suggestion", Some(&alice)).await.status, StatusCode::NOT_FOUND, "not in my installation");
+    assert_eq!(app.get("/v1/me/repos/bob/Other/suggestion", Some(&alice)).await.status, StatusCode::FORBIDDEN, "not her account");
     let carol = app.login(3, "carol").await;
-    assert_eq!(app.get("/v1/me/repos", Some(&carol)).await.json(), json!({ "installed": false, "repos": [] }));
+    assert_eq!(app.get("/v1/me/repos", Some(&carol)).await.json()["repos"], json!([]));
 }

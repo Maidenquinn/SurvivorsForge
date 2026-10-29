@@ -22,6 +22,8 @@ pub struct FakeData {
     pub tags: HashMap<i64, Vec<Tag>>,
     /// URL -> bytes.
     pub downloads: HashMap<String, Vec<u8>>,
+    /// Login (lowercase) -> its public organizations.
+    pub orgs: HashMap<String, Vec<String>>,
 }
 
 #[derive(Default)]
@@ -50,10 +52,17 @@ impl FakeGitHub {
         let owner = full_name.split('/').next().unwrap().to_string();
         data.repos.insert(
             id,
-            Repo { id, full_name: full_name.into(), private: false, owner: forge_api::github::types::Owner { login: owner }, description: None },
+            Repo { id, full_name: full_name.into(), private: false, owner: forge_api::github::types::Owner { id: 0, login: owner }, description: None },
         );
         data.installations.insert(full_name.to_lowercase(), 1);
         data.permissions.insert((id, admin_login.to_lowercase()), "admin".into());
+    }
+
+    /// A public repo of the account with GitHub id `owner_id`, without the App.
+    pub fn add_own_repo(&self, id: i64, full_name: &str, owner_id: i64) {
+        let owner = full_name.split('/').next().unwrap().to_string();
+        let owner = forge_api::github::types::Owner { id: owner_id, login: owner };
+        self.data().repos.insert(id, Repo { id, full_name: full_name.into(), private: false, owner, description: None });
     }
 }
 
@@ -63,20 +72,12 @@ impl GitHubApi for FakeGitHub {
         Ok(self.call().installations.get(&full_name.to_lowercase()).copied())
     }
 
-    /// Installed on the account when it is installed on any repo of the account.
-    async fn installation_for_user(&self, login: &str) -> GitHubResult<Option<i64>> {
-        let prefix = format!("{}/", login.to_lowercase());
-        Ok(self.call().installations.iter().find(|(repo, _)| repo.starts_with(&prefix)).map(|(_, id)| *id))
+    async fn user_orgs(&self, login: &str) -> GitHubResult<Vec<String>> {
+        Ok(self.call().orgs.get(&login.to_lowercase()).cloned().unwrap_or_default())
     }
 
-    async fn installation_repos(&self, installation: i64) -> GitHubResult<Vec<Repo>> {
-        let data = self.call();
-        let mut repos: Vec<Repo> = data
-            .repos
-            .values()
-            .filter(|r| data.installations.get(&r.full_name.to_lowercase()) == Some(&installation))
-            .cloned()
-            .collect();
+    async fn user_repos(&self, login: &str) -> GitHubResult<Vec<Repo>> {
+        let mut repos: Vec<Repo> = self.call().repos.values().filter(|r| r.owner.login.eq_ignore_ascii_case(login)).cloned().collect();
         repos.sort_by(|a, b| a.full_name.cmp(&b.full_name));
         Ok(repos)
     }

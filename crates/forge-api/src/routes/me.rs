@@ -1,26 +1,17 @@
 use crate::app::AppState;
 use crate::auth::{CurrentUser, bearer, hash};
 use crate::error::{ApiError, ApiResult};
+use crate::github::GitHubError;
+use serde::Deserialize;
 use crate::scan_job::MAX_DOWNLOAD;
 use crate::suggest;
 use serde_json::{Value, json};
 use axum::Json;
-use axum::extract::{FromRequestParts, Path, Request, State};
+use axum::extract::{FromRequestParts, Path, Query, Request, State};
 use axum::http::StatusCode;
 
 pub async fn me(user: CurrentUser) -> Json<CurrentUser> {
     Json(user)
-}
-
-/// `GET /v1/me/installation`: whether the App is installed on the user's own account, and where
-/// they choose its repos. The website hides the install step when it is.
-pub async fn installation(State(state): State<AppState>, user: CurrentUser) -> ApiResult<Json<Value>> {
-    let installation = state.github.installation_for_user(&user.login).await.map_err(|e| {
-        tracing::warn!(error = %e, "cannot read the App installation");
-        ApiError::new(StatusCode::BAD_GATEWAY, "github_unavailable", "GitHub cannot be reached right now")
-    })?;
-    let manage_url = installation.map(|id| format!("https://github.com/settings/installations/{id}"));
-    Ok(Json(json!({ "installed": installation.is_some(), "manage_url": manage_url })))
 }
 
 fn github_down(e: crate::github::GitHubError) -> ApiError {
@@ -28,32 +19,72 @@ fn github_down(e: crate::github::GitHubError) -> ApiError {
     ApiError::new(StatusCode::BAD_GATEWAY, "github_unavailable", "GitHub cannot be reached right now")
 }
 
-/// The public repos of the user's App installation that have no addon yet.
-async fn my_repos_of(state: &AppState, user: &CurrentUser) -> ApiResult<Option<(i64, Vec<crate::github::types::Repo>)>> {
-    let Some(installation) = state.github.installation_for_user(&user.login).await.map_err(github_down)? else { return Ok(None) };
-    let repos = state.github.installation_repos(installation).await.map_err(github_down)?;
+#[derive(Deserialize, Default)]
+pub struct RepoSearch {
+    owner: Option<String>,
+    #[serde(default)]
+    q: String,
+}
+
+/// The user's own account and the organizations they are a public member of.
+async fn accounts_of(state: &AppState, user: &CurrentUser) -> ApiResult<Vec<String>> {
+    let mut accounts = vec![user.login.clone()];
+    accounts.extend(state.github.user_orgs(&user.login).await.map_err(github_down)?);
+    Ok(accounts)
+}
+
+/// `GET /v1/me/accounts`: the accounts whose repos the user may publish from the form.
+pub async fn accounts(State(state): State<AppState>, user: CurrentUser) -> ApiResult<Json<Value>> {
+    Ok(Json(json!(accounts_of(&state, &user).await?)))
+}
+
+/// The account whose repos the publish form offers: one of the user's accounts; admins may name any.
+async fn repo_owner(state: &AppState, user: &CurrentUser, wanted: Option<&str>) -> ApiResult<String> {
+    let Some(owner) = wanted.map(str::trim).filter(|o| !o.is_empty()) else { return Ok(user.login.clone()) };
+    if owner.len() > 39 || !owner.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
+        return Err(ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "invalid_owner", "Not a GitHub account name"));
+    }
+    let mine = owner.eq_ignore_ascii_case(&user.login) || user.is_admin() || accounts_of(state, user).await?.iter().any(|a| a.eq_ignore_ascii_case(owner));
+    if !mine {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "not_your_account", "You can publish repos of your account and your organizations only"));
+    }
+    Ok(owner.to_string())
+}
+
+/// `GET /v1/me/repos?owner=&q=`: up to ten public repos of the account whose name contains `q`,
+/// without the ones that already have an addon. Read from GitHub's public list, so the App need
+/// not be installed yet; publishing still needs it.
+pub async fn repos(State(state): State<AppState>, user: CurrentUser, Query(search): Query<RepoSearch>) -> ApiResult<Json<Value>> {
+    let owner = repo_owner(&state, &user, search.owner.as_deref()).await?;
+    let repos = match state.github.user_repos(&owner).await {
+        Ok(repos) => repos,
+        Err(GitHubError::NotFound) => Vec::new(),
+        Err(e) => return Err(github_down(e)),
+    };
     let ids: Vec<i64> = repos.iter().map(|r| r.id).collect();
     let taken: Vec<i64> =
         sqlx::query_scalar("SELECT repo_id FROM addons WHERE repo_id = ANY($1) AND deleted_at IS NULL").bind(&ids).fetch_all(&state.pool).await?;
-    let mut free: Vec<_> = repos.into_iter().filter(|r| !r.private && !taken.contains(&r.id)).collect();
-    free.sort_by_key(|r| r.full_name.to_lowercase());
-    Ok(Some((installation, free)))
-}
-
-/// `GET /v1/me/repos`: the repos the publish form offers.
-pub async fn repos(State(state): State<AppState>, user: CurrentUser) -> ApiResult<Json<Value>> {
-    let Some((_, repos)) = my_repos_of(&state, &user).await? else { return Ok(Json(json!({ "installed": false, "repos": [] }))) };
-    let list: Vec<Value> = repos.iter().map(|r| json!({ "full_name": r.full_name, "description": r.description })).collect();
-    Ok(Json(json!({ "installed": true, "repos": list })))
+    let q = search.q.trim().to_lowercase();
+    let name = |r: &crate::github::types::Repo| r.full_name.rsplit('/').next().unwrap_or_default().to_lowercase();
+    let list: Vec<Value> = repos
+        .iter()
+        .filter(|r| !r.private && !taken.contains(&r.id) && name(r).contains(&q))
+        .take(10)
+        .map(|r| json!({ "full_name": r.full_name, "description": r.description }))
+        .collect();
+    Ok(Json(json!({ "owner": owner, "repos": list })))
 }
 
 /// `GET /v1/me/repos/{owner}/{repo}/suggestion`: the publish form filled in from the newest
-/// release with a zip, else the newest tag. Only for repos of the user's installation.
+/// release with a zip, else the newest tag, all read from public GitHub data.
 pub async fn suggestion(State(state): State<AppState>, user: CurrentUser, Path((owner, name)): Path<(String, String)>) -> ApiResult<Json<Value>> {
-    let full_name = format!("{owner}/{name}");
-    let (installation, repos) = my_repos_of(&state, &user).await?.ok_or_else(ApiError::not_found)?;
-    let repo = repos.into_iter().find(|r| r.full_name.eq_ignore_ascii_case(&full_name)).ok_or_else(ApiError::not_found)?;
-    let releases = state.github.releases(Some(installation), repo.id).await.map_err(github_down)?;
+    repo_owner(&state, &user, Some(&owner)).await?;
+    let repo = match state.github.repo_by_name(None, &format!("{owner}/{name}")).await {
+        Ok(repo) if !repo.private => repo,
+        Ok(_) | Err(GitHubError::NotFound) => return Err(ApiError::not_found()),
+        Err(e) => return Err(github_down(e)),
+    };
+    let releases = state.github.releases(None, repo.id).await.map_err(github_down)?;
     let (source_type, pattern, url, read_from) = match suggest::pick_release(&releases) {
         Some((release, asset)) => (
             "release",
@@ -61,7 +92,7 @@ pub async fn suggestion(State(state): State<AppState>, user: CurrentUser, Path((
             Some(asset.browser_download_url.clone()),
             format!("release {}, {}", release.tag_name, asset.name),
         ),
-        None => match suggest::newest_tag(&state.github.tags(Some(installation), repo.id).await.map_err(github_down)?) {
+        None => match suggest::newest_tag(&state.github.tags(None, repo.id).await.map_err(github_down)?) {
             Some(tag) => ("tag", String::new(), Some(format!("https://codeload.github.com/{}/zip/{}", repo.full_name, tag.name)), format!("tag {}", tag.name)),
             None => ("release", String::new(), None, "no release or tag yet".to_string()),
         },

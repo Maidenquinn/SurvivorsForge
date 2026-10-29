@@ -5,19 +5,29 @@
 <link rel="canonical" href="{{ canonical }}">
 {% endblock %}
 {% block content %}
+<p class="back"><a href="/addons">All addons</a></p>
 <header class="addon-head">
   {% if let Some(icon) = icon_url %}<img class="icon big" src="{{ icon }}" alt="" width="96" height="96">{% endif %}
   <div>
     <h1>{{ name }}</h1>
-    <p class="muted">by {{ author }}{% if !claimed %} (not claimed on this site yet){% endif %} · <a href="/addons?category={{ category }}">{{ category }}</a> · <a href="https://github.com/{{ repo }}" rel="noopener">GitHub</a>{% if let Some(u) = user %}{% if u.admin %} · <a href="/admin/addons/{{ slug }}">Manage as admin</a>{% endif %}{% endif %}</p>
+    <p class="muted">by {{ author }}{% if !claimed && user.is_some() %} (not claimed on this site yet){% endif %} · <a href="/addons?category={{ category|urlencode }}">{{ category }}</a> · <a href="https://github.com/{{ repo }}" rel="external noopener">GitHub</a>{% if let Some(u) = user %}{% if u.admin %} · <a href="/admin/addons/{{ slug }}">Manage as admin</a>{% endif %}{% endif %}</p>
     <p>{{ summary }}</p>
   </div>
 </header>
+{% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
+{% if can_claim %}
+<form class="notice ok admin-actions" method="post" action="/addons/{{ slug }}/claim">
+  <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="back" value="/addons/{{ slug }}">
+  <p>This addon comes from your repo {{ repo }} and has no owner here yet. Claiming checks on GitHub that you are an admin of the repo and that the <a href="{{ install_url }}" rel="noopener">SurvivorsForge App</a> is installed on it.</p>
+  <button type="submit">Claim it</button>
+</form>
+{% endif %}
 
 <section class="panel download">
   {% match latest %}
   {% when Some with (l) %}
-    <h2>Version {{ l.row.tag }}</h2>
+    <h2>Version {% if l.row.tag_short != l.row.tag %}<span title="{{ l.row.tag }}">{{ l.row.tag_short }}</span>{% else %}{{ l.row.tag }}{% endif %}</h2>
+    {% if l.row.published != "" %}<p class="muted">Published {{ l.row.published }}{% if let Some(n) = l.row.downloads %} · {{ n }} downloads{% endif %}</p>{% endif %}
     <div class="notice {{ l.row.notice.class }}" role="status">
       <strong>{{ l.row.notice.badge }}.</strong> {{ l.row.notice.text }}
     </div>
@@ -29,9 +39,14 @@
         {% endfor %}
       </ul>
     {% endif %}
-    <p class="muted">Runs on: {{ l.row.game }}</p>
+    <p class="muted">Game version: {{ l.row.game }}</p>
     {% if l.row.notice.downloadable %}
-      <p><a class="button{% if l.row.notice.confirm %} danger{% endif %}" href="{{ l.href }}">Download from GitHub</a></p>
+      <div class="actions">
+        <a class="button large" href="survivorsforge://addon/{{ slug }}" data-launcher>Install with the launcher</a>
+        <a class="button secondary{% if l.row.notice.confirm %} danger{% endif %}" href="{{ l.href }}"{% if !l.row.notice.confirm %} rel="external noopener"{% endif %}>Download from GitHub</a>
+      </div>
+      <p class="muted" data-launcher-missing>The launcher installs it, its libraries and every update. No launcher yet? <a href="https://rezondes.github.io/SurvivorsForge/">Get SurvivorsForge</a>, free for Windows, Linux and Steam Deck.</p>
+      <p class="muted">Without the launcher: unzip the download into the game's <code>AddOns</code> folder.</p>
     {% endif %}
     <p><a href="/addons/{{ slug }}/versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} · <a href="/packs/new?addon={{ slug }}">Put into an addon pack</a>{% endif %}</p>
   {% when None %}
@@ -43,7 +58,7 @@
 <section class="shots" aria-label="Screenshots">
   {% for shot in shots %}
   <figure>
-    <a href="{{ shot.url }}"><img src="{{ shot.url }}" alt="{{ shot.caption }}" width="{{ shot.width }}" height="{{ shot.height }}" loading="lazy"></a>
+    <a href="{{ shot.url }}"><img src="{{ shot.url }}" alt="{% if shot.caption != "" %}{{ shot.caption }}{% else %}Screenshot {{ loop.index }} of {{ name }}{% endif %}" width="{{ shot.width }}" height="{{ shot.height }}" loading="lazy"></a>
     {% if shot.caption != "" %}<figcaption>{{ shot.caption }}</figcaption>{% endif %}
   </figure>
   {% endfor %}

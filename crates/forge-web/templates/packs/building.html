@@ -1,11 +1,27 @@
 {% extends "base.html" %}
-{% block title %}Building the pack - SurvivorsForge{% endblock %}
-{% block head %}<meta name="robots" content="noindex"><meta http-equiv="refresh" content="3">{% endblock %}
+{% block title %}{% if failed.is_some() %}The pack could not be built{% else %}Building the pack{% endif %} - SurvivorsForge{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% if let Some(n) = next_try %}<meta http-equiv="refresh" content="3;url=/packs/{{ id }}/download?try={{ n }}">{% endif %}{% endblock %}
 {% block content %}
+{% if let Some(message) = failed %}
+<h1>The pack could not be built</h1>
+<section class="panel">
+  <div class="notice bad">{{ message }}</div>
+  <p>A download after an hour builds it again, in case GitHub was only down.</p>
+  <p><a href="/packs/{{ id }}">Back to the pack</a></p>
+</section>
+{% else if next_try.is_some() %}
 <h1>Building the pack</h1>
-<section class="panel" role="status">
+<section class="panel">
   <p>The addons are being fetched and packed. This page checks again every few seconds and the download starts on its own.</p>
   <p class="muted">Big packs take up to a minute.</p>
   <p><a href="/packs/{{ id }}">Back to the pack</a></p>
 </section>
+{% else %}
+<h1>Building the pack</h1>
+<section class="panel">
+  <p>This takes longer than usual. The pack is still being built.</p>
+  <p><a class="button" href="/packs/{{ id }}/download">Check again</a></p>
+  <p><a href="/packs/{{ id }}">Back to the pack</a></p>
+</section>
+{% endif %}
 {% endblock %}

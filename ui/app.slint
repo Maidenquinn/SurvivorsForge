@@ -1,11 +1,10 @@
 import { Theme } from "theme.slint";
-import { ComboBox } from "std-widgets.slint";
 import {
     AddonRow, ActionButton, TabButton, SectionHeading, Field, ScrollPanel, AddonRowView,
-    Overlay, Panel, DialogCard, TitleBar, ResizeEdges, LinkButton
+    Overlay, Panel, DialogCard, TitleBar, ResizeEdges, LinkButton, Dropdown, AddonDetail, DetailView
 } from "components.slint";
 
-export { AddonRow, Theme }
+export { AddonRow, AddonDetail, Theme }
 
 // An AddOns folder found on this machine: short label for the button, full path to use.
 export struct Suggestion {
@@ -192,7 +191,7 @@ component SettingsView inherits VerticalLayout {
     }
     if root.game-versions.length > 1 : SettingRow {
         label: "Game version";
-        ComboBox {
+        Dropdown {
             model: root.game-versions;
             current-index <=> root.game-index;
         }
@@ -286,6 +285,8 @@ export component AppWindow inherits Window {
     in property <[AddonRow]> browse-rows;
     // Browse filter: "All categories" first, subcategories read "Classes: Warrior".
     in property <[string]> category-labels;
+    in property <[string]> category-list-labels;
+    in property <[int]> category-levels;
     in-out property <int> category-index;
     callback category-changed(int);
     // Addons picked in Browse for an addon pack.
@@ -308,6 +309,12 @@ export component AppWindow inherits Window {
     callback row-action(string);
     callback row-remove(string);
     callback row-open(string);
+    // The detail view of one addon, shown on the page it was opened from (-1: none).
+    in-out property <int> detail-page: -1;
+    in property <AddonDetail> detail;
+    callback row-details(string);
+    callback detail-website();
+    property <bool> showing-detail: root.detail-page == root.page;
 
     in property <string> status-text;
     in property <bool> status-error;
@@ -451,7 +458,7 @@ export component AppWindow inherits Window {
                     text: root.page == 0 ? "Installed" : root.page == 1 ? "Verified Addons" : "Settings";
                 }
 
-                if root.page != 2 : HorizontalLayout {
+                if root.page != 2 && !root.showing-detail : HorizontalLayout {
                     spacing: Theme.gap-tight;
                     Field {
                         width: 280px;
@@ -459,9 +466,11 @@ export component AppWindow inherits Window {
                         text <=> root.search;
                         edited(text) => { root.search-changed(text); }
                     }
-                    if root.page == 1 : ComboBox {
+                    if root.page == 1 : Dropdown {
                         width: 220px;
                         model: root.category-labels;
+                        list-labels: root.category-list-labels;
+                        levels: root.category-levels;
                         current-index <=> root.category-index;
                         selected => { root.category-changed(self.current-index); }
                     }
@@ -487,13 +496,24 @@ export component AppWindow inherits Window {
                     }
                 }
 
-                if root.page == 0 : ScrollPanel {
+                if root.showing-detail : DetailView {
+                    vertical-stretch: 1;
+                    detail: root.detail;
+                    back => { root.detail-page = -1; }
+                    action => { root.row-action(root.detail.row.id); }
+                    remove => { root.row-remove(root.detail.row.id); }
+                    open => { root.row-open(root.detail.row.id); }
+                    website => { root.detail-website(); }
+                }
+
+                if root.page == 0 && !root.showing-detail : ScrollPanel {
                     vertical-stretch: 1;
                     for row in root.installed-rows : AddonRowView {
                         addon: row;
                         action => { root.row-action(row.id); }
                         remove => { root.row-remove(row.id); }
                         open => { root.row-open(row.id); }
+                        details => { root.row-details(row.id); }
                     }
                     if root.installed-rows.length == 0 : Text {
                         text: root.search != "" ? "No installed addon matches your search." : "No addons installed yet. Browse the verified addons, install a zip or add a GitHub repo.";
@@ -505,7 +525,7 @@ export component AppWindow inherits Window {
                 }
 
                 // One zip with every picked addon, for the browser version of the game.
-                if root.page == 1 && root.picked-count > 0 : HorizontalLayout {
+                if root.page == 1 && !root.showing-detail && root.picked-count > 0 : HorizontalLayout {
                     spacing: 10px;
                     Text {
                         text: root.picked-count == 1 ? "1 addon picked for a pack" : root.picked-count + " addons picked for a pack";
@@ -534,12 +554,13 @@ export component AppWindow inherits Window {
                     }
                 }
 
-                if root.page == 1 : ScrollPanel {
+                if root.page == 1 && !root.showing-detail : ScrollPanel {
                     vertical-stretch: 1;
                     for row in root.browse-rows : AddonRowView {
                         addon: row;
                         action => { root.row-action(row.id); }
                         open => { root.row-open(row.id); }
+                        details => { root.row-details(row.id); }
                         pick => { root.row-pick(row.id); }
                     }
                     if root.browse-rows.length == 0 : Text {

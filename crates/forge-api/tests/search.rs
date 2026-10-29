@@ -117,6 +117,18 @@ async fn paging_bounds(pool: PgPool) {
 }
 
 #[sqlx::test]
+async fn addons_with_a_blocked_version_are_hidden(pool: PgPool) {
+    // An admin blocked the version players would get: the addon leaves the list, any filter.
+    let app = catalog(pool).await;
+    sqlx::query("UPDATE versions SET blocked_at = now(), block_reason = 'malware' WHERE addon_id = (SELECT id FROM addons WHERE slug = 'plates')")
+        .execute(&app.pool)
+        .await
+        .unwrap();
+    assert_eq!(slugs(&app, "").await, ["builder", "luckyodds"]);
+    assert_eq!(slugs(&app, "q=nameplates").await, Vec::<String>::new());
+}
+
+#[sqlx::test]
 async fn tag_addons_have_no_download_count(pool: PgPool) {
     // GitHub counts downloads of release files only; a tag's zip has no counter.
     let app = catalog(pool).await;

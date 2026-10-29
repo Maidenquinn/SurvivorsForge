@@ -4,12 +4,12 @@
 {% block content %}
 <h1>Addons</h1>
 <form class="search" method="get" action="/addons" role="search"
-      hx-get="/addons" hx-trigger="input changed delay:300ms from:input, change from:select, search" hx-target="#results" hx-select="#results" hx-push-url="true">
+      hx-get="/addons" hx-trigger="input changed delay:300ms from:input, change from:select, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results" hx-select-oob="#result-status" hx-swap="innerHTML scroll:top">
   <label for="q">Search</label>
   <input id="q" type="search" name="q" value="{{ q }}" placeholder="Name or what it does" autocomplete="off">
   <div class="filters">
     <div>
-      <label for="trust">Check</label>
+      <label for="trust">Safety check</label>
       <select id="trust" name="trust">
         <option value="" {% if trust == "" %}selected{% endif %}>Any</option>
         <option value="verified" {% if trust == "verified" %}selected{% endif %}>Verified</option>
@@ -22,7 +22,13 @@
       <label for="category">Category</label>
       <select id="category" name="category">
         <option value="" {% if category == "" %}selected{% endif %}>All categories</option>
-        {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
+        {% for (top, children) in categories %}
+        {% if children.is_empty() %}<option value="{{ top.name }}"{% if top.name.eq_ignore_ascii_case(category) %} selected{% endif %}>{{ top.name }}</option>
+        {% else %}<optgroup label="{{ top.name }}">
+          <option value="{{ top.name }}"{% if top.name.eq_ignore_ascii_case(category) %} selected{% endif %}>All {{ top.name }}</option>
+          {% for c in children %}<option value="{{ c.name }}"{% if c.name.eq_ignore_ascii_case(category) %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </optgroup>{% endif %}
+        {% endfor %}
       </select>
     </div>
     <div>
@@ -38,24 +44,18 @@
   <noscript><button type="submit">Search</button></noscript>
 </form>
 
+<p id="result-status" class="sr-only" role="status">{{ total }} addon{% if total != 1 %}s{% endif %}</p>
 <div id="results" class="list">
+  <div class="result-bar">
   <p class="muted">{{ total }} addon{% if total != 1 %}s{% endif %}{% if category != "" %} in {{ category }} (<a href="/addons">all categories</a>){% endif %}</p>
+    {% include "view_toggle.html" %}
+  </div>
   {% if cards.is_empty() %}
-    <section class="panel"><p>No addon matches. Try fewer words or another filter.</p></section>
+    <section class="panel"><p>No addon matches. Try fewer words or another filter.</p><p><a href="/addons">Show all addons</a></p></section>
   {% else %}
   <div class="grid">
     {% for c in cards %}
-    <article class="panel card">
-      <div class="card-head">
-        {% if let Some(icon) = c.icon_url %}<img class="icon" src="{{ icon }}" alt="" width="48" height="48">{% endif %}
-        <div>
-          <h2><a href="/addons/{{ c.slug }}">{{ c.name }}</a></h2>
-          <p class="muted">by {{ c.author }} · <a href="/addons?category={{ c.category }}">{{ c.category }}</a></p>
-        </div>
-      </div>
-      <p>{{ c.summary }}</p>
-      <p><span class="badge {{ c.notice.class }}">{{ c.notice.badge }}</span> <span class="muted">{% match c.downloads %}{% when Some with (n) %}{{ n }} downloads{% when None %}Updated {{ c.updated }}{% endmatch %}</span></p>
-    </article>
+    {% include "card.html" %}
     {% endfor %}
   </div>
   {% endif %}
