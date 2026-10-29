@@ -36,6 +36,8 @@ pub enum Error {
     FolderOwnedBy(String),
     AlreadyVerified(String),
     InvalidRepo(String),
+    /// The platform does not let this version be installed (blocked, or changed on GitHub).
+    NotInstallable(String),
 }
 
 impl fmt::Display for Error {
@@ -55,6 +57,7 @@ impl fmt::Display for Error {
             Error::NoMatchingAsset => write!(f, "The latest release has no matching addon zip"),
             Error::FolderOwnedBy(name) => write!(f, "The folder already belongs to the addon \"{name}\""),
             Error::AlreadyVerified(name) => write!(f, "\"{name}\" is a verified addon, install it from Browse"),
+            Error::NotInstallable(why) => write!(f, "{why}"),
             Error::InvalidRepo(input) => write!(f, "\"{input}\" is not a GitHub repo (expected owner/repo or a GitHub URL)"),
         }
     }

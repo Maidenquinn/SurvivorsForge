@@ -45,7 +45,7 @@ fn lock(shared: &Shared) -> MutexGuard<'_, Core> {
 
 impl Core {
     fn new(data_dir: PathBuf, config: Option<Config>) -> Core {
-        let registry = registry::load(Err(Error::Network("not loaded yet".into())), &data_dir.join("cache")).0;
+        let registry = registry::load(Vec::new(), &data_dir.join("cache")).0;
         let mut core = Core {
             data_dir,
             config: Config::default(),
@@ -191,11 +191,20 @@ fn refresh(ui: &AppWindow, shared: &Shared) {
                 name: b.name.into(),
                 author: b.author.into(),
                 version: SharedString::new(),
-                badge: b.category.into(),
+                badge: b.trust.map(str::to_string).unwrap_or(b.category).into(),
                 description: b.description.into(),
-                status: if b.installed { "Installed" } else { "" }.into(),
-                status_kind: if b.installed { 1 } else { 0 },
-                action: if b.installed { "" } else { "Install" }.into(),
+                status: match (b.installed, b.installable) {
+                    (true, _) => "Installed",
+                    (false, false) => "Not installable",
+                    (false, true) => "",
+                }
+                .into(),
+                status_kind: match (b.installed, b.installable) {
+                    (true, _) => 1,
+                    (false, false) => 3,
+                    (false, true) => 0,
+                },
+                action: if b.installed || !b.installable { "" } else { "Install" }.into(),
                 busy: core.busy.contains(&b.id),
                 can_remove: false,
                 can_open: true,
@@ -293,7 +302,8 @@ fn remote_job(core: &Core, id: &str) -> Option<survivorsforge::Result<RemoteJob>
             .map(|r| r.map(|(repo, spec)| (entry.name.clone(), repo, spec, entry.source.clone(), known)));
     }
     core.registry.get(id).map(|a| {
-        Ok((a.name.clone(), a.repo.clone(), a.source.clone(), Source::Verified { registry_id: a.id.clone() }, None))
+        let platform = updates::platform_remote(a).transpose()?;
+        Ok((a.name.clone(), a.repo.clone(), a.source.clone(), Source::Verified { registry_id: a.id.clone() }, platform))
     })
 }
 
@@ -378,7 +388,8 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
             let core = lock(shared);
             (core.client(), core.state.clone(), core.data_dir.join("cache"))
         };
-        let (registry, origin) = registry::load(client.get_text(registry::REMOTE_URL), &cache);
+        let fetched = registry::sources(registry::api_url()).into_iter().map(|(origin, url)| (origin, client.get_text(&url))).collect();
+        let (registry, origin) = registry::load(fetched, &cache);
         let results = updates::check_all(&client, &mut state, &registry);
         let self_update = match client.latest_release(APP_REPO) {
             Ok(Some(release)) => self_update::available(APP_VERSION, &release),
@@ -417,7 +428,7 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
             message += &format!(", {failed} checks failed");
         }
         match origin {
-            Origin::Remote => {}
+            Origin::Api | Origin::Remote => {}
             Origin::Cache => message += " (verified list: cached copy)",
             Origin::Embedded => message += " (verified list: built-in copy)",
         }

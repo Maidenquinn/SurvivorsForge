@@ -5,6 +5,7 @@ use crate::registry::Registry;
 use crate::scan::InstalledAddon;
 use crate::state::{Reconciled, Source, State, TOC_PREFIX};
 use crate::updates::UpdateStatus;
+use forge_core::trust::Trust;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -151,6 +152,19 @@ pub fn installed_rows(
     rows
 }
 
+/// The label of a platform trust level, the same words the website uses.
+pub fn trust_label(trust: Trust, verified_author: bool) -> &'static str {
+    match trust {
+        Trust::Verified => "Verified",
+        Trust::Scanned if verified_author => "Verified author",
+        Trust::Scanned => "Checked",
+        Trust::Flagged => "Flagged",
+        Trust::Unscanned => "Not checked",
+        Trust::Blocked => "Blocked",
+        Trust::SourceChanged => "File changed",
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct BrowseRow {
     pub id: String,
@@ -160,6 +174,10 @@ pub struct BrowseRow {
     pub category: String,
     pub repo: String,
     pub installed: bool,
+    /// The platform's trust label of the newest version; `None` from the plain verified list.
+    pub trust: Option<&'static str>,
+    /// False when the platform blocks the newest version.
+    pub installable: bool,
 }
 
 pub fn browse_rows(registry: &Registry, state: &State) -> Vec<BrowseRow> {
@@ -175,6 +193,8 @@ pub fn browse_rows(registry: &Registry, state: &State) -> Vec<BrowseRow> {
             repo: a.repo.clone(),
             // Also counts as installed when its folders came from a zip or another repo.
             installed: state.get(&a.id).is_some() || a.folders.iter().any(|f| state.owner_of(f).is_some()),
+            trust: a.latest.as_ref().map(|l| trust_label(l.trust, a.verified_author == Some(true))),
+            installable: a.latest.as_ref().is_none_or(|l| l.trust.installable()),
         })
         .collect()
 }
@@ -387,5 +407,51 @@ mod tests {
     fn zip_plan_reports_unmanaged_overwrite() {
         let plan = plan_zip_install(&[detected("Tickfire")], &State::default(), &[scanned("Tickfire")]);
         assert_eq!(plan.overwrites_unmanaged, ["Tickfire"]);
+    }
+
+    fn platform_registry(trust: Trust) -> Registry {
+        let mut registry = crate::registry::embedded();
+        for addon in &mut registry.addons {
+            addon.latest = Some(crate::registry::LatestVersion {
+                tag: "v1".into(),
+                asset_url: "https://github.com/a.zip".into(),
+                sha256: None,
+                size: None,
+                trust,
+                findings: Default::default(),
+                game_min: None,
+                game_max: None,
+            });
+        }
+        registry
+    }
+
+    #[test]
+    fn badge_per_trust() {
+        let cases = [
+            (Trust::Verified, false, "Verified"),
+            (Trust::Scanned, true, "Verified author"),
+            (Trust::Scanned, false, "Checked"),
+            (Trust::Flagged, false, "Flagged"),
+            (Trust::Unscanned, false, "Not checked"),
+            (Trust::Blocked, false, "Blocked"),
+            (Trust::SourceChanged, false, "File changed"),
+        ];
+        for (trust, author, label) in cases {
+            assert_eq!(trust_label(trust, author), label);
+        }
+        let rows = browse_rows(&platform_registry(Trust::Flagged), &State::default());
+        assert!(rows.iter().all(|r| r.trust == Some("Flagged")));
+        let plain = browse_rows(&crate::registry::embedded(), &State::default());
+        assert!(plain.iter().all(|r| r.trust.is_none() && r.installable), "the plain verified list has no trust data");
+    }
+
+    #[test]
+    fn blocked_rows_not_installable() {
+        for trust in [Trust::Blocked, Trust::SourceChanged] {
+            let rows = browse_rows(&platform_registry(trust), &State::default());
+            assert!(rows.iter().all(|r| !r.installable));
+        }
+        assert!(browse_rows(&platform_registry(Trust::Flagged), &State::default()).iter().all(|r| r.installable));
     }
 }
