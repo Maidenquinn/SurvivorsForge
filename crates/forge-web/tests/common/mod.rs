@@ -86,6 +86,38 @@ impl TestWeb {
         self.request(request).await
     }
 
+    /// A form with file inputs, posted from our own origin; the CSRF token travels as the field
+    /// `csrf` like in the browser. Files are (field, file name, bytes).
+    pub async fn post_multipart(&mut self, uri: &str, fields: &[(&str, &str)], files: &[(&str, &str, &[u8])]) -> Page {
+        let token = self.csrf().await;
+        self.post_multipart_with(uri, &token, fields, files).await
+    }
+
+    pub async fn post_multipart_with(&mut self, uri: &str, csrf: &str, fields: &[(&str, &str)], files: &[(&str, &str, &[u8])]) -> Page {
+        const BOUNDARY: &str = "forge-test-boundary";
+        fn part(body: &mut Vec<u8>, head: &str, data: &[u8]) {
+            body.extend_from_slice(format!("--{BOUNDARY}\r\n{head}\r\n\r\n").as_bytes());
+            body.extend_from_slice(data);
+            body.extend_from_slice(b"\r\n");
+        }
+        let mut body = Vec::new();
+        part(&mut body, "Content-Disposition: form-data; name=\"csrf\"", csrf.as_bytes());
+        for (name, value) in fields {
+            part(&mut body, &format!("Content-Disposition: form-data; name=\"{name}\""), value.as_bytes());
+        }
+        for (name, file, data) in files {
+            part(&mut body, &format!("Content-Disposition: form-data; name=\"{name}\"; filename=\"{file}\"\r\nContent-Type: image/png"), data);
+        }
+        body.extend_from_slice(format!("--{BOUNDARY}--\r\n").as_bytes());
+        let request = Request::post(uri)
+            .header("cookie", self.cookie_header())
+            .header("origin", WEB)
+            .header("content-type", format!("multipart/form-data; boundary={BOUNDARY}"))
+            .body(Body::from(body))
+            .unwrap();
+        self.request(request).await
+    }
+
     /// The CSRF token as the page embeds it.
     pub async fn csrf(&mut self) -> String {
         let page = self.get("/").await;

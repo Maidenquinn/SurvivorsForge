@@ -34,7 +34,7 @@
 {% when None %}
 {% endmatch %}
 
-<form class="panel" method="post" action="/addons/new">
+<form class="panel" method="post" action="/addons/new" enctype="multipart/form-data">
   <input type="hidden" name="csrf" value="{{ csrf }}">
   <h2>2. Your repo</h2>
   <label for="repo">GitHub repo</label>
@@ -86,7 +86,13 @@
   <p class="muted"><code># Heading</code> (with a space), <code>**bold**</code>, <code>*italic*</code>, <code>- list</code>, <code>[link](https://...)</code>. Every line break is kept.</p>
   <h3>Preview</h3>
   <div id="preview" class="description preview"></div>
-  <p class="muted">You add screenshots and the icon right after publishing: they need the addon to exist.</p>
+
+  <h2>5. Icon and screenshots</h2>
+  <p class="muted">Optional, and you can change them any time later. PNG, JPEG or WebP, at most 5 MB each.</p>
+  <label for="icon">Icon (cropped to a 256 px square)</label>
+  <input id="icon" type="file" name="icon" accept="image/png,image/jpeg,image/webp">
+  <label for="screenshots">Screenshots (up to 10, scaled to at most 1920 px)</label>
+  <input id="screenshots" type="file" name="screenshots" accept="image/png,image/jpeg,image/webp" multiple>
 
   <p><button type="submit">Publish</button></p>
 </form>

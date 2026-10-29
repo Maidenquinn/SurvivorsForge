@@ -43,7 +43,7 @@ async fn wizard_happy_path_and_field_errors() {
         .mount(&web.api)
         .await;
     let fields = [("repo", "alice/taken"), ("slug", "lucky"), ("name", "Lucky"), ("category", "Miscellaneous"), ("source_type", "release"), ("asset_pattern", "L-*.zip"), ("folders", "Lucky")];
-    let page = web.post_form("/addons/new", &fields).await;
+    let page = web.post_multipart("/addons/new", &fields, &[]).await;
     assert_eq!(page.status, StatusCode::UNPROCESSABLE_ENTITY);
     assert!(page.body.contains("The folder Lucky belongs to the addon Other"));
     assert!(page.body.contains("value=\"alice/taken\""), "input kept");
@@ -59,7 +59,7 @@ async fn wizard_happy_path_and_field_errors() {
         ("repo", "alice/lucky"), ("slug", "lucky"), ("name", "Lucky"), ("summary", "Odds"), ("description_md", "## Features"),
         ("category", "Miscellaneous"), ("source_type", "release"), ("asset_pattern", "L-*.zip"), ("folders", "Lucky\nLuckyData"),
     ];
-    let page = web.post_form("/addons/new", &fields).await;
+    let page = web.post_multipart("/addons/new", &fields, &[]).await;
     assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/lucky/images?created=1"), "straight on to the screenshots");
     let images = web.get("/addons/lucky/images?created=1").await;
     assert!(images.body.contains("Your addon is published"), "{}", images.body);
@@ -248,4 +248,48 @@ async fn my_repos_fill_in_the_form() {
     let broken = web.get("/addons/new?repo=alice/Other").await;
     assert_eq!(broken.status, StatusCode::OK);
     assert!(broken.body.contains("could not be read"), "the form stays usable: {}", broken.body);
+}
+
+#[tokio::test]
+async fn icon_and_screenshots_come_with_the_new_addon() {
+    let mut web = logged_in(owner()).await;
+    let form = web.get("/addons/new").await;
+    for text in [r#"enctype="multipart/form-data""#, r#"name="icon""#, r#"name="screenshots""#] {
+        assert!(form.body.contains(text), "missing {text}");
+    }
+    Mock::given(method("POST")).and(path("/v1/addons")).respond_with(ResponseTemplate::new(201).set_body_json(json!({ "slug": "lucky" }))).mount(&web.api).await;
+    for (kind, times) in [("icon", 1), ("screenshot", 2)] {
+        Mock::given(method("POST"))
+            .and(path("/v1/addons/lucky/images"))
+            .and(wiremock::matchers::body_string_contains(format!("name=\"kind\"\r\n\r\n{kind}\r\n")))
+            .respond_with(ResponseTemplate::new(201).set_body_json(json!({ "id": 1 })))
+            .expect(times)
+            .mount(&web.api)
+            .await;
+    }
+    let fields = [("repo", "alice/lucky"), ("slug", "lucky"), ("name", "Lucky"), ("category", "Miscellaneous"), ("source_type", "release"), ("folders", "Lucky")];
+    // An empty file input still sends a part without a file name; it uploads nothing.
+    let files: [(&str, &str, &[u8]); 4] = [("icon", "icon.png", b"I"), ("screenshots", "a.png", b"A"), ("screenshots", "b.png", b"B"), ("screenshots", "", b"")];
+
+    let forged = web.post_multipart_with("/addons/new", "wrong", &fields, &files).await;
+    assert_eq!(forged.status, StatusCode::FORBIDDEN, "the CSRF token counts in file forms too");
+
+    let page = web.post_multipart("/addons/new", &fields, &files).await;
+    assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/lucky/images?created=1"), "{}", page.body);
+}
+
+#[tokio::test]
+async fn a_failed_image_upload_still_lands_on_the_new_addon() {
+    let mut web = logged_in(owner()).await;
+    Mock::given(method("POST")).and(path("/v1/addons")).respond_with(ResponseTemplate::new(201).set_body_json(json!({ "slug": "lucky" }))).mount(&web.api).await;
+    Mock::given(method("POST"))
+        .and(path("/v1/addons/lucky/images"))
+        .respond_with(ResponseTemplate::new(422).set_body_json(json!({ "error": "invalid_image", "message": "This is not a PNG, JPEG or WebP image" })))
+        .mount(&web.api)
+        .await;
+    let fields = [("repo", "alice/lucky"), ("slug", "lucky"), ("name", "Lucky"), ("category", "Miscellaneous"), ("source_type", "release"), ("folders", "Lucky")];
+    let page = web.post_multipart("/addons/new", &fields, &[("screenshots", "a.txt", b"nope")]).await;
+    assert!(page.location().starts_with("/addons/lucky/images?created=1&error="), "{}", page.location());
+    let images = web.get(page.location()).await;
+    assert!(images.body.contains("a.txt: This is not a PNG, JPEG or WebP image"), "{}", images.body);
 }

@@ -5,7 +5,7 @@
 use crate::app::AppState;
 use crate::session::{CSRF_COOKIE, cookie};
 use axum::body::{Body, to_bytes};
-use axum::extract::{Request, State};
+use axum::extract::{FromRequest, Request, State};
 use axum::http::{Method, StatusCode, header};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
@@ -32,6 +32,23 @@ fn origin_ok(request: &Request, web_url: &str) -> bool {
 
 fn forbidden() -> Response {
     (StatusCode::FORBIDDEN, "The form expired or came from another site. Reload the page and try again.").into_response()
+}
+
+/// The new addon form with an icon and ten screenshots of at most 5 MB each.
+pub const MAX_UPLOAD_FORM: usize = 60 * 1024 * 1024;
+
+/// The text of field `name` in a multipart body; the browser sends fields in page order, and the
+/// token comes first.
+async fn multipart_field(content_type: Option<header::HeaderValue>, body: axum::body::Bytes, name: &str) -> Option<String> {
+    let mut probe = Request::new(Body::from(body));
+    probe.headers_mut().insert(header::CONTENT_TYPE, content_type?);
+    let mut multipart = axum::extract::Multipart::from_request(probe, &()).await.ok()?;
+    while let Ok(Some(field)) = multipart.next_field().await {
+        if field.name() == Some(name) {
+            return field.text().await.ok();
+        }
+    }
+    None
 }
 
 fn form_field(body: &[u8], name: &str) -> Option<String> {
@@ -64,6 +81,19 @@ pub async fn middleware(State(state): State<AppState>, jar: PrivateCookieJar, mu
                 let (parts, body) = request.into_parts();
                 let Ok(bytes) = to_bytes(body, MAX_FORM).await else { return forbidden() };
                 let field = form_field(&bytes, "csrf");
+                request = Request::from_parts(parts, Body::from(bytes));
+                field
+            }
+            // Forms with file inputs (publishing with images) send the token as a multipart field.
+            None if request
+                .headers()
+                .get(header::CONTENT_TYPE)
+                .and_then(|v| v.to_str().ok())
+                .is_some_and(|c| c.starts_with("multipart/form-data")) =>
+            {
+                let (parts, body) = request.into_parts();
+                let Ok(bytes) = to_bytes(body, MAX_UPLOAD_FORM).await else { return forbidden() };
+                let field = multipart_field(parts.headers.get(header::CONTENT_TYPE).cloned(), bytes.clone(), "csrf").await;
                 request = Request::from_parts(parts, Body::from(bytes));
                 field
             }

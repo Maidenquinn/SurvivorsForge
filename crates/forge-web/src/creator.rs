@@ -191,24 +191,73 @@ pub async fn new_addon(
     }))
 }
 
+/// The text fields of the publish form and its images as (kind, file name, bytes). Empty file
+/// inputs send a part without a name; they are skipped.
+async fn read_new_addon(mut multipart: Multipart) -> (NewAddonForm, Vec<(&'static str, String, Vec<u8>)>, bool) {
+    let (mut fields, mut images, mut complete) = (serde_json::Map::new(), Vec::new(), true);
+    while let Ok(Some(field)) = multipart.next_field().await {
+        let name = field.name().unwrap_or_default().to_string();
+        let file_name = field.file_name().map(str::to_string);
+        let Ok(bytes) = field.bytes().await else {
+            complete = false;
+            break;
+        };
+        match (name.as_str(), file_name) {
+            ("icon" | "screenshots", Some(file)) if !file.is_empty() && !bytes.is_empty() => {
+                images.push((if name == "icon" { "icon" } else { "screenshot" }, file, bytes.to_vec()));
+            }
+            (_, None) => {
+                fields.insert(name, Value::String(String::from_utf8_lossy(&bytes).into_owned()));
+            }
+            _ => {}
+        }
+    }
+    (serde_json::from_value(Value::Object(fields)).unwrap_or_default(), images, complete)
+}
+
 pub async fn create_addon(
     State(state): State<AppState>,
     jar: PrivateCookieJar,
     Extension(csrf): Extension<CsrfToken>,
-    Form(form): Form<NewAddonForm>,
+    multipart: Multipart,
 ) -> WebResult<Response> {
     let (user, token) = me(&state, &jar).await?;
+    let (form, images, complete) = read_new_addon(multipart).await;
     let body = json!({
         "repo": form.repo.trim(), "slug": form.slug.trim(), "name": form.name.trim(), "summary": form.summary.trim(),
         "description_md": form.description_md,
         "category": form.category, "source_type": form.source_type, "asset_pattern": form.asset_pattern.trim(),
         "folders": folders_of(&form.folders),
     });
-    match state.api.post("/v1/addons", Some(&token), &body).await {
-        // Straight on to the screenshots: they need the addon to exist.
-        Ok(created) => Ok(Redirect::to(&format!("/addons/{}/images?created=1", s(&created["slug"]))).into_response()),
+    let result = if complete {
+        state.api.post("/v1/addons", Some(&token), &body).await
+    } else {
+        Err(ApiError::Api { status: 413, code: "too_large".into(), message: "The images are too large together; each may be at most 5 MB.".into() })
+    };
+    match result {
+        // The images go up once the addon exists; the images page shows what did not.
+        Ok(created) => {
+            let slug = s(&created["slug"]);
+            let mut failed = Vec::new();
+            for (kind, file, data) in images {
+                let upload = reqwest::multipart::Form::new().text("kind", kind).part("file", reqwest::multipart::Part::bytes(data).file_name(file.clone()));
+                if let Err(e) = state.api.post_multipart(&format!("/v1/addons/{slug}/images"), &token, upload).await {
+                    failed.push(format!("{file}: {}", e.message()));
+                }
+            }
+            let mut query = vec![("created", "1".to_string())];
+            if !failed.is_empty() {
+                query.push(("error", failed.join(" ")));
+            }
+            let url = reqwest::Url::parse_with_params("http://x/", &query).map(|u| u.query().unwrap_or_default().to_string()).unwrap_or_default();
+            Ok(Redirect::to(&format!("/addons/{slug}/images?{url}")).into_response())
+        }
         Err(e) => {
-            let errors = form_errors(e)?;
+            let mut errors = form_errors(e)?;
+            if !images.is_empty() {
+                let note = "Nothing was published. Choose the images again.";
+                errors.0.entry("form".into()).and_modify(|m| *m = format!("{m} {note}")).or_insert_with(|| note.into());
+            }
             let manage_url = app_manage_url(&state, &token).await;
             let repos = if manage_url.is_some() { my_repos(&state, &token).await } else { Vec::new() };
             let page = NewAddonPage {
@@ -340,6 +389,9 @@ async fn images_page(state: &AppState, user: Visitor, csrf: String, slug: &str, 
 pub struct ImagesQuery {
     #[serde(default)]
     created: Option<String>,
+    /// Images of the publish form that did not go up.
+    #[serde(default)]
+    error: Option<String>,
 }
 
 pub async fn images(
@@ -353,8 +405,8 @@ pub async fn images(
     if !perms(&state, &slug, &token).await?.edit_images {
         return Ok(forbidden());
     }
-    let message = query.created.map(|_| "Your addon is published. Add screenshots and an icon now, or later under Edit.".to_string());
-    Ok(images_page(&state, user, csrf.0, &slug, message, None).await?.into_response())
+    let message = query.created.map(|_| "Your addon is published. Add or change screenshots and the icon here, now or later under Edit.".to_string());
+    Ok(images_page(&state, user, csrf.0, &slug, message, query.error).await?.into_response())
 }
 
 pub async fn upload_image(
