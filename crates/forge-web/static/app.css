@@ -263,6 +263,12 @@ pre { background: var(--field); border: 1px solid var(--line); border-radius: va
 .shots figcaption { color: var(--muted); font-size: var(--meta); }
 .caption-form { display: flex; gap: 6px; margin: 6px 0; }
 .caption-form input { flex: 1; min-width: 0; min-height: 34px; }
+.actions.shot-tools { align-items: center; gap: 6px; }
+.icon-button { min-width: 38px; min-height: 38px; padding: 0; }
+.icon-button svg { display: block; }
+.drag-handle { display: inline-grid; place-items: center; width: 38px; height: 38px; color: var(--muted); cursor: grab; border: 1px dashed var(--line); border-radius: var(--radius); }
+.drag-handle:hover { color: var(--gold); border-color: var(--outline); }
+.shots figure.dragging { opacity: .4; }
 .description img { max-width: 100%; height: auto; }
 .pager { display: flex; justify-content: space-between; margin-top: 16px; }
 .actions { display: flex; gap: 12px; flex-wrap: wrap; }

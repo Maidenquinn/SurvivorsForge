@@ -112,6 +112,7 @@ pub fn router(state: AppState) -> Router {
                 .post(crate::creator::upload_image)
                 .layer(axum::extract::DefaultBodyLimit::max(crate::csrf::MAX_UPLOAD_FORM)),
         )
+        .route("/addons/{slug}/images/order", post(crate::creator::order_images))
         .route("/addons/{slug}/images/{id}/move", post(crate::creator::move_image))
         .route("/addons/{slug}/images/{id}/delete", post(crate::creator::delete_image))
         .route("/addons/{slug}/images/{id}/caption", post(crate::creator::caption_image))

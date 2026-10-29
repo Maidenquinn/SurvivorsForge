@@ -604,11 +604,35 @@ pub async fn move_image(
         if let Some(other) = other {
             let mut order = ids.clone();
             order.swap(at, other);
-            for (position, image) in order.iter().enumerate() {
-                state.api.call(Method::PATCH, &format!("/v1/addons/{slug}/images/{image}"), Some(&token), Some(&json!({ "position": position }))).await?;
-            }
+            save_order(&state, &token, &slug, &order).await?;
         }
     }
+    Ok(Redirect::to(&format!("/addons/{slug}/images")).into_response())
+}
+
+async fn save_order(state: &AppState, token: &str, slug: &str, order: &[i64]) -> WebResult<()> {
+    for (position, image) in order.iter().enumerate() {
+        state.api.call(Method::PATCH, &format!("/v1/addons/{slug}/images/{image}"), Some(token), Some(&json!({ "position": position }))).await?;
+    }
+    Ok(())
+}
+
+#[derive(Deserialize)]
+pub struct OrderForm {
+    /// Image ids, comma-separated, in the new order.
+    #[serde(default)]
+    order: String,
+}
+
+/// The order after dragging: the given ids that belong to the addon, then any it left out.
+pub async fn order_images(State(state): State<AppState>, jar: PrivateCookieJar, Path(slug): Path<String>, Form(form): Form<OrderForm>) -> WebResult<Response> {
+    let (_, token) = me(&state, &jar).await?;
+    let a = state.api.get(&format!("/v1/addons/{slug}"), None).await?;
+    let ids: Vec<i64> = a["images"].as_array().into_iter().flatten().filter_map(|i| i["id"].as_i64()).collect();
+    let mut order: Vec<i64> = form.order.split(',').filter_map(|i| i.trim().parse().ok()).filter(|i| ids.contains(i)).collect();
+    order.dedup();
+    order.extend(ids.iter().filter(|i| !order.contains(i)).collect::<Vec<_>>());
+    save_order(&state, &token, &slug, &order).await?;
     Ok(Redirect::to(&format!("/addons/{slug}/images")).into_response())
 }
 

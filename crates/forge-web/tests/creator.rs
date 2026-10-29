@@ -178,6 +178,24 @@ async fn captions_can_be_changed_later() {
 }
 
 #[tokio::test]
+async fn screenshots_take_a_dragged_order() {
+    let mut web = logged_in(owner()).await;
+    let images = web.get("/addons/lucky/images").await.body;
+    assert!(images.contains(r#"data-order-url="/addons/lucky/images/order""#) && images.contains(r#"data-image-id="7""#), "{images}");
+    assert!(images.contains(r#"aria-label="Move earlier""#) && images.contains(r#"aria-label="Delete screenshot""#), "icon buttons keep a name");
+    Mock::given(method("PATCH"))
+        .and(path("/v1/addons/lucky/images/7"))
+        .and(body_partial_json(json!({ "position": 0 })))
+        .respond_with(ResponseTemplate::new(204))
+        .expect(1)
+        .mount(&web.api)
+        .await;
+    // An id of another addon is left out.
+    let page = web.post_form("/addons/lucky/images/order", &[("order", "99,7")]).await;
+    assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/lucky/images"));
+}
+
+#[tokio::test]
 async fn several_screenshots_in_one_upload() {
     let mut web = logged_in(owner()).await;
     Mock::given(method("POST"))

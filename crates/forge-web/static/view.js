@@ -77,6 +77,48 @@
     }, 2000);
   });
 
+  // Screenshots in the editor: dragged by their handle, the new order is saved at once. The arrow
+  // buttons stay for the keyboard and without script.
+  var dragged = null;
+  document.addEventListener("mousedown", function (event) {
+    var handle = event.target.closest("[data-drag-handle]");
+    if (handle) handle.closest("[data-image-id]").draggable = true;
+  });
+  document.addEventListener("dragstart", function (event) {
+    var figure = event.target.closest && event.target.closest("[data-image-id]");
+    if (!figure || !figure.draggable) return;
+    dragged = figure;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", figure.getAttribute("data-image-id"));
+    figure.classList.add("dragging");
+  });
+  document.addEventListener("dragover", function (event) {
+    if (!dragged) return;
+    event.preventDefault();
+    var over = event.target.closest("[data-image-id]");
+    if (!over || over === dragged || over.parentNode !== dragged.parentNode) return;
+    var box = over.getBoundingClientRect();
+    over.parentNode.insertBefore(dragged, event.clientX > box.left + box.width / 2 ? over.nextSibling : over);
+  });
+  document.addEventListener("drop", function (event) {
+    if (dragged) event.preventDefault();
+  });
+  document.addEventListener("dragend", function () {
+    if (!dragged) return;
+    var figure = dragged;
+    dragged = null;
+    figure.classList.remove("dragging");
+    figure.draggable = false;
+    var list = figure.parentNode;
+    var ids = Array.prototype.map.call(list.querySelectorAll("[data-image-id]"), function (f) {
+      return f.getAttribute("data-image-id");
+    });
+    var body = new URLSearchParams({ order: ids.join(","), csrf: document.querySelector('input[name="csrf"]').value });
+    fetch(list.getAttribute("data-order-url"), { method: "POST", body: body }).then(function () {
+      location.reload();
+    });
+  });
+
   // htmx keeps the old results when a reload fails; say so above them.
   function failed(event) {
     var target = event.detail && event.detail.target;

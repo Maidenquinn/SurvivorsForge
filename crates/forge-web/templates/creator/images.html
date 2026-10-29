@@ -28,9 +28,10 @@
 <section class="panel">
   <h2>Screenshots</h2>
   {% if images.is_empty() %}<p class="muted">No screenshots yet.</p>{% endif %}
-  <div class="shots">
+  {% if images.len() > 1 %}<p class="muted">Drag a screenshot by its handle to change the order, or use the arrows.</p>{% endif %}
+  <div class="shots" data-order-url="/addons/{{ slug }}/images/order">
     {% for img in images %}
-    <figure>
+    <figure data-image-id="{{ img.id }}">
       <img src="{{ img.url }}" alt="{{ img.caption }}" loading="lazy">
       <form method="post" action="/addons/{{ slug }}/images/{{ img.id }}/caption" class="caption-form">
         <input type="hidden" name="csrf" value="{{ csrf }}">
@@ -38,18 +39,19 @@
         <input id="caption-{{ img.id }}" name="caption" value="{{ img.caption }}" maxlength="200" placeholder="No caption">
         <button type="submit" class="secondary">Save</button>
       </form>
-      <div class="actions">
+      <div class="actions shot-tools">
+        {% if images.len() > 1 %}<span class="drag-handle" data-drag-handle title="Drag to move"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 3h.01M10 3h.01M6 8h.01M10 8h.01M6 13h.01M10 13h.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span>{% endif %}
         <form method="post" action="/addons/{{ slug }}/images/{{ img.id }}/move" class="inline">
           <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="direction" value="up">
-          <button type="submit" class="secondary" {% if loop.first %}disabled{% endif %}>Earlier</button>
+          <button type="submit" class="secondary icon-button" aria-label="Move earlier" title="Move earlier" {% if loop.first %}disabled{% endif %}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
         </form>
         <form method="post" action="/addons/{{ slug }}/images/{{ img.id }}/move" class="inline">
           <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="direction" value="down">
-          <button type="submit" class="secondary" {% if loop.last %}disabled{% endif %}>Later</button>
+          <button type="submit" class="secondary icon-button" aria-label="Move later" title="Move later" {% if loop.last %}disabled{% endif %}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
         </form>
         <form method="post" action="/addons/{{ slug }}/images/{{ img.id }}/delete" class="inline">
           <input type="hidden" name="csrf" value="{{ csrf }}">
-          <button type="submit" class="danger">Delete</button>
+          <button type="submit" class="danger icon-button" aria-label="Delete screenshot" title="Delete"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9.5h5.6l.7-9.5M7 6.5v5M9 6.5v5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button>
         </form>
       </div>
     </figure>
