@@ -27,7 +27,7 @@ pub async fn list(State(state): State<AppState>, Path(slug): Path<String>, Query
     -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
     not_blocked(&addon)?;
-    let before = page.before.filter(|id| *id > 0).unwrap_or(i64::MAX);
+    let before = page.before.unwrap_or(i64::MAX);
     let comments: Value = sqlx::query_scalar(
         "SELECT coalesce(json_agg(json_build_object(
             'id', c.id, 'body', c.body, 'author', u.login,
@@ -48,15 +48,22 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser,
     let addon = load_addon(&state.pool, &slug).await?;
     not_blocked(&addon)?;
     let now = (state.clock)();
+    // Serialize writes per author so concurrent requests cannot bypass the daily cap.
+    // Transaction-scoped advisory locks release automatically on commit or rollback.
+    let mut tx = state.pool.begin().await?;
+    sqlx::query("SELECT pg_advisory_xact_lock($1)")
+        .bind(user.id)
+        .execute(&mut *tx).await?;
     let recent: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM addon_comments WHERE author_id=$1 AND created_at>$2"
-    ).bind(user.id).bind(now - chrono::Duration::hours(24)).fetch_one(&state.pool).await?;
+    ).bind(user.id).bind(now - chrono::Duration::hours(24)).fetch_one(&mut *tx).await?;
     if recent >= 100 {
         return Err(ApiError::new(StatusCode::TOO_MANY_REQUESTS, "comment_limit", "Daily comment limit reached"));
     }
     let id: i64 = sqlx::query_scalar(
         "INSERT INTO addon_comments(addon_id,author_id,body,created_at) VALUES($1,$2,$3,$4) RETURNING id"
-    ).bind(addon.id).bind(user.id).bind(body.body.trim()).bind(now).fetch_one(&state.pool).await?;
+    ).bind(addon.id).bind(user.id).bind(body.body.trim()).bind(now).fetch_one(&mut *tx).await?;
+    tx.commit().await?;
     Ok((StatusCode::CREATED, Json(json!({"id":id}))))
 }
 
