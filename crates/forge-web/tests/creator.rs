@@ -145,6 +145,36 @@ async fn image_upload_messages() {
 }
 
 #[tokio::test]
+async fn several_screenshots_in_one_upload() {
+    let mut web = logged_in(owner()).await;
+    Mock::given(method("POST"))
+        .and(path("/v1/addons/lucky/images"))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({ "id": 8 })))
+        .expect(2)
+        .mount(&web.api)
+        .await;
+    let token = web.csrf().await;
+    let boundary = "B0UND";
+    let file = |name: &str| format!("--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{name}\"\r\nContent-Type: image/png\r\n\r\nPNGDATA\r\n");
+    let body = format!(
+        "--{boundary}\r\nContent-Disposition: form-data; name=\"kind\"\r\n\r\nscreenshot\r\n{}{}--{boundary}--\r\n",
+        file("a.png"),
+        file("b.png")
+    );
+    let cookie = web.cookies.iter().map(|(k, v)| format!("{k}={v}")).collect::<Vec<_>>().join("; ");
+    let request = Request::post("/addons/lucky/images")
+        .header("cookie", cookie)
+        .header("origin", WEB)
+        .header("x-csrf-token", token)
+        .header("content-type", format!("multipart/form-data; boundary={boundary}"))
+        .body(Body::from(body))
+        .unwrap();
+    let page = web.request(request).await;
+    assert!(page.body.contains("2 images uploaded."), "{}", page.body);
+    assert!(web.get("/addons/lucky/images").await.body.contains(r#"name="file" accept="image/png,image/jpeg,image/webp" multiple"#));
+}
+
+#[tokio::test]
 async fn dependency_cycle_message() {
     let mut web = logged_in(owner()).await;
     Mock::given(method("PUT"))

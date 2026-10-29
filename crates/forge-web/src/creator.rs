@@ -525,31 +525,53 @@ pub async fn upload_image(
     mut multipart: Multipart,
 ) -> WebResult<Response> {
     let (user, token) = me(&state, &jar).await?;
-    let mut form = reqwest::multipart::Form::new();
+    let (mut files, mut kind, mut caption) = (Vec::new(), String::new(), String::new());
     while let Ok(Some(field)) = multipart.next_field().await {
         let name = field.name().unwrap_or_default().to_string();
         let file_name = field.file_name().unwrap_or("upload").to_string();
         let Ok(bytes) = field.bytes().await else {
-            return Ok(images_page(&state, user, csrf.0, &slug, None, Some("Images may be at most 5 MB.".into())).await?.into_response());
+            return Ok(images_page(&state, user, csrf.0, &slug, None, Some("Images may be at most 5 MB each.".into())).await?.into_response());
         };
-        form = match name.as_str() {
-            "file" => form.part("file", reqwest::multipart::Part::bytes(bytes.to_vec()).file_name(file_name)),
-            "kind" | "caption" => form.text(name, String::from_utf8_lossy(&bytes).into_owned()),
-            _ => form,
-        };
+        match name.as_str() {
+            "file" if !bytes.is_empty() => files.push((file_name, bytes.to_vec())),
+            "kind" => kind = String::from_utf8_lossy(&bytes).into_owned(),
+            "caption" => caption = String::from_utf8_lossy(&bytes).into_owned(),
+            _ => {}
+        }
     }
-    let (message, error) = match state.api.post_multipart(&format!("/v1/addons/{slug}/images"), &token, form).await {
-        Ok(answer) if answer["notice"] == "resized" => (
-            Some(format!(
-                "Image was scaled down from {} x {} to {} x {} px.",
-                answer["original"]["width"], answer["original"]["height"], answer["stored"]["width"], answer["stored"]["height"]
-            )),
-            None,
-        ),
-        Ok(_) => (Some("Image uploaded.".into()), None),
-        Err(ApiError::Api { message, .. }) => (None, Some(message)),
-        Err(e) => return Err(e.into()),
+    // There is one icon: of several picked files only the first becomes it.
+    if kind == "icon" {
+        files.truncate(1);
+    }
+    // One API upload per file, so one bad file does not stop the others.
+    let (mut uploaded, mut notes, mut errors) = (0, Vec::new(), Vec::new());
+    let several = files.len() > 1;
+    for (file_name, data) in files {
+        let form = reqwest::multipart::Form::new()
+            .text("kind", kind.clone())
+            .text("caption", caption.clone())
+            .part("file", reqwest::multipart::Part::bytes(data).file_name(file_name.clone()));
+        let named = |text: String| if several { format!("{file_name}: {text}") } else { text };
+        match state.api.post_multipart(&format!("/v1/addons/{slug}/images"), &token, form).await {
+            Ok(answer) => {
+                uploaded += 1;
+                if answer["notice"] == "resized" {
+                    notes.push(named(format!(
+                        "Image was scaled down from {} x {} to {} x {} px.",
+                        answer["original"]["width"], answer["original"]["height"], answer["stored"]["width"], answer["stored"]["height"]
+                    )));
+                }
+            }
+            Err(ApiError::Api { message, .. }) => errors.push(named(message)),
+            Err(e) => return Err(e.into()),
+        }
+    }
+    let message = match uploaded {
+        0 => None,
+        1 => Some(std::iter::once("Image uploaded.".to_string()).chain(notes).collect::<Vec<_>>().join(" ")),
+        n => Some(std::iter::once(format!("{n} images uploaded.")).chain(notes).collect::<Vec<_>>().join(" ")),
     };
+    let error = (!errors.is_empty()).then(|| errors.join(" "));
     Ok(images_page(&state, user, csrf.0, &slug, message, error).await?.into_response())
 }
 
