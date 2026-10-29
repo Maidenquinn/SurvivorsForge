@@ -35,7 +35,7 @@ walk(templates);
 for (const file of allTemplates) {
   const html = fs.readFileSync(file, "utf8");
   const filename = path.relative(templates, file);
-  for (const match of html.matchAll(/data-i18n(?:-placeholder|-confirm|-aria-label|-title)?="([^"]+)"/g)) {
+  for (const match of html.matchAll(/data-i18n(?:-placeholder|-confirm|-aria-label|-title|-alt)?="([^"]+)"/g)) {
     if (!(match[1] in catalog.en)) unknown.push(filename + ": " + match[1]);
   }
   if (/<option\b[^>]*>\s*<span\b/i.test(html)) unknown.push(filename + ": invalid nested span in <option>");
