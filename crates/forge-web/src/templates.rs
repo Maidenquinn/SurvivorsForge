@@ -195,6 +195,9 @@ pub struct InlineIssue {
 #[template(path = "addon.html")]
 pub struct AddonPage {
     pub tab: String,
+    pub comments: Vec<crate::comments::Comment>,
+    pub comments_next: Option<i64>,
+    pub comments_moderator: bool,
     pub issues: Vec<IssueItem>,
     pub selected_issue: Option<InlineIssue>,
     pub can_manage_issues: bool,
