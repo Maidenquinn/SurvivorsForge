@@ -410,21 +410,41 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   var fullscreenButton = dialog.querySelector("[data-gallery-fullscreen]");
   function syncFullscreenButton() {
-    var active = document.fullscreenElement === dialog;
-    fullscreenButton.textContent = active ? "⛶" : "⛶";
+    var active = dialog.classList.contains("gallery-expanded");
+    fullscreenButton.textContent = active ? "↙" : "⛶";
     fullscreenButton.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
     fullscreenButton.title = active ? "Exit fullscreen" : "Fullscreen";
   }
+  function leaveExpanded() {
+    dialog.classList.remove("gallery-expanded");
+    if (document.fullscreenElement === dialog && document.exitFullscreen) {
+      document.exitFullscreen().catch(function () {});
+    }
+    syncFullscreenButton();
+  }
   fullscreenButton.addEventListener("click", function () {
-    if (document.fullscreenElement === dialog) {
-      if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
-    } else if (dialog.requestFullscreen) {
-      dialog.requestFullscreen().catch(function () {});
+    if (dialog.classList.contains("gallery-expanded")) {
+      leaveExpanded();
+    } else {
+      // Expand immediately, even if requestFullscreen is unavailable or rejected.
+      dialog.classList.add("gallery-expanded");
+      syncFullscreenButton();
+      if (dialog.requestFullscreen) dialog.requestFullscreen().catch(function () {});
     }
   });
-  document.addEventListener("fullscreenchange", syncFullscreenButton);
-  dialog.addEventListener("close", function () {
-    if (document.fullscreenElement === dialog && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+  document.addEventListener("fullscreenchange", function () {
+    if (!document.fullscreenElement && dialog.classList.contains("gallery-expanded")) {
+      dialog.classList.remove("gallery-expanded");
+    }
+    syncFullscreenButton();
+  });
+  dialog.addEventListener("close", leaveExpanded);
+  dialog.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && dialog.classList.contains("gallery-expanded")) {
+      event.preventDefault();
+      event.stopPropagation();
+      leaveExpanded();
+    }
   });
   dialog.querySelector("[data-gallery-prev]").addEventListener("click", function () { display(index - 1); });
   dialog.querySelector("[data-gallery-next]").addEventListener("click", function () { display(index + 1); });
