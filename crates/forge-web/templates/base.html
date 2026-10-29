@@ -6,6 +6,13 @@
   <meta name="htmx-config" content='{"allowEval": false, "allowScriptTags": false, "includeIndicatorStyles": false, "selfRequestsOnly": true}'>
   <title>{% block title %}SurvivorsForge{% endblock %}</title>
   {% block head %}{% endblock %}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SurvivorsForge">
+  <meta property="og:title" content="{% block og_title %}SurvivorsForge{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Addons for Azeroth Survivors, checked for harmful code and installed in one click.{% endblock %}">
+  <meta property="og:image" content="{{ crate::app::public_url() }}/static/icon.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="theme-color" content="#E8C25A">
   <link rel="icon" href="/static/icon.png" type="image/png">
   <link rel="apple-touch-icon" href="/static/icon.png">
   <link rel="stylesheet" href="/static/app.css?v={{ crate::app::asset_version() }}">

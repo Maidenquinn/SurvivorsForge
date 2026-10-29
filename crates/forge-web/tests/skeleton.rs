@@ -23,10 +23,15 @@ async fn reports_api_state() {
 
 #[tokio::test]
 async fn login_redirects_to_the_api() {
+    // A page that moves on at once instead of a redirect: link previews (Discord) do not follow it,
+    // so a shared link to a page behind the login shows SurvivorsForge, not GitHub's login.
     let mut web = TestWeb::new().await;
     let page = web.get("/login").await;
-    assert_eq!(page.status, StatusCode::SEE_OTHER);
-    assert_eq!(page.location(), "https://api.test/v1/auth/github/start?return_to=https%3A%2F%2Fweb.test%2Fauth%2Fcallback");
+    assert_eq!(page.status, StatusCode::OK);
+    let start = "https://api.test/v1/auth/github/start?return_to=https%3A%2F%2Fweb.test%2Fauth%2Fcallback".replace('&', "&#38;");
+    assert!(page.body.contains(&format!(r#"<meta http-equiv="refresh" content="0;url={start}">"#)), "{}", page.body);
+    assert!(page.body.contains(&format!(r#"href="{start}""#)), "a link when the refresh is off");
+    assert!(page.body.contains(r#"<meta property="og:site_name" content="SurvivorsForge">"#));
 }
 
 #[tokio::test]

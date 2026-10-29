@@ -679,6 +679,15 @@ pub struct PacksPage {
 }
 
 #[derive(Template)]
+#[template(path = "login.html")]
+pub struct LoginPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    /// The API's GitHub login.
+    pub start: String,
+}
+
+#[derive(Template)]
 #[template(path = "packs/building.html")]
 pub struct PackBuildingPage {
     pub user: Option<Visitor>,

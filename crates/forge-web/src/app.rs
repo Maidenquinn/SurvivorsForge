@@ -5,7 +5,7 @@ use crate::config::Config;
 use crate::csrf::{self, CsrfToken};
 use crate::error::{WebError, WebResult, error_page};
 use crate::session::{self, SESSION_COOKIE};
-use crate::templates::{IndexPage, Visitor, render};
+use crate::templates::{IndexPage, LoginPage, Visitor, render};
 use axum::extract::{FromRef, Query, State};
 use axum::http::{HeaderValue, StatusCode, header};
 use axum::response::{Html, IntoResponse, Redirect, Response};
@@ -74,7 +74,15 @@ pub async fn visitor(state: &AppState, jar: &PrivateCookieJar) -> WebResult<Opti
     Ok(Some((Visitor::from_me(&me), token)))
 }
 
+/// The site's own address, for the absolute links that link previews need (`og:image`).
+static PUBLIC_URL: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+pub fn public_url() -> &'static str {
+    PUBLIC_URL.get().map_or("", String::as_str)
+}
+
 pub fn router(state: AppState) -> Router {
+    let _ = PUBLIC_URL.set(state.config.public_web_url.clone());
     let pages = Router::new()
         .route("/", get(index))
         .route("/addons", get(crate::public::addons))
@@ -208,7 +216,9 @@ async fn login(State(state): State<AppState>, jar: PrivateCookieJar) -> Response
     .expect("valid API URL");
     // Lives until the callback removes it or the browser closes.
     let started = session::cookie(session::LOGIN_COOKIE, "1".into(), state.secure_cookies());
-    (jar.add(started), Redirect::to(url.as_str())).into_response()
+    // A page that moves on at once rather than a redirect: link previews stop here and show this
+    // site instead of following through to GitHub's login.
+    (jar.add(started), render(&LoginPage { user: None, csrf: String::new(), start: url.to_string() })).into_response()
 }
 
 #[derive(Deserialize)]
