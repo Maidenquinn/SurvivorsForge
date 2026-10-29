@@ -1,0 +1,12 @@
+# The whole platform on this machine over plain HTTP, for testing (docs/local-setup.md):
+#   docker compose --env-file .env.local -f compose.yaml -f compose.local.yaml up -d --build
+# Website http://localhost:3080, API http://localhost:3081. Own project name, so its database and
+# volumes stay apart from the Postgres that `cargo test` uses.
+name: survivorsforge-local
+
+services:
+  caddy:
+    # Instead of 80/443: Caddy serves the two http:// sites of DOMAIN_WEB and DOMAIN_API.
+    ports: !override
+      - "127.0.0.1:3080:3080"
+      - "127.0.0.1:3081:3081"

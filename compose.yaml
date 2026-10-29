@@ -67,6 +67,10 @@ services:
     <<: *api
     pull_policy: never
     command: ["worker"]
+    # The API applies the migrations; the worker starts once they are in.
+    depends_on:
+      api:
+        condition: service_healthy
     # Handles untrusted zips: no image volume, read-only file system, capped memory.
     read_only: true
     tmpfs:

@@ -12,6 +12,8 @@ The platform is three programs and a database, all started by Docker Compose:
 
 Releases and downloads stay on GitHub. The server keeps metadata, scan results and images.
 
+To try everything on your own machine first, see [local-setup.md](local-setup.md).
+
 ## What you need
 
 - A Linux server with Docker and the Compose plugin (2.24 or newer). Ports 80 and 443 open.
