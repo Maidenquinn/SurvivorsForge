@@ -17,7 +17,7 @@
     <article class="issue-message" data-inline-editor id="comment-{{ comment.id }}">
       <header class="issue-message-head">
         {% if !comment.avatar.is_empty() %}<img class="issue-avatar" src="{{ comment.avatar }}" alt="" width="32" height="32">{% endif %}
-        <strong>{{ comment.author }}</strong><span class="muted">{{ comment.created }}{% if comment.edited %} · <span data-i18n="edited">edited</span>{% endif %}</span>
+        <strong>{{ comment.author }}</strong><span class="muted"><time datetime="{{ comment.created_iso }}" title="{{ comment.created_iso }}">{{ comment.created }}</time>{% if comment.edited %} · <time datetime="{{ comment.edited_iso }}" title="{{ comment.edited_iso }}"><span data-i18n="edited">edited</span></time>{% endif %}</span>
         <span class="issue-action-spacer"></span>
         {% if comment.can_edit %}<button type="button" class="issue-action" data-edit-toggle data-i18n="edit">Edit</button>{% endif %}
         {% if comment.can_delete %}<form method="post" action="/addons/{{ slug }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?" data-i18n-confirm="confirm_delete"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="issue-action issue-danger" type="submit" data-i18n="delete">Delete</button></form>{% endif %}
