@@ -1,4 +1,3 @@
-pub mod archive;
 pub mod config;
 pub mod controller;
 pub mod github;
@@ -8,8 +7,9 @@ pub mod repo_detect;
 pub mod scan;
 pub mod self_update;
 pub mod state;
-pub mod toc;
 pub mod updates;
+
+pub use forge_core::{archive, toc};
 
 use std::fmt;
 use std::path::Path;
@@ -56,6 +56,18 @@ impl fmt::Display for Error {
             Error::FolderOwnedBy(name) => write!(f, "The folder already belongs to the addon \"{name}\""),
             Error::AlreadyVerified(name) => write!(f, "\"{name}\" is a verified addon, install it from Browse"),
             Error::InvalidRepo(input) => write!(f, "\"{input}\" is not a GitHub repo (expected owner/repo or a GitHub URL)"),
+        }
+    }
+}
+
+impl From<forge_core::Error> for Error {
+    fn from(e: forge_core::Error) -> Self {
+        match e {
+            forge_core::Error::Io(e) => Error::Io(e),
+            forge_core::Error::Zip(e) => Error::Zip(e),
+            forge_core::Error::UnsafePath(p) => Error::UnsafePath(p),
+            forge_core::Error::NoAddonFound => Error::NoAddonFound,
+            forge_core::Error::Parse(e) => Error::Parse(e),
         }
     }
 }

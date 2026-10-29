@@ -248,7 +248,7 @@ mod tests {
     fn zip_source_is_manual() {
         let mut state = State::default();
         state.upsert(Entry { source: Source::Zip { file_name: "x.zip".into() }, ..entry("x", "zip:x.zip") });
-        let results = check_all(&FakeGitHub::default(), &mut state, &Registry::embedded());
+        let results = check_all(&FakeGitHub::default(), &mut state, &crate::registry::embedded());
         assert_eq!(results, [("x".to_string(), UpdateStatus::Manual)]);
     }
 
@@ -260,7 +260,7 @@ mod tests {
         let mut state = State::default();
         state.upsert(entry("luckyodds", "toc:0.4.0"));
         state.upsert(entry("azsspellmeter", "toc:1.31"));
-        let results = check_all(&gh, &mut state, &Registry::embedded());
+        let results = check_all(&gh, &mut state, &crate::registry::embedded());
         assert!(matches!(&results[0].1, UpdateStatus::CheckFailed(m) if m.contains("limiting requests")));
         assert_eq!(results[1].1, UpdateStatus::UpToDate);
         assert_eq!(state.get("azsspellmeter").unwrap().version, "v1.31");

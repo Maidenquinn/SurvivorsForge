@@ -125,18 +125,18 @@ mod tests {
     #[test]
     fn detection_order_release_tag_branch() {
         let gh = FakeGitHub::default().release("cadoky/Lucky", "v0.6.0", &["Lucky-v0.6.0.zip"]);
-        let d = detect(&gh, &Registry::embedded(), "cadoky/Lucky", &mut fetcher(&[("Lucky-v0.6.0.zip", "Lucky")])).unwrap();
+        let d = detect(&gh, &crate::registry::embedded(), "cadoky/Lucky", &mut fetcher(&[("Lucky-v0.6.0.zip", "Lucky")])).unwrap();
         assert_eq!(d.spec, SourceSpec::Release { asset: "Lucky-v*.zip".into() });
         assert_eq!(d.remote.id, "v0.6.0");
         assert_eq!(d.entry_id(), "gh:cadoky/lucky");
 
         let gh = FakeGitHub::default().tag("o/tagged", "v1.2");
-        let d = detect(&gh, &Registry::embedded(), "o/tagged", &mut fetcher(&[("zip/v1.2", "T")])).unwrap();
+        let d = detect(&gh, &crate::registry::embedded(), "o/tagged", &mut fetcher(&[("zip/v1.2", "T")])).unwrap();
         assert_eq!(d.spec, SourceSpec::Tag);
         assert_eq!(d.remote.id, "v1.2");
 
         let gh = FakeGitHub::default().branch("o/plain", "main", "abcdef1234");
-        let d = detect(&gh, &Registry::embedded(), "o/plain", &mut fetcher(&[("zip/abcdef1234", "P")])).unwrap();
+        let d = detect(&gh, &crate::registry::embedded(), "o/plain", &mut fetcher(&[("zip/abcdef1234", "P")])).unwrap();
         assert_eq!(d.spec, SourceSpec::Branch);
         assert_eq!(d.remote.label, "abcdef1");
     }
@@ -144,23 +144,23 @@ mod tests {
     #[test]
     fn skips_assets_without_addon() {
         let gh = FakeGitHub::default().release("m/ui", "v3.0.36", &["SurvivorUI-Installer.zip", "SurvivorUI-v3.0.36.zip"]);
-        let d = detect(&gh, &Registry::embedded(), "m/ui", &mut fetcher(&[("SurvivorUI-v3", "SurvivorUI")])).unwrap();
+        let d = detect(&gh, &crate::registry::embedded(), "m/ui", &mut fetcher(&[("SurvivorUI-v3", "SurvivorUI")])).unwrap();
         assert_eq!(d.spec, SourceSpec::Release { asset: "SurvivorUI-v*.zip".into() });
     }
 
     #[test]
     fn no_addon_anywhere() {
         let gh = FakeGitHub::default().tag("o/web", "v1");
-        assert_eq!(detect(&gh, &Registry::embedded(), "o/web", &mut fetcher(&[])), Err(Error::NoAddonFound));
+        assert_eq!(detect(&gh, &crate::registry::embedded(), "o/web", &mut fetcher(&[])), Err(Error::NoAddonFound));
         assert_eq!(
-            detect(&FakeGitHub::default(), &Registry::embedded(), "o/missing", &mut fetcher(&[])),
+            detect(&FakeGitHub::default(), &crate::registry::embedded(), "o/missing", &mut fetcher(&[])),
             Err(Error::NotFound)
         );
     }
 
     #[test]
     fn verified_repo_is_redirected() {
-        let result = detect(&FakeGitHub::default(), &Registry::embedded(), "CADOKY/luckyodds", &mut fetcher(&[]));
+        let result = detect(&FakeGitHub::default(), &crate::registry::embedded(), "CADOKY/luckyodds", &mut fetcher(&[]));
         assert_eq!(result, Err(Error::AlreadyVerified("LuckyOdds".into())));
     }
 }

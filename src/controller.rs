@@ -312,7 +312,7 @@ mod tests {
             label: "v0.6.0".into(),
             download: String::new(),
         }));
-        let rows = installed_rows(&state, &reconciled, &scan, &Registry::embedded(), &statuses);
+        let rows = installed_rows(&state, &reconciled, &scan, &crate::registry::embedded(), &statuses);
         let summary: Vec<(&str, Badge)> = rows.iter().map(|r| (r.id.as_str(), r.badge)).collect();
         assert_eq!(summary, [
             ("gh:o/r", Badge::GitHub),
@@ -329,7 +329,7 @@ mod tests {
     fn missing_folder_shows_missing() {
         let mut state = State::default();
         state.upsert(entry("zip-z", "Z", zip_source()));
-        let rows = installed_rows(&state, &state.reconcile(&[]), &[], &Registry::embedded(), &HashMap::new());
+        let rows = installed_rows(&state, &state.reconcile(&[]), &[], &crate::registry::embedded(), &HashMap::new());
         assert_eq!(rows[0].state, RowState::Missing);
     }
 

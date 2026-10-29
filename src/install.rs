@@ -39,7 +39,7 @@ pub fn install_zip_with(addons_dir: &Path, state: &mut State, request: Request, 
     let staging = work_dir(addons_dir).join("staging").join(&run);
     let backup = work_dir(addons_dir).join("backup").join(&run);
     std::fs::create_dir_all(&staging)?;
-    let result = archive::extract_addons(request.zip, &detected, &staging).and_then(|()| {
+    let result = archive::extract_addons(request.zip, &detected, &staging).map_err(Error::from).and_then(|()| {
         let mut replaced: Vec<String> = detected.iter().map(|a| a.name.clone()).collect();
         if let Some(old) = state.get(request.id) {
             for folder in &old.folders {

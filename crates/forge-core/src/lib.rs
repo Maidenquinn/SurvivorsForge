@@ -1,0 +1,38 @@
+//! Logic shared by the SurvivorsForge launcher, API, website and scanner. No GUI dependencies.
+
+pub mod archive;
+pub mod registry;
+pub mod toc;
+
+use std::fmt;
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Error {
+    Io(String),
+    Zip(String),
+    UnsafePath(String),
+    NoAddonFound,
+    Parse(String),
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::Io(e) => write!(f, "File error: {e}"),
+            Error::Zip(e) => write!(f, "The zip file is damaged or invalid: {e}"),
+            Error::UnsafePath(p) => write!(f, "The zip contains an unsafe path ({p}), installation cancelled"),
+            Error::NoAddonFound => write!(f, "No addon found"),
+            Error::Parse(e) => write!(f, "Unexpected response: {e}"),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
+        Error::Io(e.to_string())
+    }
+}
+
+pub type Result<T> = std::result::Result<T, Error>;

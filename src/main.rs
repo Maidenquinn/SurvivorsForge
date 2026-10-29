@@ -466,7 +466,7 @@ fn on_install_zip(ui: &AppWindow, shared: &Shared) {
         return;
     }
     let Some(file) = rfd::FileDialog::new().add_filter("Zip archive", &["zip"]).pick_file() else { return };
-    let detected = match archive::analyze(&file) {
+    let detected = match archive::analyze(&file).map_err(Error::from) {
         Ok(detected) => detected,
         Err(e) => {
             let message = if e == Error::NoAddonFound { "No addon found in the zip".into() } else { e.to_string() };
@@ -529,7 +529,7 @@ fn on_repo_submit(ui: &AppWindow, shared: &Shared) {
         let result = repo_detect::detect(&client, &registry, &repo, &mut |url| {
             let zip = downloads.join(format!("{}.zip", unique_name()));
             client.download(url, &zip)?;
-            archive::analyze(&zip).map(|addons| (zip.clone(), addons)).inspect_err(|_| {
+            archive::analyze(&zip).map_err(Error::from).map(|addons| (zip.clone(), addons)).inspect_err(|_| {
                 let _ = std::fs::remove_file(&zip);
             })
         });

@@ -203,13 +203,13 @@ mod tests {
     fn adopts_known_verified_folders() {
         let mut state = State::default();
         let scan = [scanned("SurvivorPlates", "3.0.36"), scanned("SurvivorUI", "3.0.36"), scanned("Tickfire", "1.0")];
-        assert!(state.adopt(&scan, &Registry::embedded()));
+        assert!(state.adopt(&scan, &crate::registry::embedded()));
         assert_eq!(state.entries.len(), 1);
         let e = &state.entries[0];
         assert_eq!(e.id, "survivor-ui");
         assert_eq!(e.version, "toc:3.0.36");
         assert_eq!(e.folders, ["SurvivorUI", "SurvivorPlates"]);
-        assert!(!state.adopt(&scan, &Registry::embedded()), "second run changes nothing");
+        assert!(!state.adopt(&scan, &crate::registry::embedded()), "second run changes nothing");
     }
 
     #[test]
