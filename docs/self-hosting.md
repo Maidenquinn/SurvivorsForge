@@ -189,20 +189,16 @@ The volume name starts with the Compose project name, by default the folder name
 ## 6. The launcher
 
 The launcher talks only to the API: the addon list, release and tag metadata and game versions
-come from there. Only the zip files are downloaded from GitHub directly. Build it with the API's
-address:
+come from there. Only the zip files are downloaded from GitHub directly. A release build talks to
+the official platform, `https://forgeapi.rezondes.net` and `https://forge.rezondes.net`; a debug
+build to the local platform of [local-setup.md](local-setup.md).
+
+To build a launcher for your own platform, set both addresses at build time ("Share as link" opens
+the website's pack builder):
 
 ```bash
-SURVIVORSFORGE_API_URL=https://api.forge.example.com cargo build --release
+SURVIVORSFORGE_API_URL=https://api.forge.example.com SURVIVORSFORGE_WEB_URL=https://forge.example.com cargo build --release
 ```
-
-Set `SURVIVORSFORGE_WEB_URL=https://forge.example.com` as well: "Share as link" opens the
-website's pack builder there.
-
-In the release workflow, set both as environment variables of the build step. Without them a
-release build uses the placeholders `https://api.survivorsforge.invalid` and
-`https://survivorsforge.invalid`, which never answer; a debug build uses the local platform of
-[local-setup.md](local-setup.md).
 
 Players of a launcher built for another platform point it at yours in *Settings → Platform API*
 and *Platform website*. The order is: the environment variables at run time, then these settings,

@@ -130,8 +130,9 @@ still come from GitHub. *Browse* shows the category filter and the tick boxes fo
 *Check for updates*.
 
 Another address (other ports, a test server) goes into *Settings → Platform API* and *Platform
-website*. A release build (`cargo run --release`) has no local default; it needs these settings or
-the `SURVIVORSFORGE_API_URL` and `SURVIVORSFORGE_WEB_URL` environment variables.
+website*. A release build (`cargo run --release`) talks to the official platform
+(`https://forgeapi.rezondes.net`) unless these settings or the `SURVIVORSFORGE_API_URL` and
+`SURVIVORSFORGE_WEB_URL` environment variables point elsewhere.
 
 ## 7. Logs, stop, start over
 

@@ -10,22 +10,22 @@ use std::time::{Duration, SystemTime};
 
 pub const EMBEDDED: &str = include_str!("../registry/verified.json");
 const CACHE_FILE: &str = "verified.json";
-/// Stand in until a release build sets the real addresses with `SURVIVORSFORGE_API_URL` and
-/// `SURVIVORSFORGE_WEB_URL`.
-pub const PLACEHOLDER_API_URL: &str = "https://api.survivorsforge.invalid";
-pub const PLACEHOLDER_WEB_URL: &str = "https://survivorsforge.invalid";
+/// The SurvivorsForge platform, for release builds without `SURVIVORSFORGE_API_URL` and
+/// `SURVIVORSFORGE_WEB_URL` at build time.
+pub const OFFICIAL_API_URL: &str = "https://forgeapi.rezondes.net";
+pub const OFFICIAL_WEB_URL: &str = "https://forge.rezondes.net";
 /// Where `docs/local-setup.md` runs the platform; debug builds (`cargo run`) use it.
 pub const LOCAL_API_URL: &str = "http://localhost:3081";
 pub const LOCAL_WEB_URL: &str = "http://localhost:3080";
 
-/// The address without anything else set: the local platform for debug builds, the placeholder
+/// The address without anything else set: the local platform for debug builds, the official one
 /// for release builds.
 pub fn fallback_api_url() -> &'static str {
-    if cfg!(debug_assertions) { LOCAL_API_URL } else { PLACEHOLDER_API_URL }
+    if cfg!(debug_assertions) { LOCAL_API_URL } else { OFFICIAL_API_URL }
 }
 
 pub fn fallback_web_url() -> &'static str {
-    if cfg!(debug_assertions) { LOCAL_WEB_URL } else { PLACEHOLDER_WEB_URL }
+    if cfg!(debug_assertions) { LOCAL_WEB_URL } else { OFFICIAL_WEB_URL }
 }
 
 /// The platform API: `SURVIVORSFORGE_API_URL` at run time, else `setting` from the settings, else
@@ -149,12 +149,18 @@ mod tests {
 
     #[test]
     fn api_url_environment_then_setting_then_build_then_fallback() {
-        let pick = |env, setting, build| pick_url(&[env, setting, build], PLACEHOLDER_API_URL);
+        let pick = |env, setting, build| pick_url(&[env, setting, build], OFFICIAL_API_URL);
         assert_eq!(pick(Some("http://localhost:8080/"), Some("https://mine"), Some("https://api.real")), "http://localhost:8080");
         assert_eq!(pick(Some(" "), Some("https://mine/"), Some("https://api.real")), "https://mine", "the setting beats the build");
         assert_eq!(pick(None, None, Some("https://api.real")), "https://api.real");
-        assert_eq!(pick(None, None, None), PLACEHOLDER_API_URL);
+        assert_eq!(pick(None, None, None), OFFICIAL_API_URL);
         assert_eq!(registry_url("https://api.test"), "https://api.test/v1/registry");
+    }
+
+    #[test]
+    fn release_builds_talk_to_the_official_platform() {
+        assert_eq!(OFFICIAL_API_URL, "https://forgeapi.rezondes.net");
+        assert_eq!(OFFICIAL_WEB_URL, "https://forge.rezondes.net");
     }
 
     #[test]
