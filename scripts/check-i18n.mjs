@@ -25,7 +25,7 @@ const templates = path.join(root, "crates/forge-web/templates");
 const unknown = [];
 for (const filename of fs.readdirSync(templates).filter(name => name.endsWith(".html"))) {
   const html = fs.readFileSync(path.join(templates, filename), "utf8");
-  for (const match of html.matchAll(/data-i18n(?:-placeholder|-confirm)?="([^"]+)"/g)) {
+  for (const match of html.matchAll(/data-i18n(?:-placeholder|-confirm|-aria-label)?="([^"]+)"/g)) {
     if (!(match[1] in catalog.en)) unknown.push(filename + ": " + match[1]);
   }
 }
