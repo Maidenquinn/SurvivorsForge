@@ -23,17 +23,31 @@ for (const locale of expected) {
 }
 const templates = path.join(root, "crates/forge-web/templates");
 const unknown = [];
-for (const filename of fs.readdirSync(templates).filter(name => name.endsWith(".html"))) {
-  const html = fs.readFileSync(path.join(templates, filename), "utf8");
-  for (const match of html.matchAll(/data-i18n(?:-placeholder|-confirm|-aria-label)?="([^"]+)"/g)) {
-    if (!(match[1] in catalog.en)) unknown.push(filename + ": " + match[1]);
+const allTemplates = [];
+function walk(dir) {
+  for (const entry of fs.readdirSync(dir, {withFileTypes:true})) {
+    const file = path.join(dir, entry.name);
+    if (entry.isDirectory()) walk(file);
+    else if (entry.name.endsWith(".html")) allTemplates.push(file);
   }
 }
-if (unknown.length) throw new Error("Unknown translation keys:\n" + unknown.join("\n"));
+walk(templates);
+for (const file of allTemplates) {
+  const html = fs.readFileSync(file, "utf8");
+  const filename = path.relative(templates, file);
+  for (const match of html.matchAll(/data-i18n(?:-placeholder|-confirm|-aria-label|-title)?="([^"]+)"/g)) {
+    if (!(match[1] in catalog.en)) unknown.push(filename + ": " + match[1]);
+  }
+  if (/<option\\b[^>]*>\\s*<span\\b/i.test(html)) unknown.push(filename + ": invalid nested span in <option>");
+  for (const match of html.matchAll(/<span\\b[^>]*data-l10n-en="([^"]+)"[^>]*>/g)) {
+    if (!/data-l10n-fr="[^"]+"/.test(match[0])) unknown.push(filename + ": missing French annotation for " + match[1]);
+  }
+}
+if (unknown.length) throw new Error("Invalid template translations:\\n" + unknown.join("\\n"));
 vm.runInNewContext(source, {
   document: {addEventListener() {}},
   window: {},
   navigator: {language:"en"},
   localStorage: {getItem() {return null}},
 });
-console.log("i18n OK:", expected.length, "languages,", keys.length, "keys per language, all template references valid");
+console.log("i18n OK:", expected.length, "languages,", keys.length, "keys per language, all", allTemplates.length, "template references valid");
