@@ -6,30 +6,30 @@
 {% include "admin/flash.html" %}
 <form class="panel admin-actions" method="post" action="/admin/list/{{ kind }}">
   <input type="hidden" name="csrf" value="{{ csrf }}">
-  <label for="new-name"><span data-l10n-en="New entry" data-l10n-fr="Nouvelle entrée">New entry</span></label><input id="new-name" name="name" required>
-  <label for="new-sort"><span data-l10n-en="Order (lower comes first)" data-l10n-fr="Ordre (plus petit en premier)">Order (lower comes first)</span></label><input id="new-sort" name="sort_key" inputmode="numeric" required>
+  <label for="new-name"><span data-i18n="admin_new_entry">New entry</span></label><input id="new-name" name="name" required>
+  <label for="new-sort"><span data-i18n="admin_order_lower">Order (lower comes first)</span></label><input id="new-sort" name="sort_key" inputmode="numeric" required>
   {% if kind == "categories" %}
-  <label for="new-parent"><span data-l10n-en="Subcategory of" data-l10n-fr="Sous-catégorie de">Subcategory of</span></label>
-  <select id="new-parent" name="parent"><option value="" data-l10n-option-en="None (top level)" data-l10n-option-fr="Aucune (niveau principal)">None (top level)</option>{% for p in parents %}<option value="{{ p }}">{{ p }}</option>{% endfor %}</select>
+  <label for="new-parent"><span data-i18n="admin_subcategory">Subcategory of</span></label>
+  <select id="new-parent" name="parent"><option value="" data-i18n="admin_none_top">None (top level)</option>{% for p in parents %}<option value="{{ p }}">{{ p }}</option>{% endfor %}</select>
   {% endif %}
-  <button type="submit"><span data-l10n-en="Add" data-l10n-fr="Ajouter">Add</span></button>
+  <button type="submit"><span data-i18n="action_add">Add</span></button>
 </form>
 <section class="panel list">
-  {% if rows.is_empty() %}<p class="muted"><span data-l10n-en="Empty." data-l10n-fr="Aucune entrée.">Empty.</span></p>{% endif %}
+  {% if rows.is_empty() %}<p class="muted"><span data-i18n="admin_empty">Empty.</span></p>{% endif %}
   {% for (key, name, sort, parent) in rows %}
   <div class="member">
     <form method="post" action="/admin/list/{{ kind }}/{{ key }}/save">
       <input type="hidden" name="csrf" value="{{ csrf }}">
       <label class="sr-only" for="name-{{ loop.index }}"><span data-i18n="name">Name</span></label><input id="name-{{ loop.index }}" name="name" value="{{ name }}">
-      <label class="sr-only" for="sort-{{ loop.index }}"><span data-l10n-en="Order" data-l10n-fr="Ordre">Order</span></label><input id="sort-{{ loop.index }}" name="sort_key" value="{{ sort }}" inputmode="numeric" class="narrow">
+      <label class="sr-only" for="sort-{{ loop.index }}"><span data-i18n="admin_order">Order</span></label><input id="sort-{{ loop.index }}" name="sort_key" value="{{ sort }}" inputmode="numeric" class="narrow">
       {% if kind == "categories" %}
-      <label class="sr-only" for="parent-{{ loop.index }}"><span data-l10n-en="Subcategory of" data-l10n-fr="Sous-catégorie de">Subcategory of</span></label>
+      <label class="sr-only" for="parent-{{ loop.index }}"><span data-i18n="admin_subcategory">Subcategory of</span></label>
       <select id="parent-{{ loop.index }}" name="parent" class="narrow-select">
-        <option value="" {% if parent == "" %}selected{% endif %} data-l10n-option-en="Top level" data-l10n-option-fr="Niveau principal">Top level</option>
+        <option value="" {% if parent == "" %}selected{% endif %} data-i18n="admin_top_level">Top level</option>
         {% for p in parents %}{% if p.as_str() != name.as_str() %}<option value="{{ p }}" {% if p.as_str() == parent.as_str() %}selected{% endif %}>Under {{ p }}</option>{% endif %}{% endfor %}
       </select>
       {% endif %}
-      <button type="submit" class="secondary"><span data-l10n-en="Save" data-l10n-fr="Enregistrer">Save</span></button>
+      <button type="submit" class="secondary"><span data-i18n="action_save">Save</span></button>
     </form>
     <form method="post" action="/admin/list/{{ kind }}/{{ key }}/delete" class="inline">
       <input type="hidden" name="csrf" value="{{ csrf }}">

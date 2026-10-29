@@ -2,17 +2,17 @@
 {% block title %}Audit log - Admin - SurvivorsForge{% endblock %}
 {% block content %}
 <p><a href="/admin"><span data-i18n="admin">Admin</span></a></p>
-<h1><span data-l10n-en="Audit log" data-l10n-fr="Journal d'audit">Audit log</span></h1>
+<h1><span data-i18n="admin_audit_log">Audit log</span></h1>
 <form class="panel filters" method="get" action="/admin/audit">
   <div><label for="f-admin"><span data-i18n="admin">Admin</span></label><input id="f-admin" name="admin" value="{{ filter_admin }}"></div>
-  <div><label for="f-action"><span data-l10n-en="Action" data-l10n-fr="Action">Action</span></label><input id="f-action" name="action" value="{{ filter_action }}" placeholder="block_addon"></div>
-  <div><label for="f-type"><span data-l10n-en="Target type" data-l10n-fr="Type de cible">Target type</span></label><input id="f-type" name="target_type" value="{{ filter_target_type }}" placeholder="addon"></div>
-  <div><label for="f-id"><span data-l10n-en="Target id" data-l10n-fr="ID de la cible">Target id</span></label><input id="f-id" name="target_id" value="{{ filter_target_id }}"></div>
-  <div><button type="submit"><span data-l10n-en="Filter" data-l10n-fr="Filtrer">Filter</span></button></div>
+  <div><label for="f-action"><span data-i18n="admin_action">Action</span></label><input id="f-action" name="action" value="{{ filter_action }}" placeholder="block_addon"></div>
+  <div><label for="f-type"><span data-i18n="admin_target_type">Target type</span></label><input id="f-type" name="target_type" value="{{ filter_target_type }}" placeholder="addon"></div>
+  <div><label for="f-id"><span data-i18n="admin_target_id">Target id</span></label><input id="f-id" name="target_id" value="{{ filter_target_id }}"></div>
+  <div><button type="submit"><span data-i18n="admin_filter">Filter</span></button></div>
 </form>
 <div class="table-wrap list">
 <table>
-  <thead><tr><th><span data-l10n-en="When" data-l10n-fr="Date">When</span></th><th><span data-i18n="admin">Admin</span></th><th><span data-l10n-en="Action" data-l10n-fr="Action">Action</span></th><th><span data-l10n-en="Target" data-l10n-fr="Cible">Target</span></th><th><span data-l10n-en="Note" data-l10n-fr="Note">Note</span></th></tr></thead>
+  <thead><tr><th><span data-i18n="admin_when">When</span></th><th><span data-i18n="admin">Admin</span></th><th><span data-i18n="admin_action">Action</span></th><th><span data-i18n="admin_target">Target</span></th><th><span data-i18n="admin_note">Note</span></th></tr></thead>
   <tbody>
   {% for e in entries %}
     <tr><td>{{ e.when }}</td><td>{{ e.admin }}</td><td>{{ e.action }}</td><td>{{ e.target }}</td><td>{{ e.note }}</td></tr>
@@ -20,9 +20,9 @@
   </tbody>
 </table>
 </div>
-{% if entries.is_empty() %}<p class="muted"><span data-l10n-en="No entries." data-l10n-fr="Aucune entrée.">No entries.</span></p>{% endif %}
+{% if entries.is_empty() %}<p class="muted"><span data-i18n="admin_no_entries">No entries.</span></p>{% endif %}
 <nav class="pager">
-  {% if let Some(p) = prev %}<a href="{{ p }}"><span data-l10n-en="Newer" data-l10n-fr="Plus récent">Newer</span></a>{% endif %}
-  {% if let Some(n) = next %}<a href="{{ n }}"><span data-l10n-en="Older" data-l10n-fr="Plus ancien">Older</span></a>{% endif %}
+  {% if let Some(p) = prev %}<a href="{{ p }}"><span data-i18n="pager_newer">Newer</span></a>{% endif %}
+  {% if let Some(n) = next %}<a href="{{ n }}"><span data-i18n="pager_older">Older</span></a>{% endif %}
 </nav>
 {% endblock %}

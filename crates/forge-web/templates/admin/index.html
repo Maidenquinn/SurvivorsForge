@@ -3,17 +3,17 @@
 {% block content %}
 <h1><span data-i18n="admin">Admin</span></h1>
 <form class="panel admin-actions" method="get" action="/admin/addons" role="search">
-  <label for="q"><span data-l10n-en="Manage an addon: versions, verification, owner, block" data-l10n-fr="Gérer un AddOn : versions, vérification, propriétaire, blocage">Manage an addon: versions, verification, owner, block</span></label>
+  <label for="q"><span data-i18n="admin_manage_addon">Manage an addon: versions, verification, owner, block</span></label>
   <input id="q" type="search" name="q" placeholder="Name" data-i18n-placeholder="name">
-  <button type="submit"><span data-l10n-en="Find" data-l10n-fr="Rechercher">Find</span></button>
+  <button type="submit"><span data-i18n="action_find">Find</span></button>
 </form>
 <div class="grid">
   <a class="panel tile" href="/admin/review"><strong>{{ queue }}</strong> version{% if queue != 1 %}s{% endif %} to review</a>
   <a class="panel tile" href="/admin/reports"><strong>{{ reports }}</strong> open report{% if reports != 1 %}s{% endif %}</a>
-  <a class="panel tile" href="/admin/users"><span data-l10n-en="Users and bans" data-l10n-fr="Utilisateurs et bannissements">Users and bans</span></a>
-  <a class="panel tile" href="/admin/addons/new"><span data-l10n-en="Add an addon of someone else" data-l10n-fr="Ajouter l'AddOn d'un autre auteur">Add an addon of someone else</span></a>
-  <a class="panel tile" href="/admin/list/game-versions"><span data-l10n-en="Game versions" data-l10n-fr="Versions du jeu">Game versions</span></a>
-  <a class="panel tile" href="/admin/list/categories"><span data-l10n-en="Categories" data-l10n-fr="Catégories">Categories</span></a>
-  <a class="panel tile" href="/admin/audit"><span data-l10n-en="Audit log" data-l10n-fr="Journal d'audit">Audit log</span></a>
+  <a class="panel tile" href="/admin/users"><span data-i18n="admin_users_bans">Users and bans</span></a>
+  <a class="panel tile" href="/admin/addons/new"><span data-i18n="admin_add_other">Add an addon of someone else</span></a>
+  <a class="panel tile" href="/admin/list/game-versions"><span data-i18n="admin_game_versions">Game versions</span></a>
+  <a class="panel tile" href="/admin/list/categories"><span data-i18n="admin_categories">Categories</span></a>
+  <a class="panel tile" href="/admin/audit"><span data-i18n="admin_audit_log">Audit log</span></a>
 </div>
 {% endblock %}

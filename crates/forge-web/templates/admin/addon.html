@@ -1,24 +1,24 @@
 {% extends "base.html" %}
 {% block title %}{{ name }} - Admin - SurvivorsForge{% endblock %}
 {% block content %}
-<p><a href="/admin" data-i18n="admin">Admin</a> · <a href="/addons/{{ slug }}">Public page</a></p>
+<p><a href="/admin" data-i18n="admin">Admin</a> · <a href="/addons/{{ slug }}" data-i18n="admin_public_page">Public page</a></p>
 <h1>{{ name }}</h1>
 {% include "admin/flash.html" %}
 <section class="panel">
-  <h2>Owner</h2>
+  <h2 data-i18n="admin_owner">Owner</h2>
   <p>{% if owner != "" %}{{ owner }}{% else %}Nobody yet (the author can claim it){% endif %}</p>
   <form method="post" action="/admin/addons/{{ slug }}/owner" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}">
-    <label for="new-owner">New owner (GitHub login of someone who logged in here)</label>
+    <label for="new-owner" data-i18n="admin_new_owner">New owner (GitHub login of someone who logged in here)</label>
     <input id="new-owner" name="login" required>
-    <label for="owner-note">Note</label>
+    <label for="owner-note" data-i18n="admin_note">Note</label>
     <input id="owner-note" name="note" required>
-    <button type="submit">Hand over</button>
+    <button type="submit" data-i18n="admin_hand_over">Hand over</button>
   </form>
 </section>
 <section class="panel">
   <h2 data-i18n="versions">Versions</h2>
-  {% if versions.is_empty() %}<p class="muted">No version yet.</p>{% endif %}
+  {% if versions.is_empty() %}<p class="muted" data-i18n="admin_no_version">No version yet.</p>{% endif %}
   {% for v in versions %}
   <div class="member">
     <strong><a href="/addons/{{ slug }}/versions/{{ v.tag }}">{{ v.tag }}</a></strong>
@@ -42,22 +42,22 @@
     {% endif %}
   </div>
   {% endfor %}
-  <p class="muted">The tag opens the version with every finding. Verifying a flagged version needs a note why the findings are fine.</p>
+  <p class="muted" data-i18n="admin_verify_warning">The tag opens the version with every finding. Verifying a flagged version needs a note why the findings are fine.</p>
 </section>
 <section class="panel">
-  <h2>Block</h2>
+  <h2 data-i18n="admin_block">Block</h2>
   {% if blocked %}
   <p><span class="badge bad">Blocked</span> {{ block_reason }}</p>
   <form method="post" action="/admin/addons/{{ slug }}/unblock" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}">
-    <label for="unblock-note">Note</label><input id="unblock-note" name="note" required>
-    <button type="submit">Unblock</button>
+    <label for="unblock-note" data-i18n="admin_note">Note</label><input id="unblock-note" name="note" required>
+    <button type="submit" data-i18n="admin_unblock">Unblock</button>
   </form>
   {% else %}
   <form method="post" action="/admin/addons/{{ slug }}/block" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}">
-    <label for="block-note">Reason (shown on the addon page)</label><input id="block-note" name="note" required>
-    <button type="submit" class="danger">Block the whole addon</button>
+    <label for="block-note" data-i18n="admin_reason_shown">Reason (shown on the addon page)</label><input id="block-note" name="note" required>
+    <button type="submit" class="danger" data-i18n="admin_block_addon">Block the whole addon</button>
   </form>
   {% endif %}
 </section>

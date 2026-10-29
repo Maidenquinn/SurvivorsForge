@@ -2,8 +2,8 @@
 {% block title %}Add an addon - Admin - SurvivorsForge{% endblock %}
 {% block content %}
 <p><a href="/admin"><span data-i18n="admin">Admin</span></a></p>
-<h1><span data-l10n-en="Add an addon of someone else" data-l10n-fr="Ajouter l'AddOn d'un autre auteur">Add an addon of someone else</span></h1>
-<p class="muted"><span data-l10n-en="Like an entry of the old verified list: no GitHub App needed. Nobody owns it until its author logs in and claims it." data-l10n-fr="Comme dans l'ancienne liste vérifiée : aucune application GitHub requise. L'auteur pourra revendiquer l'AddOn après connexion.">Like an entry of the old verified list: no GitHub App needed. Nobody owns it until its author logs in and claims it.</span></p>
+<h1><span data-i18n="admin_add_other">Add an addon of someone else</span></h1>
+<p class="muted"><span data-i18n="admin_add_other_intro">Like an entry of the old verified list: no GitHub App needed. Nobody owns it until its author logs in and claims it.</span></p>
 {% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
 {% match filled %}
 {% when Some with (Ok(from)) %}<div class="notice ok" role="status">Filled in from {{ from }}. Check every field and pick a category.</div>
@@ -13,27 +13,27 @@
 <form class="panel" method="post" action="/admin/addons/new">
   <input type="hidden" name="csrf" value="{{ csrf }}">
   {% include "creator/repo_field.html" %}
-  <label for="author_name"><span data-l10n-en="Author name" data-l10n-fr="Nom de l'auteur">Author name</span></label>
+  <label for="author_name"><span data-i18n="admin_author_name">Author name</span></label>
   <input id="author_name" name="author_name" value="{{ form.author_name }}" required>
   <label for="name"><span data-i18n="name">Name</span></label>
   <input id="name" name="name" value="{{ form.base.name }}" required>
-  <label for="slug"><span data-l10n-en="Address on this site" data-l10n-fr="Identifiant sur le site">Address on this site</span></label>
+  <label for="slug"><span data-i18n="creator_slug">Address on this site</span></label>
   <input id="slug" name="slug" value="{{ form.base.slug }}" required>
-  <label for="summary"><span data-l10n-en="One line about it" data-l10n-fr="Description courte">One line about it</span></label>
+  <label for="summary"><span data-i18n="admin_short_summary">One line about it</span></label>
   <input id="summary" name="summary" value="{{ form.base.summary }}" maxlength="200">
   <label for="category"><span data-i18n="category">Category</span></label>
   <select id="category" name="category">
     {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(form.base.category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
   </select>
-  <label for="source_type"><span data-l10n-en="Downloads come from" data-l10n-fr="Source des téléchargements">Downloads come from</span></label>
+  <label for="source_type"><span data-i18n="creator_source">Downloads come from</span></label>
   <select id="source_type" name="source_type">
-    <option value="release" {% if form.base.source_type == "release" %}selected{% endif %} data-l10n-option-en="A zip attached to each release" data-l10n-option-fr="Archive ZIP jointe à chaque version">A zip attached to each release</option>
-    <option value="tag" {% if form.base.source_type == "tag" %}selected{% endif %} data-l10n-option-en="The source zip of each tag" data-l10n-option-fr="Archive ZIP du code source de chaque tag">The source zip of each tag</option>
+    <option value="release" {% if form.base.source_type == "release" %}selected{% endif %} data-i18n="source_release_zip">A zip attached to each release</option>
+    <option value="tag" {% if form.base.source_type == "tag" %}selected{% endif %} data-i18n="source_tag_zip">The source zip of each tag</option>
   </select>
   <label for="asset_pattern"><span data-l10n-en="Release zip name" data-l10n-fr="Nom de l'archive ZIP">Release zip name</span></label>
   <input id="asset_pattern" name="asset_pattern" value="{{ form.base.asset_pattern }}">
-  <label for="folders"><span data-l10n-en="Addon folders, one per line" data-l10n-fr="Dossiers AddOns, un par ligne">Addon folders, one per line</span></label>
+  <label for="folders"><span data-i18n="admin_folders_lines">Addon folders, one per line</span></label>
   <textarea id="folders" name="folders" rows="3" required>{{ form.base.folders }}</textarea>
-  <p><button type="submit"><span data-l10n-en="Add" data-l10n-fr="Ajouter">Add</span></button></p>
+  <p><button type="submit"><span data-i18n="action_add">Add</span></button></p>
 </form>
 {% endblock %}
