@@ -5,7 +5,7 @@ use crate::app::{AppState, visitor};
 use crate::csrf::CsrfToken;
 use crate::error::{WebError, WebResult, error_page};
 use crate::templates::{
-    AddonPage, AddonsPage, BlockedPage, Card, Dep, DownloadPage, FindingRow, LatestBlock, Shot, VersionPage, VersionRow, VersionsPage, render,
+    AddonPage, AddonsPage, BlockedPage, Card, Dep, DownloadPage, FindingRow, IssueItem, LatestBlock, Shot, VersionPage, VersionRow, VersionsPage, render,
 };
 use crate::trust::{Notice, notice};
 use axum::Extension;
@@ -157,6 +157,7 @@ fn grouped(n: i64) -> String {
 #[derive(Deserialize, Default)]
 pub struct ClaimError {
     error: Option<String>,
+    tab: Option<String>,
 }
 
 pub async fn addon(
@@ -191,7 +192,24 @@ pub async fn addon(
     // GitHub logins ignore case; the claim itself checks the repo rights on GitHub.
     let repo_owner = s(&a["repo"]).split('/').next().unwrap_or_default().to_string();
     let can_claim = a["claimed"] == false && user.as_ref().is_some_and(|u| u.login.eq_ignore_ascii_case(&repo_owner));
+    let tab = match claim.tab.as_deref() {
+        Some("issues") => "issues",
+        Some("gallery") => "gallery",
+        Some("versions") => "versions",
+        _ => "overview",
+    }.to_string();
+    // Only request issue data on its tab, keeping the main addon page fast.
+    let issues: Vec<IssueItem> = if tab == "issues" {
+        let list = state.api.get(&format!("/v1/addons/{}/issues", seg(&slug)), None).await?;
+        list.as_array().into_iter().flatten().map(|i| IssueItem {
+            id: i["id"].as_i64().unwrap_or(0),
+            title: s(&i["title"]), kind: s(&i["kind"]),
+            status: s(&i["status"]), author: s(&i["author"]),
+        }).collect()
+    } else { Vec::new() };
     let page = AddonPage {
+        tab,
+        issues,
         can_claim,
         install_url: state.install_url(),
         error: claim.error,
