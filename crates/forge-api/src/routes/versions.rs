@@ -42,7 +42,18 @@ pub async fn list(State(state): State<AppState>, Path(slug): Path<String>, Query
     .bind(game)
     .fetch_one(&state.pool)
     .await?;
-    Ok(Json(versions))
+    Ok(Json(newest_first(versions)))
+}
+
+/// By date, and by version number where dates are the same: tags have no date of their own, so all
+/// tags of one sync share it, and the row order follows GitHub's listing, not the version.
+fn newest_first(mut versions: Value) -> Value {
+    if let Some(list) = versions.as_array_mut() {
+        let date = |v: &Value| v["published_at"].as_str().unwrap_or_default().to_string();
+        let key = |v: &Value| forge_core::github_web::version_key(v["tag"].as_str().unwrap_or_default());
+        list.sort_by(|a, b| date(b).cmp(&date(a)).then_with(|| key(b).cmp(&key(a))));
+    }
+    versions
 }
 
 /// The latest scan of a version with all its findings.

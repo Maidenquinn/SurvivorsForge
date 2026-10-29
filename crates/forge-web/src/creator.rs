@@ -66,7 +66,7 @@ async fn categories(state: &AppState) -> WebResult<Vec<crate::templates::Categor
     crate::app::selectable_categories(state).await
 }
 
-async fn perms(state: &AppState, slug: &str, token: &str) -> WebResult<Perms> {
+pub(crate) async fn perms(state: &AppState, slug: &str, token: &str) -> WebResult<Perms> {
     let p = state.api.get(&format!("/v1/addons/{slug}/permissions"), Some(token)).await?;
     Ok(Perms {
         owner: p["owner"] == true,
@@ -482,7 +482,16 @@ pub async fn preview(State(state): State<AppState>, jar: PrivateCookieJar, Form(
     Ok(Html(forge_core::markdown::render(&form.description_md, &state.image_base())))
 }
 
-async fn images_page(state: &AppState, user: Visitor, csrf: String, slug: &str, message: Option<String>, error: Option<String>) -> WebResult<Html<String>> {
+async fn images_page(
+    state: &AppState,
+    user: Visitor,
+    token: &str,
+    csrf: String,
+    slug: &str,
+    message: Option<String>,
+    error: Option<String>,
+) -> WebResult<Html<String>> {
+    let perms = perms(state, slug, token).await?;
     let a = state.api.get(&format!("/v1/addons/{slug}"), None).await?;
     let images = a["images"]
         .as_array()
@@ -490,7 +499,7 @@ async fn images_page(state: &AppState, user: Visitor, csrf: String, slug: &str, 
         .flatten()
         .map(|i| crate::templates::ImageRow { id: i["id"].as_i64().unwrap_or(0), url: s(&i["url"]), caption: s(&i["caption"]) })
         .collect();
-    Ok(render(&ImagesPage { user: Some(user), csrf, slug: slug.into(), name: s(&a["name"]), icon_url: a["icon_url"].as_str().map(str::to_string), images, message, error }))
+    Ok(render(&ImagesPage { user: Some(user), csrf, slug: slug.into(), name: s(&a["name"]), icon_url: a["icon_url"].as_str().map(str::to_string), images, message, error, perms }))
 }
 
 #[derive(Deserialize)]
@@ -514,7 +523,7 @@ pub async fn images(
         return Ok(forbidden());
     }
     let message = query.created.map(|_| "Your addon is published. Add or change screenshots and the icon here, now or later under Edit.".to_string());
-    Ok(images_page(&state, user, csrf.0, &slug, message, query.error).await?.into_response())
+    Ok(images_page(&state, user, &token, csrf.0, &slug, message, query.error).await?.into_response())
 }
 
 pub async fn upload_image(
@@ -525,32 +534,54 @@ pub async fn upload_image(
     mut multipart: Multipart,
 ) -> WebResult<Response> {
     let (user, token) = me(&state, &jar).await?;
-    let mut form = reqwest::multipart::Form::new();
+    let (mut files, mut kind, mut caption) = (Vec::new(), String::new(), String::new());
     while let Ok(Some(field)) = multipart.next_field().await {
         let name = field.name().unwrap_or_default().to_string();
         let file_name = field.file_name().unwrap_or("upload").to_string();
         let Ok(bytes) = field.bytes().await else {
-            return Ok(images_page(&state, user, csrf.0, &slug, None, Some("Images may be at most 5 MB.".into())).await?.into_response());
+            return Ok(images_page(&state, user, &token, csrf.0, &slug, None, Some("Images may be at most 5 MB each.".into())).await?.into_response());
         };
-        form = match name.as_str() {
-            "file" => form.part("file", reqwest::multipart::Part::bytes(bytes.to_vec()).file_name(file_name)),
-            "kind" | "caption" => form.text(name, String::from_utf8_lossy(&bytes).into_owned()),
-            _ => form,
-        };
+        match name.as_str() {
+            "file" if !bytes.is_empty() => files.push((file_name, bytes.to_vec())),
+            "kind" => kind = String::from_utf8_lossy(&bytes).into_owned(),
+            "caption" => caption = String::from_utf8_lossy(&bytes).into_owned(),
+            _ => {}
+        }
     }
-    let (message, error) = match state.api.post_multipart(&format!("/v1/addons/{slug}/images"), &token, form).await {
-        Ok(answer) if answer["notice"] == "resized" => (
-            Some(format!(
-                "Image was scaled down from {} x {} to {} x {} px.",
-                answer["original"]["width"], answer["original"]["height"], answer["stored"]["width"], answer["stored"]["height"]
-            )),
-            None,
-        ),
-        Ok(_) => (Some("Image uploaded.".into()), None),
-        Err(ApiError::Api { message, .. }) => (None, Some(message)),
-        Err(e) => return Err(e.into()),
+    // There is one icon: of several picked files only the first becomes it.
+    if kind == "icon" {
+        files.truncate(1);
+    }
+    // One API upload per file, so one bad file does not stop the others.
+    let (mut uploaded, mut notes, mut errors) = (0, Vec::new(), Vec::new());
+    let several = files.len() > 1;
+    for (file_name, data) in files {
+        let form = reqwest::multipart::Form::new()
+            .text("kind", kind.clone())
+            .text("caption", caption.clone())
+            .part("file", reqwest::multipart::Part::bytes(data).file_name(file_name.clone()));
+        let named = |text: String| if several { format!("{file_name}: {text}") } else { text };
+        match state.api.post_multipart(&format!("/v1/addons/{slug}/images"), &token, form).await {
+            Ok(answer) => {
+                uploaded += 1;
+                if answer["notice"] == "resized" {
+                    notes.push(named(format!(
+                        "Image was scaled down from {} x {} to {} x {} px.",
+                        answer["original"]["width"], answer["original"]["height"], answer["stored"]["width"], answer["stored"]["height"]
+                    )));
+                }
+            }
+            Err(ApiError::Api { message, .. }) => errors.push(named(message)),
+            Err(e) => return Err(e.into()),
+        }
+    }
+    let message = match uploaded {
+        0 => None,
+        1 => Some(std::iter::once("Image uploaded.".to_string()).chain(notes).collect::<Vec<_>>().join(" ")),
+        n => Some(std::iter::once(format!("{n} images uploaded.")).chain(notes).collect::<Vec<_>>().join(" ")),
     };
-    Ok(images_page(&state, user, csrf.0, &slug, message, error).await?.into_response())
+    let error = (!errors.is_empty()).then(|| errors.join(" "));
+    Ok(images_page(&state, user, &token, csrf.0, &slug, message, error).await?.into_response())
 }
 
 #[derive(Deserialize)]
@@ -573,12 +604,61 @@ pub async fn move_image(
         if let Some(other) = other {
             let mut order = ids.clone();
             order.swap(at, other);
-            for (position, image) in order.iter().enumerate() {
-                state.api.call(Method::PATCH, &format!("/v1/addons/{slug}/images/{image}"), Some(&token), Some(&json!({ "position": position }))).await?;
-            }
+            save_order(&state, &token, &slug, &order).await?;
         }
     }
+    // Back at the moved screenshot instead of the top of the page.
+    Ok(Redirect::to(&format!("/addons/{slug}/images#shot-{id}")).into_response())
+}
+
+async fn save_order(state: &AppState, token: &str, slug: &str, order: &[i64]) -> WebResult<()> {
+    for (position, image) in order.iter().enumerate() {
+        state.api.call(Method::PATCH, &format!("/v1/addons/{slug}/images/{image}"), Some(token), Some(&json!({ "position": position }))).await?;
+    }
+    Ok(())
+}
+
+#[derive(Deserialize)]
+pub struct OrderForm {
+    /// Image ids, comma-separated, in the new order.
+    #[serde(default)]
+    order: String,
+}
+
+/// The order after dragging: the given ids that belong to the addon, then any it left out.
+pub async fn order_images(State(state): State<AppState>, jar: PrivateCookieJar, Path(slug): Path<String>, Form(form): Form<OrderForm>) -> WebResult<Response> {
+    let (_, token) = me(&state, &jar).await?;
+    let a = state.api.get(&format!("/v1/addons/{slug}"), None).await?;
+    let ids: Vec<i64> = a["images"].as_array().into_iter().flatten().filter_map(|i| i["id"].as_i64()).collect();
+    let mut order: Vec<i64> = form.order.split(',').filter_map(|i| i.trim().parse().ok()).filter(|i| ids.contains(i)).collect();
+    order.dedup();
+    order.extend(ids.iter().filter(|i| !order.contains(i)).collect::<Vec<_>>());
+    save_order(&state, &token, &slug, &order).await?;
     Ok(Redirect::to(&format!("/addons/{slug}/images")).into_response())
+}
+
+#[derive(Deserialize)]
+pub struct CaptionForm {
+    #[serde(default)]
+    caption: String,
+}
+
+/// Changes the caption of an uploaded screenshot.
+pub async fn caption_image(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Extension(csrf): Extension<CsrfToken>,
+    Path((slug, id)): Path<(String, i64)>,
+    Form(form): Form<CaptionForm>,
+) -> WebResult<Response> {
+    let (user, token) = me(&state, &jar).await?;
+    let body = json!({ "caption": form.caption });
+    let (message, error) = match state.api.call(Method::PATCH, &format!("/v1/addons/{slug}/images/{id}"), Some(&token), Some(&body)).await {
+        Ok(_) => (Some("Caption saved.".to_string()), None),
+        Err(ApiError::Api { message, status, .. }) if status != 403 && status != 404 => (None, Some(message)),
+        Err(e) => return Err(e.into()),
+    };
+    Ok(images_page(&state, user, &token, csrf.0, &slug, message, error).await?.into_response())
 }
 
 pub async fn delete_image(State(state): State<AppState>, jar: PrivateCookieJar, Path((slug, id)): Path<(String, i64)>) -> WebResult<Response> {
@@ -600,7 +680,8 @@ async fn members_page(state: &AppState, user: Visitor, token: &str, csrf: String
             images: m["can_edit_images"] == true,
         })
         .collect();
-    Ok(render(&MembersPage { user: Some(user), csrf, slug: slug.into(), members, error }))
+    let perms = perms(state, slug, token).await?;
+    Ok(render(&MembersPage { user: Some(user), csrf, slug: slug.into(), members, error, perms }))
 }
 
 pub async fn members(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(slug): Path<String>) -> WebResult<Response> {
@@ -659,9 +740,10 @@ fn current_deps(addon: &Value) -> Vec<(String, String, bool)> {
     addon["dependencies"].as_array().into_iter().flatten().map(|d| (s(&d["slug"]), s(&d["name"]), d["required"] == true)).collect()
 }
 
-async fn deps_page(state: &AppState, user: Visitor, csrf: String, slug: &str, error: Option<String>) -> WebResult<Html<String>> {
+async fn deps_page(state: &AppState, user: Visitor, token: &str, csrf: String, slug: &str, error: Option<String>) -> WebResult<Html<String>> {
+    let perms = perms(state, slug, token).await?;
     let a = state.api.get(&format!("/v1/addons/{slug}"), None).await?;
-    Ok(render(&DepsPage { user: Some(user), csrf, slug: slug.into(), deps: current_deps(&a), error }))
+    Ok(render(&DepsPage { user: Some(user), csrf, slug: slug.into(), deps: current_deps(&a), error, perms }))
 }
 
 pub async fn deps(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(slug): Path<String>) -> WebResult<Response> {
@@ -669,7 +751,7 @@ pub async fn deps(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
     if !perms(&state, &slug, &token).await?.owner {
         return Ok(forbidden());
     }
-    Ok(deps_page(&state, user, csrf.0, &slug, None).await?.into_response())
+    Ok(deps_page(&state, user, &token, csrf.0, &slug, None).await?.into_response())
 }
 
 #[derive(Deserialize)]
@@ -701,7 +783,7 @@ pub async fn save_deps(
     }
     match state.api.call(Method::PUT, &format!("/v1/addons/{slug}/dependencies"), Some(&token), Some(&Value::Array(list))).await {
         Ok(_) => Ok(Redirect::to(&format!("/addons/{slug}/dependencies")).into_response()),
-        Err(ApiError::Api { message, status, .. }) if status != 403 => Ok(deps_page(&state, user, csrf.0, &slug, Some(message)).await?.into_response()),
+        Err(ApiError::Api { message, status, .. }) if status != 403 => Ok(deps_page(&state, user, &token, csrf.0, &slug, Some(message)).await?.into_response()),
         Err(e) => Err(e.into()),
     }
 }
@@ -713,13 +795,14 @@ pub async fn version_edit(
     Path((slug, tag)): Path<(String, String)>,
 ) -> WebResult<Response> {
     let (user, token) = me(&state, &jar).await?;
-    if !perms(&state, &slug, &token).await?.owner {
+    let perms = perms(&state, &slug, &token).await?;
+    if !perms.owner {
         return Ok(forbidden());
     }
     let versions = state.api.get(&format!("/v1/addons/{slug}/versions"), None).await?;
     let v = versions.as_array().into_iter().flatten().find(|v| v["tag"] == tag.as_str()).ok_or(WebError::NotFound)?.clone();
     let games: Vec<String> = state.api.get("/v1/game-versions", None).await?.as_array().into_iter().flatten().map(|g| s(&g["name"])).collect();
-    Ok(render(&VersionEditPage { user: Some(user), csrf: csrf.0, slug, tag, game_min: s(&v["game_min"]), game_max: s(&v["game_max"]), games, error: None })
+    Ok(render(&VersionEditPage { user: Some(user), csrf: csrf.0, slug, tag, game_min: s(&v["game_min"]), game_max: s(&v["game_max"]), games, error: None, perms })
         .into_response())
 }
 
@@ -745,7 +828,8 @@ pub async fn save_version(
         Ok(_) => Ok(Redirect::to(&format!("/addons/{slug}/versions")).into_response()),
         Err(ApiError::Api { message, status, .. }) if status != 403 && status != 404 => {
             let games: Vec<String> = state.api.get("/v1/game-versions", None).await?.as_array().into_iter().flatten().map(|g| s(&g["name"])).collect();
-            let page = VersionEditPage { user: Some(user), csrf: csrf.0, slug, tag, game_min: form.game_min, game_max: form.game_max, games, error: Some(message) };
+            let perms = perms(&state, &slug, &token).await?;
+            let page = VersionEditPage { user: Some(user), csrf: csrf.0, slug, tag, game_min: form.game_min, game_max: form.game_max, games, error: Some(message), perms };
             Ok((StatusCode::UNPROCESSABLE_ENTITY, render(&page)).into_response())
         }
         Err(e) => Err(e.into()),
@@ -754,10 +838,11 @@ pub async fn save_version(
 
 pub async fn delete_page(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(slug): Path<String>) -> WebResult<Response> {
     let (user, token) = me(&state, &jar).await?;
-    if !perms(&state, &slug, &token).await?.owner {
+    let perms = perms(&state, &slug, &token).await?;
+    if !perms.owner {
         return Ok(forbidden());
     }
-    Ok(render(&DeleteAddonPage { user: Some(user), csrf: csrf.0, slug, error: None }).into_response())
+    Ok(render(&DeleteAddonPage { user: Some(user), csrf: csrf.0, slug, error: None, perms }).into_response())
 }
 
 #[derive(Deserialize)]
@@ -775,7 +860,8 @@ pub async fn delete_addon(
 ) -> WebResult<Response> {
     let (user, token) = me(&state, &jar).await?;
     if form.confirm.trim() != slug {
-        let page = DeleteAddonPage { user: Some(user), csrf: csrf.0, slug, error: Some("Type the slug exactly to confirm.".into()) };
+        let perms = perms(&state, &slug, &token).await?;
+        let page = DeleteAddonPage { user: Some(user), csrf: csrf.0, slug, error: Some("Type the slug exactly to confirm.".into()), perms };
         return Ok((StatusCode::UNPROCESSABLE_ENTITY, render(&page)).into_response());
     }
     state.api.call(Method::DELETE, &format!("/v1/addons/{slug}"), Some(&token), None).await?;

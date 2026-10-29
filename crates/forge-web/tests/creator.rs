@@ -145,6 +145,97 @@ async fn image_upload_messages() {
 }
 
 #[tokio::test]
+async fn the_edit_toolbar_stays_on_every_edit_page() {
+    let mut web = logged_in(owner()).await;
+    get_json(&web, "/v1/addons/lucky/members", json!([])).await;
+    get_json(&web, "/v1/addons/lucky/versions", json!([{ "tag": "v1", "game_min": null, "game_max": null }])).await;
+    get_json(&web, "/v1/game-versions", json!([{ "name": "0.69.0" }])).await;
+    let toolbar = r#"<nav class="subnav" aria-label="Edit addon">"#;
+    for page in ["/addons/lucky/edit", "/addons/lucky/images", "/addons/lucky/members", "/addons/lucky/dependencies", "/addons/lucky/versions", "/addons/lucky/versions/v1/edit", "/addons/lucky/delete"] {
+        let body = web.get(page).await.body;
+        assert!(body.contains(toolbar), "{page}: {body}");
+    }
+    let mut anonymous = TestWeb::new().await;
+    get_json(&anonymous, "/v1/addons/lucky", json!({ "slug": "lucky", "name": "Lucky", "blocked": false, "verified_author": false })).await;
+    get_json(&anonymous, "/v1/addons/lucky/versions", json!([])).await;
+    assert!(!anonymous.get("/addons/lucky/versions").await.body.contains(toolbar), "only for those who may edit");
+}
+
+#[tokio::test]
+async fn captions_can_be_changed_later() {
+    let mut web = logged_in(owner()).await;
+    let images = web.get("/addons/lucky/images").await.body;
+    assert!(images.contains(r#"action="/addons/lucky/images/7/caption""#) && images.contains(r#"value="x""#), "{images}");
+    Mock::given(method("PATCH"))
+        .and(path("/v1/addons/lucky/images/7"))
+        .and(body_partial_json(json!({ "caption": "Bags open" })))
+        .respond_with(ResponseTemplate::new(204))
+        .expect(1)
+        .mount(&web.api)
+        .await;
+    let page = web.post_form("/addons/lucky/images/7/caption", &[("caption", "Bags open")]).await;
+    assert!(page.body.contains("Caption saved."), "{}", page.body);
+}
+
+#[tokio::test]
+async fn screenshots_take_a_dragged_order() {
+    let mut web = logged_in(owner()).await;
+    let images = web.get("/addons/lucky/images").await.body;
+    assert!(images.contains(r#"data-order-url="/addons/lucky/images/order""#) && images.contains(r#"data-image-id="7""#), "{images}");
+    assert!(images.contains(r#"aria-label="Move earlier""#) && images.contains(r#"aria-label="Delete screenshot""#), "icon buttons keep a name");
+    Mock::given(method("PATCH"))
+        .and(path("/v1/addons/lucky/images/7"))
+        .and(body_partial_json(json!({ "position": 0 })))
+        .respond_with(ResponseTemplate::new(204))
+        .expect(1)
+        .mount(&web.api)
+        .await;
+    // An id of another addon is left out.
+    let page = web.post_form("/addons/lucky/images/order", &[("order", "99,7")]).await;
+    assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/lucky/images"));
+}
+
+#[tokio::test]
+async fn moving_a_screenshot_keeps_it_in_view() {
+    // Without script the page comes back scrolled to the moved screenshot, not to the top.
+    let mut web = logged_in(owner()).await;
+    let images = web.get("/addons/lucky/images").await.body;
+    assert!(images.contains(r#"<figure data-image-id="7" id="shot-7">"#) && images.contains("data-move"), "{images}");
+    let page = web.post_form("/addons/lucky/images/7/move", &[("direction", "up")]).await;
+    assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/lucky/images#shot-7"));
+}
+
+#[tokio::test]
+async fn several_screenshots_in_one_upload() {
+    let mut web = logged_in(owner()).await;
+    Mock::given(method("POST"))
+        .and(path("/v1/addons/lucky/images"))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({ "id": 8 })))
+        .expect(2)
+        .mount(&web.api)
+        .await;
+    let token = web.csrf().await;
+    let boundary = "B0UND";
+    let file = |name: &str| format!("--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{name}\"\r\nContent-Type: image/png\r\n\r\nPNGDATA\r\n");
+    let body = format!(
+        "--{boundary}\r\nContent-Disposition: form-data; name=\"kind\"\r\n\r\nscreenshot\r\n{}{}--{boundary}--\r\n",
+        file("a.png"),
+        file("b.png")
+    );
+    let cookie = web.cookies.iter().map(|(k, v)| format!("{k}={v}")).collect::<Vec<_>>().join("; ");
+    let request = Request::post("/addons/lucky/images")
+        .header("cookie", cookie)
+        .header("origin", WEB)
+        .header("x-csrf-token", token)
+        .header("content-type", format!("multipart/form-data; boundary={boundary}"))
+        .body(Body::from(body))
+        .unwrap();
+    let page = web.request(request).await;
+    assert!(page.body.contains("2 images uploaded."), "{}", page.body);
+    assert!(web.get("/addons/lucky/images").await.body.contains(r#"name="file" accept="image/png,image/jpeg,image/webp" multiple"#));
+}
+
+#[tokio::test]
 async fn dependency_cycle_message() {
     let mut web = logged_in(owner()).await;
     Mock::given(method("PUT"))

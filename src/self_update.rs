@@ -1,10 +1,11 @@
 //! Updates SurvivorsForge itself from the releases of `APP_REPO`.
 //!
-//! Release assets per platform:
-//! - Windows: `SurvivorsForge-<version>-x86_64-pc-windows-msvc.zip` holding the `.exe`, which
-//!   replaces the running executable.
-//! - Linux: `SurvivorsForge-<version>-x86_64.AppImage`, which replaces the AppImage file itself
-//!   (`$APPIMAGE`). A bare binary outside an AppImage is not updated in place.
+//! Release assets per platform, under a fixed name and (for launchers before 0.4.0) a versioned one:
+//! - Windows: `SurvivorsForge-windows-x86_64.zip` / `SurvivorsForge-<version>-x86_64-pc-windows-msvc.zip`
+//!   holding the `.exe`, which replaces the running executable.
+//! - Linux: `SurvivorsForge-linux-x86_64.AppImage` / `SurvivorsForge-<version>-x86_64.AppImage`,
+//!   which replaces the AppImage file itself (`$APPIMAGE`). A bare binary outside an AppImage is
+//!   not updated in place.
 
 use crate::github::{Client, Release};
 use crate::{Error, Result};
@@ -22,6 +23,19 @@ pub fn asset_name_for(windows: bool, version: &str) -> String {
 
 pub fn asset_name(version: &str) -> String {
     asset_name_for(cfg!(windows), version)
+}
+
+/// The name that stays the same in every release; the versioned ones may go after 0.4.0.
+pub fn stable_asset_name_for(windows: bool) -> String {
+    if windows {
+        format!("{}-windows-x86_64.zip", crate::APP_NAME)
+    } else {
+        format!("{}-linux-x86_64.AppImage", crate::APP_NAME)
+    }
+}
+
+pub fn stable_asset_name() -> String {
+    stable_asset_name_for(cfg!(windows))
 }
 
 /// The AppImage file to replace: `$APPIMAGE`, set by the AppImage runtime, if it points at a file.
@@ -54,8 +68,8 @@ pub fn available(current: &str, release: &Release) -> Option<Available> {
         return None;
     }
     let version = parse(&release.tag)?.to_string();
-    let wanted = asset_name(&version);
-    let asset = release.assets.iter().find(|a| a.name == wanted)?;
+    let named = |wanted: String| release.assets.iter().find(|a| a.name == wanted);
+    let asset = named(stable_asset_name()).or_else(|| named(asset_name(&version)))?;
     Some(Available { version, url: asset.url.clone() })
 }
 
@@ -158,5 +172,16 @@ mod tests {
         );
         assert_eq!(available("0.1.0", &release("v0.2.0", &["other.zip"])), None);
         assert_eq!(available("0.2.0", &release("v0.2.0", &[&name])), None);
+    }
+
+    #[test]
+    fn available_from_the_fixed_name_first() {
+        // Releases after 0.4.0 may carry only the fixed names; until then both are there.
+        let fixed = stable_asset_name();
+        assert_eq!(available("0.4.0", &release("v0.4.1", &[&fixed])).map(|a| a.url), Some(format!("https://dl/{fixed}")));
+        let versioned = asset_name("0.4.1");
+        assert_eq!(available("0.4.0", &release("v0.4.1", &[&versioned, &fixed])).map(|a| a.url), Some(format!("https://dl/{fixed}")));
+        assert_eq!(stable_asset_name_for(true), "SurvivorsForge-windows-x86_64.zip");
+        assert_eq!(stable_asset_name_for(false), "SurvivorsForge-linux-x86_64.AppImage");
     }
 }

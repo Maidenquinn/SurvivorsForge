@@ -239,6 +239,8 @@ pub struct VersionsPage {
     pub name: String,
     /// (download link, version)
     pub rows: Vec<(String, VersionRow)>,
+    /// What the visitor may edit; `None` shows no edit toolbar.
+    pub perms: Option<Perms>,
 }
 
 #[derive(Template)]
@@ -392,6 +394,7 @@ pub struct ImagesPage {
     pub images: Vec<ImageRow>,
     pub message: Option<String>,
     pub error: Option<String>,
+    pub perms: Perms,
 }
 
 pub struct MemberRow {
@@ -409,6 +412,7 @@ pub struct MembersPage {
     pub slug: String,
     pub members: Vec<MemberRow>,
     pub error: Option<String>,
+    pub perms: Perms,
 }
 
 #[derive(Template)]
@@ -420,6 +424,7 @@ pub struct DepsPage {
     /// (slug, name, required)
     pub deps: Vec<(String, String, bool)>,
     pub error: Option<String>,
+    pub perms: Perms,
 }
 
 #[derive(Template)]
@@ -433,6 +438,7 @@ pub struct VersionEditPage {
     pub game_max: String,
     pub games: Vec<String>,
     pub error: Option<String>,
+    pub perms: Perms,
 }
 
 #[derive(Template)]
@@ -442,6 +448,7 @@ pub struct DeleteAddonPage {
     pub csrf: String,
     pub slug: String,
     pub error: Option<String>,
+    pub perms: Perms,
 }
 
 #[derive(Template)]
@@ -696,6 +703,15 @@ pub struct PacksPage {
     pub next: Option<String>,
     /// The search text.
     pub q: String,
+}
+
+#[derive(Template)]
+#[template(path = "login.html")]
+pub struct LoginPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    /// The API's GitHub login.
+    pub start: String,
 }
 
 #[derive(Template)]

@@ -125,7 +125,8 @@ mod tests {
             "Maidenquinn/azeroth-fieldkit",
         ]);
         assert_eq!(registry.get("survivor-ui").unwrap().folders, ["SurvivorUI", "SurvivorPlates"]);
-        assert_eq!(registry.get("bordoui").unwrap().source, SourceSpec::Tag);
+        assert_eq!(registry.get("azerothstats").unwrap().source, SourceSpec::Tag);
+        assert_eq!(registry.get("bordoui").unwrap().source, SourceSpec::Release { asset: "BordoUI.zip".into() });
     }
 
     #[test]

@@ -412,6 +412,25 @@ async fn the_download_says_how_to_install() {
 }
 
 #[tokio::test]
+async fn shared_links_get_a_preview() {
+    // Discord and other chats show these instead of a bare address.
+    let mut web = TestWeb::new().await;
+    let home = web.get("/").await.body;
+    for tag in [
+        r#"<meta property="og:site_name" content="SurvivorsForge">"#,
+        r#"<meta property="og:title" content="SurvivorsForge">"#,
+        r#"<meta property="og:image" content="https://web.test/static/icon.png">"#,
+        r#"<meta name="twitter:card" content="summary">"#,
+    ] {
+        assert!(home.contains(tag), "{tag}");
+    }
+    let mut web = with_addon("scanned", "available").await;
+    let page = web.get("/addons/lucky").await.body;
+    assert!(page.contains(r#"<meta property="og:title" content="Lucky Odds">"#), "{page}");
+    assert!(page.contains(r#"<meta property="og:description" content="Odds for rare cards">"#), "{page}");
+}
+
+#[tokio::test]
 async fn the_launcher_comes_first() {
     // The main button opens the addon in the installed launcher; GitHub is the second way.
     let mut web = with_addon("scanned", "available").await;
@@ -431,6 +450,9 @@ async fn screenshots_without_caption_still_have_a_text() {
     mock(&web, "/v1/addons/lucky/versions", versions("scanned", "available")).await;
     let page = web.get("/addons/lucky").await.body;
     assert!(page.contains(r#"alt="Screenshot 1 of Lucky Odds""#), "{page}");
+    // A click opens the viewer on the page; without script the link still opens the image.
+    assert!(page.contains(r#"<a href="https://web.test/img/a.webp" data-lightbox>"#), "{page}");
+    assert!(page.contains(r#"<dialog class="lightbox""#), "{page}");
 }
 
 #[tokio::test]
