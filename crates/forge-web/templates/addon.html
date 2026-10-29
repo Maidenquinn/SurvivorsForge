@@ -10,7 +10,7 @@
   {% if let Some(icon) = icon_url %}<img class="icon big" src="{{ icon }}" alt="" width="96" height="96">{% endif %}
   <div>
     <h1>{{ name }}</h1>
-    <p class="muted">by {{ author }}{% if !claimed && user.is_some() %} (not claimed on this site yet){% endif %} · <a href="/addons?category={{ category }}">{{ category }}</a> · <a href="https://github.com/{{ repo }}" rel="noopener">GitHub</a>{% if let Some(u) = user %}{% if u.admin %} · <a href="/admin/addons/{{ slug }}">Manage as admin</a>{% endif %}{% endif %}</p>
+    <p class="muted">by {{ author }}{% if !claimed && user.is_some() %} (not claimed on this site yet){% endif %} · <a href="/addons?category={{ category }}">{{ category }}</a> · <a href="https://github.com/{{ repo }}" rel="external noopener">GitHub</a>{% if let Some(u) = user %}{% if u.admin %} · <a href="/admin/addons/{{ slug }}">Manage as admin</a>{% endif %}{% endif %}</p>
     <p>{{ summary }}</p>
   </div>
 </header>
@@ -41,7 +41,7 @@
     {% endif %}
     <p class="muted">Game version: {{ l.row.game }}</p>
     {% if l.row.notice.downloadable %}
-      <p><a class="button{% if l.row.notice.confirm %} danger{% endif %}" href="{{ l.href }}">Download from GitHub</a></p>
+      <p><a class="button{% if l.row.notice.confirm %} danger{% endif %}" href="{{ l.href }}"{% if !l.row.notice.confirm %} rel="external noopener"{% endif %}>Download from GitHub</a></p>
       <p class="muted">Unzip it into the game's <code>AddOns</code> folder, or install and update it with the <a href="https://rezondes.github.io/SurvivorsForge/">SurvivorsForge launcher</a>.</p>
     {% endif %}
     <p><a href="/addons/{{ slug }}/versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} · <a href="/packs/new?addon={{ slug }}">Put into an addon pack</a>{% endif %}</p>

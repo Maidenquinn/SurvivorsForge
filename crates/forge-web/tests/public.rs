@@ -462,3 +462,12 @@ async fn the_addon_page_leads_back_to_the_list() {
     let mut web = with_addon("scanned", "available").await;
     assert!(web.get("/addons/lucky").await.body.contains(r#"<p class="back"><a href="/addons">All addons</a></p>"#));
 }
+
+#[tokio::test]
+async fn links_that_leave_the_site_are_marked() {
+    let mut web = with_addon("scanned", "available").await;
+    let page = web.get("/addons/lucky").await.body;
+    assert!(page.contains(r#"<a href="https://github.com/alice/lucky" rel="external noopener">GitHub</a>"#), "{page}");
+    assert!(page.contains(r#"rel="external noopener">Download from GitHub</a>"#), "{page}");
+    assert!(web.get("/static/app.css").await.body.contains(r#"a[rel~="external"]::after"#));
+}
