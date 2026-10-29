@@ -237,6 +237,8 @@ code { word-break: break-all; color: var(--gold-bright); }
 .icon { border-radius: var(--radius); border: 1px solid var(--outline); background: var(--field); flex: none; }
 .icon.big { width: 96px; height: 96px; }
 .addon-head { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+.back { margin: 0 0 8px; font-size: var(--meta); }
+.back a::before { content: "\2190\00a0"; }
 .addon-head h1 { display: block; margin: 0; }
 .addon-head h1::before, .addon-head h1::after { content: none; }
 .download h2 { margin-top: 0; }

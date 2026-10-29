@@ -456,3 +456,9 @@ async fn only_logged_in_visitors_hear_about_claiming() {
     web.login_as("tok", common::me("bob", "user")).await;
     assert!(web.get("/addons/lucky").await.body.contains("not claimed on this site yet"));
 }
+
+#[tokio::test]
+async fn the_addon_page_leads_back_to_the_list() {
+    let mut web = with_addon("scanned", "available").await;
+    assert!(web.get("/addons/lucky").await.body.contains(r#"<p class="back"><a href="/addons">All addons</a></p>"#));
+}
