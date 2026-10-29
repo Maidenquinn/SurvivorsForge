@@ -199,10 +199,15 @@ SURVIVORSFORGE_API_URL=https://api.forge.example.com cargo build --release
 Set `SURVIVORSFORGE_WEB_URL=https://forge.example.com` as well: "Share as link" opens the
 website's pack builder there.
 
-In the release workflow, set both as environment variables of the build step. Without them the
-build uses the placeholders `https://api.survivorsforge.invalid` and `https://survivorsforge.invalid`,
-which never answer. The same variables at run time override the built-in addresses, for testing against a local
-API. When the API cannot be reached, the launcher shows its cached list and installs nothing.
+In the release workflow, set both as environment variables of the build step. Without them a
+release build uses the placeholders `https://api.survivorsforge.invalid` and
+`https://survivorsforge.invalid`, which never answer; a debug build uses the local platform of
+[local-setup.md](local-setup.md).
+
+Players of a launcher built for another platform point it at yours in *Settings → Platform API*
+and *Platform website*. The order is: the environment variables at run time, then these settings,
+then the addresses built in. When the API cannot be reached, the launcher shows its cached list and
+installs nothing.
 
 ## 7. Addon packs
 

@@ -117,22 +117,21 @@ which allows 60 requests per hour per IP; the 12 verified addons need about 25 o
 
 ## 6. The launcher against the local platform
 
-```powershell
-# PowerShell, in the repository folder
-$env:SURVIVORSFORGE_API_URL = "http://localhost:3081"
-$env:SURVIVORSFORGE_WEB_URL = "http://localhost:3080"
-cargo run --release
-```
+A debug build talks to the local platform on its own (`http://localhost:3081` for the API,
+`http://localhost:3080` for the website):
 
 ```bash
-# Git Bash / Linux
-SURVIVORSFORGE_API_URL=http://localhost:3081 SURVIVORSFORGE_WEB_URL=http://localhost:3080 cargo run --release
+cargo run
 ```
 
 The launcher then reads the addon list, releases and game versions from the local API; the zips
 still come from GitHub. *Browse* shows the category filter and the tick boxes for addon packs
 (*Save as zip*, *Share as link*). To see the offline mode, stop the API (`dcl stop api`) and press
 *Check for updates*.
+
+Another address (other ports, a test server) goes into *Settings → Platform API* and *Platform
+website*. A release build (`cargo run --release`) has no local default; it needs these settings or
+the `SURVIVORSFORGE_API_URL` and `SURVIVORSFORGE_WEB_URL` environment variables.
 
 ## 7. Logs, stop, start over
 

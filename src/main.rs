@@ -110,9 +110,17 @@ impl Core {
         Client::new()
     }
 
+    fn api_url(&self) -> String {
+        registry::api_url(self.config.api_url.as_deref())
+    }
+
+    fn web_url(&self) -> String {
+        registry::web_url(self.config.web_url.as_deref())
+    }
+
     /// Release and tag metadata, through the platform.
     fn github(&self) -> ApiGitHub {
-        ApiGitHub::new(Client::new(), &registry::api_url())
+        ApiGitHub::new(Client::new(), &self.api_url())
     }
 
     fn rescan(&mut self) {
@@ -507,11 +515,10 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
     }
     refresh(ui, shared);
     run_bg(ui.as_weak(), shared.clone(), None, |shared| {
-        let (client, github, mut state, cache) = {
+        let (client, github, mut state, cache, api) = {
             let core = lock(shared);
-            (core.client(), core.github(), core.state.clone(), core.data_dir.join("cache"))
+            (core.client(), core.github(), core.state.clone(), core.data_dir.join("cache"), core.api_url())
         };
-        let api = registry::api_url();
         let (registry, origin) = registry::load(Some(client.get_text(&registry::registry_url(&api))), &cache);
         let offline = origin != Origin::Api;
         // Offline every check would fail: keep the last statuses instead of a wall of errors.
@@ -762,20 +769,31 @@ fn on_settings_save(ui: &AppWindow, shared: &Shared) {
             return;
         }
     };
-    let (saved, dir_changed) = {
+    let urls = config::platform_url(&ui.get_settings_api_url()).and_then(|api| Ok((api, config::platform_url(&ui.get_settings_web_url())?)));
+    let (api_url, web_url) = match urls {
+        Ok(urls) => urls,
+        Err(e) => {
+            ui.set_settings_message(e.into());
+            ui.set_settings_message_error(true);
+            return;
+        }
+    };
+    let (saved, recheck) = {
         let mut core = lock(shared);
         let game_index = ui.get_settings_game_index();
         let game_version =
             if game_index > 0 { core.game_versions.get(game_index as usize - 1).map(|g| g.name.clone()) } else { None };
-        let config = Config { addons_dir: path, game_version };
-        let dir_changed = config.addons_dir != core.config.addons_dir;
+        let platform_changed = api_url != core.config.api_url;
+        let config = Config { addons_dir: path, game_version, api_url, web_url };
+        // Another platform: its list, versions and categories replace the old ones.
+        let recheck = config.addons_dir != core.config.addons_dir || platform_changed;
         let saved = config.save(&core.data_dir);
-        if dir_changed {
+        if config.addons_dir != core.config.addons_dir {
             core.switch_config(config);
         } else {
             core.config = config;
         }
-        (saved, dir_changed)
+        (saved, recheck)
     };
     match saved {
         Ok(()) => {
@@ -789,7 +807,7 @@ fn on_settings_save(ui: &AppWindow, shared: &Shared) {
         }
     }
     refresh(ui, shared);
-    if dir_changed {
+    if recheck {
         check_updates(ui, shared);
     }
 }
@@ -811,7 +829,7 @@ fn on_setup_confirm(ui: &AppWindow, shared: &Shared) {
         }
         Ok(_) => {}
     }
-    let config = Config { addons_dir: path, game_version: None };
+    let config = Config { addons_dir: path, ..Default::default() };
     {
         let mut core = lock(shared);
         if let Err(e) = config.save(&core.data_dir) {
@@ -829,6 +847,10 @@ fn on_setup_confirm(ui: &AppWindow, shared: &Shared) {
 fn fill_settings(ui: &AppWindow, shared: &Shared) {
     let core = lock(shared);
     ui.set_settings_path(core.config.addons_dir.to_string_lossy().into_owned().into());
+    ui.set_settings_api_url(core.config.api_url.clone().unwrap_or_default().into());
+    ui.set_settings_web_url(core.config.web_url.clone().unwrap_or_default().into());
+    ui.set_settings_api_default(registry::api_url(None).into());
+    ui.set_settings_web_default(registry::web_url(None).into());
     fill_game_versions(ui, &core);
 }
 
@@ -1114,8 +1136,11 @@ fn main() -> Result<(), slint::PlatformError> {
         refresh(&ui, shared);
     });
     on!(on_pack_share, |ui, shared| {
-        let ids: Vec<String> = lock(shared).picked.iter().cloned().collect();
-        let link = controller::pack_link(&registry::web_url(), &ids);
+        let (ids, web): (Vec<String>, String) = {
+            let core = lock(shared);
+            (core.picked.iter().cloned().collect(), core.web_url())
+        };
+        let link = controller::pack_link(&web, &ids);
         if open::that(&link).is_err() {
             lock(shared).set_status(format!("Open {link} in your browser"), false);
             refresh(&ui, shared);

@@ -14,25 +14,41 @@ const CACHE_FILE: &str = "verified.json";
 /// `SURVIVORSFORGE_WEB_URL`.
 pub const PLACEHOLDER_API_URL: &str = "https://api.survivorsforge.invalid";
 pub const PLACEHOLDER_WEB_URL: &str = "https://survivorsforge.invalid";
+/// Where `docs/local-setup.md` runs the platform; debug builds (`cargo run`) use it.
+pub const LOCAL_API_URL: &str = "http://localhost:3081";
+pub const LOCAL_WEB_URL: &str = "http://localhost:3080";
 
-/// The platform API: `SURVIVORSFORGE_API_URL` at run time (self-hosting, tests), else the address
-/// compiled in by the release build, else the placeholder.
-pub fn api_url() -> String {
-    pick_url(std::env::var("SURVIVORSFORGE_API_URL").ok().as_deref(), option_env!("SURVIVORSFORGE_API_URL"), PLACEHOLDER_API_URL)
+/// The address without anything else set: the local platform for debug builds, the placeholder
+/// for release builds.
+pub fn fallback_api_url() -> &'static str {
+    if cfg!(debug_assertions) { LOCAL_API_URL } else { PLACEHOLDER_API_URL }
+}
+
+pub fn fallback_web_url() -> &'static str {
+    if cfg!(debug_assertions) { LOCAL_WEB_URL } else { PLACEHOLDER_WEB_URL }
+}
+
+/// The platform API: `SURVIVORSFORGE_API_URL` at run time, else `setting` from the settings, else
+/// the address compiled in by the release build, else the fallback.
+pub fn api_url(setting: Option<&str>) -> String {
+    let runtime = std::env::var("SURVIVORSFORGE_API_URL").ok();
+    pick_url(&[runtime.as_deref(), setting, option_env!("SURVIVORSFORGE_API_URL")], fallback_api_url())
 }
 
 /// The platform website, for links the launcher opens in the browser; chosen like `api_url`.
-pub fn web_url() -> String {
-    pick_url(std::env::var("SURVIVORSFORGE_WEB_URL").ok().as_deref(), option_env!("SURVIVORSFORGE_WEB_URL"), PLACEHOLDER_WEB_URL)
+pub fn web_url(setting: Option<&str>) -> String {
+    let runtime = std::env::var("SURVIVORSFORGE_WEB_URL").ok();
+    pick_url(&[runtime.as_deref(), setting, option_env!("SURVIVORSFORGE_WEB_URL")], fallback_web_url())
 }
 
-fn pick_url(runtime: Option<&str>, build: Option<&str>, placeholder: &str) -> String {
-    [runtime, build]
-        .into_iter()
+/// The first non-empty candidate, else `fallback`.
+fn pick_url(candidates: &[Option<&str>], fallback: &str) -> String {
+    candidates
+        .iter()
         .flatten()
         .map(|u| u.trim().trim_end_matches('/'))
         .find(|u| !u.is_empty())
-        .unwrap_or(placeholder)
+        .unwrap_or(fallback)
         .to_string()
 }
 
@@ -132,11 +148,24 @@ mod tests {
     }
 
     #[test]
-    fn api_url_runtime_before_build_before_placeholder() {
-        assert_eq!(pick_url(Some("http://localhost:8080/"), Some("https://api.real"), PLACEHOLDER_API_URL), "http://localhost:8080");
-        assert_eq!(pick_url(Some(" "), Some("https://api.real"), PLACEHOLDER_API_URL), "https://api.real");
-        assert_eq!(pick_url(None, None, PLACEHOLDER_WEB_URL), PLACEHOLDER_WEB_URL);
+    fn api_url_environment_then_setting_then_build_then_fallback() {
+        let pick = |env, setting, build| pick_url(&[env, setting, build], PLACEHOLDER_API_URL);
+        assert_eq!(pick(Some("http://localhost:8080/"), Some("https://mine"), Some("https://api.real")), "http://localhost:8080");
+        assert_eq!(pick(Some(" "), Some("https://mine/"), Some("https://api.real")), "https://mine", "the setting beats the build");
+        assert_eq!(pick(None, None, Some("https://api.real")), "https://api.real");
+        assert_eq!(pick(None, None, None), PLACEHOLDER_API_URL);
         assert_eq!(registry_url("https://api.test"), "https://api.test/v1/registry");
+    }
+
+    #[test]
+    fn debug_builds_talk_to_the_local_platform() {
+        // Tests are debug builds, like `cargo run`.
+        assert_eq!(fallback_api_url(), "http://localhost:3081");
+        assert_eq!(fallback_web_url(), "http://localhost:3080");
+        if std::env::var_os("SURVIVORSFORGE_API_URL").is_none() && option_env!("SURVIVORSFORGE_API_URL").is_none() {
+            assert_eq!(api_url(None), "http://localhost:3081");
+            assert_eq!(api_url(Some("https://api.example.test")), "https://api.example.test");
+        }
     }
 
     #[test]

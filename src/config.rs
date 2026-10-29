@@ -10,6 +10,25 @@ pub struct Config {
     /// The game version the user plays, for compatibility warnings; chosen in the settings.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub game_version: Option<String>,
+    /// Another platform than the built-in one (a self-hosted copy, a local test); set in the settings.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub web_url: Option<String>,
+}
+
+/// A platform address typed in the settings: empty for the default, else an http(s) URL without
+/// trailing slash.
+pub fn platform_url(input: &str) -> Result<Option<String>, String> {
+    let url = input.trim().trim_end_matches('/');
+    if url.is_empty() {
+        return Ok(None);
+    }
+    let host = url.strip_prefix("https://").or_else(|| url.strip_prefix("http://"));
+    match host {
+        Some(host) if !host.is_empty() && !url.contains(char::is_whitespace) => Ok(Some(url.to_string())),
+        _ => Err(format!("\"{url}\" is not a web address (http:// or https://)")),
+    }
 }
 
 /// `%APPDATA%\SurvivorsForge` on Windows, `~/.config/SurvivorsForge` on Linux.
@@ -236,7 +255,7 @@ mod tests {
     #[test]
     fn save_then_load_roundtrip() {
         let dir = tempfile::tempdir().unwrap();
-        let config = Config { addons_dir: PathBuf::from(r"P:\AddOns"), game_version: None };
+        let config = Config { addons_dir: PathBuf::from(r"P:\AddOns"), ..Default::default() };
         config.save(dir.path()).unwrap();
         assert_eq!(Config::load(dir.path()), Some(config));
     }
@@ -244,10 +263,24 @@ mod tests {
     #[test]
     fn game_version_roundtrip() {
         let dir = tempfile::tempdir().unwrap();
-        let config = Config { addons_dir: dir.path().join("AddOns"), game_version: Some("0.69.1".into()) };
+        let config = Config { addons_dir: dir.path().join("AddOns"), game_version: Some("0.69.1".into()), ..Default::default() };
         config.save(dir.path()).unwrap();
         assert_eq!(Config::load(dir.path()).unwrap().game_version.as_deref(), Some("0.69.1"));
         std::fs::write(dir.path().join("config.json"), r#"{"addons_dir":"C:/x"}"#).unwrap();
         assert_eq!(Config::load(dir.path()).unwrap().game_version, None, "old config files still load");
+    }
+
+    #[test]
+    fn platform_addresses_are_checked_and_kept() {
+        assert_eq!(platform_url(""), Ok(None), "empty means the default");
+        assert_eq!(platform_url(" https://api.example.test/ "), Ok(Some("https://api.example.test".into())));
+        assert_eq!(platform_url("http://localhost:3081"), Ok(Some("http://localhost:3081".into())));
+        for bad in ["api.example.test", "ftp://x", "https://a b", "https://"] {
+            assert!(platform_url(bad).is_err(), "{bad}");
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let config = Config { addons_dir: dir.path().join("AddOns"), api_url: Some("http://localhost:3081".into()), ..Default::default() };
+        config.save(dir.path()).unwrap();
+        assert_eq!(Config::load(dir.path()).unwrap().api_url.as_deref(), Some("http://localhost:3081"));
     }
 }

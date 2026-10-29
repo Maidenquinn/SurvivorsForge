@@ -162,6 +162,11 @@ component SettingsView inherits VerticalLayout {
     in property <string> version;
     in property <bool> file-dialog;
     in property <bool> game-mode;
+    // Another platform than the built-in one; empty uses the address shown as placeholder.
+    in-out property <string> api-url;
+    in-out property <string> web-url;
+    in property <string> api-default;
+    in property <string> web-default;
     callback browse();
     callback save();
 
@@ -190,6 +195,22 @@ component SettingsView inherits VerticalLayout {
         ComboBox {
             model: root.game-versions;
             current-index <=> root.game-index;
+        }
+    }
+    SettingRow {
+        label: "Platform API";
+        Field {
+            text <=> root.api-url;
+            placeholder: root.api-default;
+            accepted => { root.save(); }
+        }
+    }
+    SettingRow {
+        label: "Platform website";
+        Field {
+            text <=> root.web-url;
+            placeholder: root.web-default;
+            accepted => { root.save(); }
         }
     }
     SettingRow {
@@ -297,6 +318,10 @@ export component AppWindow inherits Window {
     in-out property <int> settings-game-index;
     in property <string> settings-message;
     in property <bool> settings-message-error;
+    in-out property <string> settings-api-url;
+    in-out property <string> settings-web-url;
+    in property <string> settings-api-default;
+    in property <string> settings-web-default;
     callback settings-browse();
     callback settings-save();
 
@@ -531,6 +556,10 @@ export component AppWindow inherits Window {
                     game-versions: root.settings-game-versions;
                     game-index <=> root.settings-game-index;
                     message: root.settings-message;
+                    api-url <=> root.settings-api-url;
+                    web-url <=> root.settings-web-url;
+                    api-default: root.settings-api-default;
+                    web-default: root.settings-web-default;
                     message-error: root.settings-message-error;
                     version: root.app-version;
                     file-dialog: root.file-dialog;

@@ -296,7 +296,7 @@ mod tests {
     #[test]
     #[ignore = "needs a running forge-api in SURVIVORSFORGE_API_URL and network"]
     fn api_live() {
-        let github = ApiGitHub::new(Client::new(), &crate::registry::api_url());
+        let github = ApiGitHub::new(Client::new(), &crate::registry::api_url(None));
         let release = github.latest_release("cadoky/LuckyOdds").unwrap().unwrap();
         assert!(release.tag.starts_with('v'));
         let dir = tempfile::tempdir().unwrap();
