@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ name }} - Admin - SurvivorsForge{% endblock %}
 {% block content %}
-<p><a href="/admin">Admin</a> · <a href="/addons/{{ slug }}">Public page</a></p>
+<p><a href="/admin" data-i18n="admin">Admin</a> · <a href="/addons/{{ slug }}">Public page</a></p>
 <h1>{{ name }}</h1>
 {% include "admin/flash.html" %}
 <section class="panel">
@@ -17,7 +17,7 @@
   </form>
 </section>
 <section class="panel">
-  <h2>Versions</h2>
+  <h2 data-i18n="versions">Versions</h2>
   {% if versions.is_empty() %}<p class="muted">No version yet.</p>{% endif %}
   {% for v in versions %}
   <div class="member">

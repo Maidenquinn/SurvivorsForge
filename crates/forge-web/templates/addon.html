@@ -52,7 +52,7 @@
     {% endif %}
     <p><a href="/addons/{{ slug }}/versions" data-i18n="all_versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} · <a href="/packs/new?addon={{ slug }}"><span data-l10n-en="Put into an addon pack" data-l10n-fr="Ajouter à un pack d'AddOns">Put into an addon pack</span></a>{% endif %}</p>
   {% when None %}
-    <p>No release yet.</p>
+    <p data-i18n="no_release">No release yet.</p>
   {% endmatch %}
 </section>
 
@@ -245,7 +245,7 @@
   <h2 data-i18n="versions">Versions</h2>
   <p class="muted" data-i18n="versions_intro">Browse releases and download a specific version.</p>
   {% if version_rows.is_empty() %}
-  <section class="panel"><p>No release yet.</p></section>
+  <section class="panel"><p data-i18n="no_release">No release yet.</p></section>
   {% else %}
   <div class="table-wrap list">
     <table>

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Addons - Admin - SurvivorsForge{% endblock %}
 {% block content %}
-<p><a href="/admin">Admin</a></p>
+<p><a href="/admin" data-i18n="admin">Admin</a></p>
 <h1>Addons</h1>
 <form class="panel" method="get" action="/admin/addons" role="search">
-  <label for="q">Name</label>
+  <label for="q" data-i18n="name">Name</label>
   <input id="q" type="search" name="q" value="{{ q }}">
-  <p><button type="submit">Search</button></p>
+  <p><button type="submit" data-i18n="search">Search</button></p>
 </form>
 <section class="panel list">
   {% if found.is_empty() %}<p class="muted">No addon matches.</p>{% endif %}
