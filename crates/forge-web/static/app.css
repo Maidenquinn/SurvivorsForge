@@ -444,3 +444,29 @@ button.suggestion:hover { border-color: var(--outline-hover); background: var(--
 .gallery-lightbox-actions button { min-width: 42px; }
 .gallery-lightbox p { text-align: center; margin: 8px 0 0; }
 [data-dynamic-issues][aria-busy="true"] { opacity: .72; pointer-events: none; }
+
+/* Issues: contextual controls, readable activity and distinct lifecycle states */
+.issue-message-head .issue-action-spacer { flex:1; }
+.issue-message-head form { margin:0; }
+.issue-action { background:transparent; color:var(--muted); border:1px solid transparent; padding:5px 9px; font-size:13px; border-radius:5px; cursor:pointer; }
+.issue-action:hover { background:var(--control); border-color:var(--outline); color:var(--gold-bright); }
+.issue-action.issue-danger:hover { color:#ffb0a8; border-color:#994d45; }
+.issue-inline-form { padding:18px; }
+.issue-inline-form[hidden], [data-edit-view][hidden] { display:none !important; }
+.issue-inline-form textarea { width:100%; }
+.issue-event { display:flex; gap:6px; align-items:baseline; flex-wrap:wrap; padding:10px 0; margin:0; color:var(--muted); border-bottom:1px solid var(--line); }
+.issue-event:last-child { border-bottom:0; }
+.issue-event-dot { color:var(--gold); font-size:19px; margin-right:5px; }
+.issue-history { margin:18px 0; }
+.issue-history h3 { margin-top:0; }
+.issue-state { font-size:22px; line-height:1; width:26px; text-align:center; }
+.issue-state-open { color:#43d86a; }
+.issue-state-acknowledged { color:#e2b95a; }
+.issue-state-in_progress { color:#61b9ef; }
+.issue-state-resolved { color:#53cf91; }
+.issue-state-closed { color:#999; }
+.issue-row { transition:background .15s ease; }
+.issue-row:hover { background:var(--row); }
+.issue-row-arrow { opacity:.55; }
+.issue-row:hover .issue-row-arrow { opacity:1; }
+@media(max-width:600px) { .issue-message-head { gap:5px; } .issue-action { padding:7px; } }
