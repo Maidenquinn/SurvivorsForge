@@ -14,6 +14,14 @@ pub struct Repo {
     pub full_name: String,
     pub private: bool,
     pub owner: Owner,
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+/// `GET /installation/repositories`.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct InstallationRepos {
+    pub repositories: Vec<Repo>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]

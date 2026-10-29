@@ -262,6 +262,10 @@ pub struct NewAddonPage {
     pub install_url: String,
     /// Where the visitor picks the repos of their App installation; `None` when it is not installed.
     pub manage_url: Option<String>,
+    /// (full name, description) of the visitor's repos that can still become an addon.
+    pub repos: Vec<(String, String)>,
+    /// What the form was filled in from, or why it could not be.
+    pub filled: Option<Result<String, String>>,
     pub categories: Vec<CategoryOption>,
     pub form: crate::creator::NewAddonForm,
     pub errors: Errors,

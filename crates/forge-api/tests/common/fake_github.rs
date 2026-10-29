@@ -50,7 +50,7 @@ impl FakeGitHub {
         let owner = full_name.split('/').next().unwrap().to_string();
         data.repos.insert(
             id,
-            Repo { id, full_name: full_name.into(), private: false, owner: forge_api::github::types::Owner { login: owner } },
+            Repo { id, full_name: full_name.into(), private: false, owner: forge_api::github::types::Owner { login: owner }, description: None },
         );
         data.installations.insert(full_name.to_lowercase(), 1);
         data.permissions.insert((id, admin_login.to_lowercase()), "admin".into());
@@ -67,6 +67,18 @@ impl GitHubApi for FakeGitHub {
     async fn installation_for_user(&self, login: &str) -> GitHubResult<Option<i64>> {
         let prefix = format!("{}/", login.to_lowercase());
         Ok(self.call().installations.iter().find(|(repo, _)| repo.starts_with(&prefix)).map(|(_, id)| *id))
+    }
+
+    async fn installation_repos(&self, installation: i64) -> GitHubResult<Vec<Repo>> {
+        let data = self.call();
+        let mut repos: Vec<Repo> = data
+            .repos
+            .values()
+            .filter(|r| data.installations.get(&r.full_name.to_lowercase()) == Some(&installation))
+            .cloned()
+            .collect();
+        repos.sort_by(|a, b| a.full_name.cmp(&b.full_name));
+        Ok(repos)
     }
 
     async fn repo(&self, _installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo> {

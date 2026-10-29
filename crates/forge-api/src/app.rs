@@ -36,6 +36,8 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/me", get(routes::me::me))
         .route("/v1/me/addons", get(routes::creator::my_addons))
         .route("/v1/me/installation", get(routes::me::installation))
+        .route("/v1/me/repos", get(routes::me::repos))
+        .route("/v1/me/repos/{owner}/{repo}/suggestion", get(routes::me::suggestion))
         .route("/v1/addons/{slug}/permissions", get(routes::creator::my_permissions))
         .route("/v1/categories", get(routes::creator::categories))
         .route("/v1/addons", get(routes::search::list).post(routes::addons::create))

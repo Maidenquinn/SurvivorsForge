@@ -220,3 +220,32 @@ async fn the_install_step_goes_away_once_the_app_is_installed() {
     assert!(!page.body.contains(">Install the GitHub App<"), "{}", page.body);
     assert!(page.body.contains("https://github.com/settings/installations/77"), "where to give it more repos");
 }
+
+#[tokio::test]
+async fn my_repos_fill_in_the_form() {
+    let mut web = logged_in(owner()).await;
+    get_json(&web, "/v1/me/installation", json!({ "installed": true, "manage_url": "https://github.com/settings/installations/77" })).await;
+    get_json(&web, "/v1/me/repos", json!({ "installed": true, "repos": [
+        { "full_name": "alice/LuckyOdds", "description": "Odds" }, { "full_name": "alice/Other", "description": null }
+    ] }))
+    .await;
+    get_json(&web, "/v1/me/repos/alice/LuckyOdds/suggestion", json!({
+        "repo": "alice/LuckyOdds", "name": "Lucky Odds", "slug": "luckyodds", "summary": "Odds for rare cards", "source_type": "release",
+        "asset_pattern": "LuckyOdds-v*.zip", "folders": ["LuckyOdds", "LuckyLib"], "read_from": "release v0.7.0, LuckyOdds-v0.7.0.zip"
+    }))
+    .await;
+
+    let page = web.get("/addons/new").await;
+    assert!(page.body.contains(r#"<option value="alice/LuckyOdds""#) && page.body.contains("Fill in from this repo"), "{}", page.body);
+
+    let filled = web.get("/addons/new?repo=alice/LuckyOdds").await;
+    for text in [r#"value="alice/LuckyOdds""#, r#"value="Lucky Odds""#, r#"value="luckyodds""#, r#"value="Odds for rare cards""#,
+                 r#"value="LuckyOdds-v*.zip""#, "LuckyOdds\nLuckyLib</textarea>", "release v0.7.0, LuckyOdds-v0.7.0.zip"] {
+        assert!(filled.body.contains(text), "missing {text}");
+    }
+    assert!(filled.body.contains(r#"<option value="alice/LuckyOdds" selected"#));
+
+    let broken = web.get("/addons/new?repo=alice/Other").await;
+    assert_eq!(broken.status, StatusCode::OK);
+    assert!(broken.body.contains("could not be read"), "the form stays usable: {}", broken.body);
+}

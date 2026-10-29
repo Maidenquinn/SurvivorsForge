@@ -130,6 +130,21 @@ async fn installation_lookup_uses_app_jwt_and_404_is_none() {
 }
 
 #[tokio::test]
+async fn installation_repos_use_the_installation_token() {
+    let server = MockServer::start().await;
+    mount_token(&server, Utc::now() + chrono::Duration::hours(1)).await;
+    Mock::given(method("GET"))
+        .and(path("/installation/repositories"))
+        .and(header("authorization", "Bearer inst-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "total_count": 1, "repositories": [repo_json()] })))
+        .mount(&server)
+        .await;
+    let gh = client(&server, Arc::new(Mutex::new(Utc::now())));
+    let repos = gh.installation_repos(1).await.unwrap();
+    assert_eq!(repos.iter().map(|r| r.full_name.as_str()).collect::<Vec<_>>(), ["o/r"]);
+}
+
+#[tokio::test]
 async fn account_installation_lookup() {
     let server = MockServer::start().await;
     Mock::given(method("GET")).and(path("/users/alice/installation")).respond_with(ResponseTemplate::new(200).set_body_json(json!({ "id": 5 }))).mount(&server).await;

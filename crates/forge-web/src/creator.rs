@@ -128,14 +128,63 @@ async fn app_manage_url(state: &AppState, token: &str) -> Option<String> {
     answer["manage_url"].as_str().map(str::to_string)
 }
 
-pub async fn new_addon(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>) -> WebResult<Html<String>> {
+/// The visitor's repos that can still become an addon; empty when the API cannot tell.
+async fn my_repos(state: &AppState, token: &str) -> Vec<(String, String)> {
+    let Ok(answer) = state.api.get("/v1/me/repos", Some(token)).await else { return Vec::new() };
+    answer["repos"].as_array().into_iter().flatten().map(|r| (s(&r["full_name"]), s(&r["description"]))).collect()
+}
+
+#[derive(Deserialize)]
+pub struct NewAddonQuery {
+    repo: Option<String>,
+}
+
+/// The form filled in from `repo`, as the API reads it from the newest release or tag.
+async fn filled_in(state: &AppState, token: &str, repo: &str) -> (NewAddonForm, Result<String, String>) {
+    let mut form = NewAddonForm { repo: repo.into(), source_type: "release".into(), ..Default::default() };
+    let path = repo.split('/').map(seg).collect::<Vec<_>>().join("/");
+    match state.api.get(&format!("/v1/me/repos/{path}/suggestion"), Some(token)).await {
+        Ok(s) => {
+            form.name = self::s(&s["name"]);
+            form.slug = self::s(&s["slug"]);
+            form.summary = self::s(&s["summary"]);
+            form.source_type = self::s(&s["source_type"]);
+            form.asset_pattern = self::s(&s["asset_pattern"]);
+            form.folders = s["folders"].as_array().into_iter().flatten().map(self::s).collect::<Vec<_>>().join("\n");
+            (form, Ok(self::s(&s["read_from"])))
+        }
+        Err(e) => (form, Err(e.message())),
+    }
+}
+
+/// One path segment for the API.
+fn seg(text: &str) -> String {
+    text.bytes().map(|b| if b.is_ascii_alphanumeric() || b"-._~".contains(&b) { (b as char).to_string() } else { format!("%{b:02X}") }).collect()
+}
+
+pub async fn new_addon(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Extension(csrf): Extension<CsrfToken>,
+    Query(query): Query<NewAddonQuery>,
+) -> WebResult<Html<String>> {
     let (user, token) = me(&state, &jar).await?;
-    let form = NewAddonForm { source_type: "release".into(), ..Default::default() };
+    let manage_url = app_manage_url(&state, &token).await;
+    let repos = if manage_url.is_some() { my_repos(&state, &token).await } else { Vec::new() };
+    let (form, filled) = match query.repo.as_deref().map(str::trim).filter(|r| r.split('/').count() == 2) {
+        Some(repo) => {
+            let (form, filled) = filled_in(&state, &token, repo).await;
+            (form, Some(filled))
+        }
+        None => (NewAddonForm { source_type: "release".into(), ..Default::default() }, None),
+    };
     Ok(render(&NewAddonPage {
         user: Some(user),
         csrf: csrf.0,
         install_url: state.install_url(),
-        manage_url: app_manage_url(&state, &token).await,
+        manage_url,
+        repos,
+        filled,
         categories: categories(&state).await?,
         form,
         errors: Errors::default(),
@@ -161,7 +210,18 @@ pub async fn create_addon(
         Err(e) => {
             let errors = form_errors(e)?;
             let manage_url = app_manage_url(&state, &token).await;
-            let page = NewAddonPage { user: Some(user), csrf: csrf.0, install_url: state.install_url(), manage_url, categories: categories(&state).await?, form, errors };
+            let repos = if manage_url.is_some() { my_repos(&state, &token).await } else { Vec::new() };
+            let page = NewAddonPage {
+                user: Some(user),
+                csrf: csrf.0,
+                install_url: state.install_url(),
+                manage_url,
+                repos,
+                filled: None,
+                categories: categories(&state).await?,
+                form,
+                errors,
+            };
             Ok((StatusCode::UNPROCESSABLE_ENTITY, render(&page)).into_response())
         }
     }

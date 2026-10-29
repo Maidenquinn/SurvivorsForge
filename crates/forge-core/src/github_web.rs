@@ -108,7 +108,7 @@ pub fn tags_from_refs(refs: &[(String, String)]) -> Vec<Tag> {
 
 /// The release numbers first, then a plain release above its pre-releases (`v1.6.0` before
 /// `v1.6.0-beta.2`), then the numbers in the suffix (`beta.2` before `beta.1`).
-fn version_key(name: &str) -> (Vec<u64>, bool, Vec<u64>) {
+pub fn version_key(name: &str) -> (Vec<u64>, bool, Vec<u64>) {
     let numbers = |s: &str| -> Vec<u64> {
         s.split(|c: char| !c.is_ascii_digit()).filter(|p| !p.is_empty()).map(|p| p.parse().unwrap_or(u64::MAX)).collect()
     };

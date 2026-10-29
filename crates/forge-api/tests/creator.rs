@@ -67,3 +67,63 @@ async fn whether_the_app_is_installed_on_my_account(pool: PgPool) {
     let mine = app.get("/v1/me/installation", Some(&alice)).await.json();
     assert_eq!(mine, json!({ "installed": true, "manage_url": "https://github.com/settings/installations/77" }));
 }
+
+fn addon_zip(entries: &[(&str, &str)]) -> Vec<u8> {
+    use std::io::Write;
+    let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    for (name, text) in entries {
+        zip.start_file(*name, zip::write::SimpleFileOptions::default()).unwrap();
+        zip.write_all(text.as_bytes()).unwrap();
+    }
+    zip.finish().unwrap().into_inner()
+}
+
+fn gh_release(tag: &str, asset: &str) -> forge_api::github::types::Release {
+    serde_json::from_value(json!({
+        "id": 1, "tag_name": tag, "draft": false, "prerelease": false, "published_at": "2026-05-01T00:00:00Z",
+        "assets": [{ "id": 2, "name": asset, "size": 10, "browser_download_url": format!("https://github.com/dl/{asset}") }]
+    }))
+    .unwrap()
+}
+
+#[sqlx::test]
+async fn my_repos_and_what_the_form_can_fill_in(pool: PgPool) {
+    let app = TestApp::new(pool);
+    let alice = app.publish(1, "alice", "taken").await;
+    app.github.add_repo(101, "alice/LuckyOdds", "alice");
+    app.github.add_repo(102, "alice/TagAddon", "alice");
+    app.github.add_repo(103, "bob/Other", "bob");
+    app.github.data().installations.insert("bob/other".into(), 2);
+
+    let repos = app.get("/v1/me/repos", Some(&alice)).await.json();
+    let names: Vec<&str> = repos["repos"].as_array().unwrap().iter().map(|r| r["full_name"].as_str().unwrap()).collect();
+    assert_eq!(names, ["alice/LuckyOdds", "alice/TagAddon"], "own installation, without repos that already have an addon");
+
+    {
+        let mut data = app.github.data();
+        data.releases.insert(101, vec![gh_release("v0.7.0", "LuckyOdds-v0.7.0.zip")]);
+        data.downloads.insert(
+            "https://github.com/dl/LuckyOdds-v0.7.0.zip".into(),
+            addon_zip(&[("LuckyOdds/LuckyOdds.toc", "## Title: Lucky Odds\n## Notes: Odds for rare cards\n")]),
+        );
+        data.tags.insert(102, vec![serde_json::from_value(json!({ "name": "v2.0", "commit": { "sha": "abc" } })).unwrap()]);
+        data.downloads.insert(
+            "https://codeload.github.com/alice/TagAddon/zip/v2.0".into(),
+            addon_zip(&[("TagAddon-2.0/TagAddon.toc", "## Title: Tag Addon\n")]),
+        );
+    }
+    let s = app.get("/v1/me/repos/alice/LuckyOdds/suggestion", Some(&alice)).await.json();
+    assert_eq!(s["name"], "Lucky Odds");
+    assert_eq!(s["slug"], "luckyodds");
+    assert_eq!(s["summary"], "Odds for rare cards");
+    assert_eq!((s["source_type"].as_str(), s["asset_pattern"].as_str()), (Some("release"), Some("LuckyOdds-v*.zip")));
+    assert_eq!(s["folders"], json!(["LuckyOdds"]));
+    assert_eq!(s["repo"], "alice/LuckyOdds");
+
+    let t = app.get("/v1/me/repos/alice/TagAddon/suggestion", Some(&alice)).await.json();
+    assert_eq!((t["source_type"].as_str(), t["folders"].clone()), (Some("tag"), json!(["TagAddon"])));
+
+    assert_eq!(app.get("/v1/me/repos/bob/Other/suggestion", Some(&alice)).await.status, StatusCode::NOT_FOUND, "not in my installation");
+    let carol = app.login(3, "carol").await;
+    assert_eq!(app.get("/v1/me/repos", Some(&carol)).await.json(), json!({ "installed": false, "repos": [] }));
+}
