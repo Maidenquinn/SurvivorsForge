@@ -134,6 +134,8 @@ pub struct FindingRow {
 
 pub struct VersionRow {
     pub tag: String,
+    /// The tag cut to 18 characters and `…` when it is longer (commit hashes), for headings.
+    pub tag_short: String,
     pub name: String,
     pub published: String,
     pub prerelease: bool,

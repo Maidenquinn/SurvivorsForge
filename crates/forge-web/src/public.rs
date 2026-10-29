@@ -45,8 +45,10 @@ fn range(min: &Value, max: &Value) -> String {
 }
 
 fn version_row(v: &Value, verified_author: bool) -> VersionRow {
+    let tag = s(&v["tag"]);
     VersionRow {
-        tag: s(&v["tag"]),
+        tag_short: if tag.chars().count() > 20 { format!("{}…", tag.chars().take(18).collect::<String>()) } else { tag.clone() },
+        tag,
         name: s(&v["name"]),
         published: date(&v["published_at"]),
         prerelease: v["prerelease"] == true,

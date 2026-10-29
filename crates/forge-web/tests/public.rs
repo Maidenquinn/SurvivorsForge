@@ -415,3 +415,17 @@ async fn the_version_says_when_and_how_often() {
     let page = web.get("/addons/lucky").await.body;
     assert!(page.contains("Published 2026-05-01 · 1,234 downloads"), "{page}");
 }
+
+#[tokio::test]
+async fn long_tags_are_shortened_in_the_heading() {
+    let mut web = TestWeb::new().await;
+    let tag = "build-6284ab9995305ec45046c881ccfe88f776184a1b";
+    let mut a = addon("scanned");
+    a["latest_tag"] = json!(tag);
+    mock(&web, "/v1/addons/lucky", a).await;
+    let mut list = versions("scanned", "available");
+    list[0]["tag"] = json!(tag);
+    mock(&web, "/v1/addons/lucky/versions", list).await;
+    let page = web.get("/addons/lucky").await.body;
+    assert!(page.contains(&format!(r#"<h2>Version <span title="{tag}">build-6284ab999530…</span></h2>"#)), "{page}");
+}
