@@ -1,4 +1,32 @@
 # SurvivorsForge platform. Values come from `.env` (see `.env.example`).
+#
+#   docker compose up -d                        everything
+#   docker compose up -d postgres api worker    the API alone, without website and proxy
+#
+# For local development, compose.dev.yaml publishes Postgres on 127.0.0.1.
+
+x-api: &api
+  image: survivorsforge/forge-api:local
+  env_file:
+    - path: ${FORGE_ENV_FILE:-.env}
+      required: false
+  environment:
+    DATABASE_URL: postgres://${POSTGRES_USER:-forge}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-forge}
+    IMAGE_DIR: /data/images
+    GITHUB_APP_PRIVATE_KEY_FILE: /run/secrets/github-app.pem
+    # Caddy's fixed address on the edge network; its X-Forwarded-For is trusted.
+    TRUSTED_PROXIES: ${FORGE_CADDY_IP:-10.213.17.10}
+  secrets:
+    - github-app.pem
+  depends_on:
+    postgres:
+      condition: service_healthy
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -8,13 +36,116 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-forge}
     volumes:
       - postgres:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    networks:
+      - backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-forge}"]
       interval: 5s
       timeout: 3s
       retries: 10
+    restart: unless-stopped
+
+  api:
+    <<: *api
+    # The worker runs the same image; only this service builds it.
+    build:
+      context: .
+      dockerfile: docker/forge-api.Dockerfile
+    command: ["serve"]
+    volumes:
+      - images:/data/images
+    networks:
+      - backend
+      - edge
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/forge-api", "healthcheck", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    <<: *api
+    pull_policy: never
+    command: ["worker"]
+    # Handles untrusted zips: no image volume, read-only file system, capped memory.
+    read_only: true
+    tmpfs:
+      - /tmp
+    mem_limit: 1g
+    networks:
+      - backend
+      - edge
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/forge-api", "healthcheck", "db"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    image: survivorsforge/forge-web:local
+    build:
+      context: .
+      dockerfile: docker/forge-web.Dockerfile
+    env_file:
+    - path: ${FORGE_ENV_FILE:-.env}
+      required: false
+    environment:
+      API_INTERNAL_URL: http://api:8080
+    networks:
+      - edge
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/forge-web", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    env_file:
+    - path: ${FORGE_ENV_FILE:-.env}
+      required: false
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - images:/srv/img:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      edge:
+        ipv4_address: ${FORGE_CADDY_IP:-10.213.17.10}
+    depends_on:
+      - web
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  # Postgres lives here only; nothing on it can reach the internet.
+  backend:
+    internal: true
+  edge:
+    ipam:
+      config:
+        - subnet: ${FORGE_EDGE_SUBNET:-10.213.17.0/24}
 
 volumes:
   postgres:
+  images:
+  caddy-data:
+  caddy-config:
+
+secrets:
+  github-app.pem:
+    file: ${GITHUB_APP_PRIVATE_KEY_PATH:-./secrets/github-app.pem}

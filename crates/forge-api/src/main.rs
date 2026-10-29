@@ -18,6 +18,9 @@ async fn main() -> ExitCode {
         .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
         .init();
     let command = std::env::args().nth(1).unwrap_or_default();
+    if command == "healthcheck" {
+        return healthcheck(std::env::args().nth(2).unwrap_or_default()).await;
+    }
     if !matches!(command.as_str(), "serve" | "worker" | "migrate" | "rescan" | "import-verified" | "export-verified") {
         eprintln!("{USAGE}");
         return ExitCode::from(2);
@@ -122,6 +125,24 @@ async fn serve(config: Config, pool: sqlx::PgPool) -> Result<(), String> {
         .with_graceful_shutdown(shutdown_signal())
         .await
         .map_err(|e| e.to_string())
+}
+
+/// `healthcheck <url>` asks a running server, `healthcheck db` the database; for container
+/// healthchecks, since the image has no shell or curl.
+async fn healthcheck(target: String) -> ExitCode {
+    let ok = if target == "db" {
+        match Config::from_env() {
+            Ok(config) => match PgPoolOptions::new().max_connections(1).connect(&config.database_url).await {
+                Ok(pool) => sqlx::query("SELECT 1").execute(&pool).await.is_ok(),
+                Err(_) => false,
+            },
+            Err(_) => false,
+        }
+    } else {
+        let url = if target.is_empty() { "http://127.0.0.1:8080/healthz".to_string() } else { target };
+        matches!(reqwest::get(&url).await, Ok(r) if r.status().is_success())
+    };
+    if ok { ExitCode::SUCCESS } else { ExitCode::FAILURE }
 }
 
 /// Ctrl+C, and SIGTERM from `docker stop` on Unix.

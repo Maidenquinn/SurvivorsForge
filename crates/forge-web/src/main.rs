@@ -4,6 +4,14 @@ use std::process::ExitCode;
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    // `forge-web healthcheck` for the container: alive when it serves its own files, even while the API is down.
+    if std::env::args().nth(1).as_deref() == Some("healthcheck") {
+        let url = std::env::args().nth(2).unwrap_or_else(|| "http://127.0.0.1:8080/static/app.css".into());
+        return match reqwest::get(&url).await {
+            Ok(r) if r.status().is_success() => ExitCode::SUCCESS,
+            _ => ExitCode::FAILURE,
+        };
+    }
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
         .init();

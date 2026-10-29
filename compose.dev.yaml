@@ -1,0 +1,13 @@
+# Local development: Postgres on 127.0.0.1 for `cargo test`.
+#   POSTGRES_HOST_PORT=15432 docker compose -f compose.yaml -f compose.dev.yaml up -d postgres
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    networks:
+      - backend
+      - dev
+
+networks:
+  # The internal backend network cannot publish ports; this one can.
+  dev: {}
