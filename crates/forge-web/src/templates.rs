@@ -8,6 +8,7 @@ use serde_json::Value;
 /// The logged-in visitor as the API describes them (`/v1/me`).
 #[derive(Debug, Clone, Default)]
 pub struct Visitor {
+    pub id: i64,
     pub login: String,
     pub avatar_url: String,
     pub admin: bool,
@@ -16,6 +17,7 @@ pub struct Visitor {
 impl Visitor {
     pub fn from_me(me: &Value) -> Visitor {
         Visitor {
+            id: me["id"].as_i64().unwrap_or_default(),
             login: me["login"].as_str().unwrap_or_default().to_string(),
             avatar_url: me["avatar_url"].as_str().unwrap_or_default().to_string(),
             admin: me["role"] == "admin",
