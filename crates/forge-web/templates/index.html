@@ -2,30 +2,30 @@
 {% block head %}<meta name="description" content="Addons for Azeroth Survivors, checked for harmful code. Install them with the SurvivorsForge launcher or as one pack for the browser version.">{% endblock %}
 {% block content %}
 <section class="hero">
-  <h1><span data-l10n-en="Addons, checked" data-l10n-fr="AddOns vérifiés">Addons, checked</span></h1>
-  <p class="lead"><span data-l10n-en="For Azeroth Survivors. The SurvivorsForge launcher installs, updates and removes addons with one click. Every release is checked for harmful code first." data-l10n-fr="Pour Azeroth Survivors. Le lanceur SurvivorsForge installe, met à jour et supprime vos AddOns en un clic. Chaque version est contrôlée avant sa publication.">For Azeroth Survivors. The SurvivorsForge launcher installs, updates and removes addons with one click. Every release is checked for harmful code first.</span></p>
+  <h1><span data-i18n="home_title">Addons, checked</span></h1>
+  <p class="lead"><span data-i18n="home_lead">For Azeroth Survivors. The SurvivorsForge launcher installs, updates and removes addons with one click. Every release is checked for harmful code first.</span></p>
   <p class="actions center">
-    <a class="button large" href="https://github.com/Rezondes/SurvivorsForge/releases/latest" rel="external noopener"><span data-l10n-en="Download the launcher" data-l10n-fr="Télécharger le lanceur">Download the launcher</span></a>
-    <a class="button secondary" href="/addons"><span data-l10n-en="Browse addons" data-l10n-fr="Parcourir les AddOns">Browse addons</span></a>
+    <a class="button large" href="https://github.com/Rezondes/SurvivorsForge/releases/latest" rel="external noopener"><span data-i18n="home_download">Download the launcher</span></a>
+    <a class="button secondary" href="/addons"><span data-i18n="home_browse">Browse addons</span></a>
   </p>
-  <p class="muted"><span data-l10n-en="Windows · Linux &amp; Steam Deck. Free and open source." data-l10n-fr="Windows, Linux et Steam Deck. Gratuit et open source.">Windows · Linux &amp; Steam Deck. Free and open source.</span></p>
+  <p class="muted"><span data-i18n="home_platform">Windows · Linux &amp; Steam Deck. Free and open source.</span></p>
 </section>
 
 <section class="home-points" aria-label="How addons are checked">
-  <div><h3><span data-l10n-en="Checked automatically" data-l10n-fr="Contrôle automatique">Checked automatically</span></h3><p><span data-l10n-en="Every release is scanned for harmful code before it is listed." data-l10n-fr="Chaque version est analysée avant d'être publiée.">Every release is scanned for harmful code before it is listed.</span></p></div>
-  <div><h3><span data-l10n-en="Verified by hand" data-l10n-fr="Vérifié manuellement">Verified by hand</span></h3><p><span data-l10n-en="Admins look at files themselves; the Verified badge shows it." data-l10n-fr="Les administrateurs examinent les fichiers ; le badge Vérifié le confirme.">Admins look at files themselves; the Verified badge shows it.</span></p></div>
-  <div><h3><span data-l10n-en="Straight from GitHub" data-l10n-fr="Directement depuis GitHub">Straight from GitHub</span></h3><p><span data-l10n-en="Nothing is repacked. The launcher installs a file only when its hash matches the checked one." data-l10n-fr="Aucun fichier n'est reconditionné. Le lanceur vérifie son empreinte avant installation.">Nothing is repacked. The launcher installs a file only when its hash matches the checked one.</span></p></div>
+  <div><h3><span data-i18n="home_checked">Checked automatically</span></h3><p><span data-i18n="home_checked_body">Every release is scanned for harmful code before it is listed.</span></p></div>
+  <div><h3><span data-i18n="home_manual">Verified by hand</span></h3><p><span data-i18n="home_manual_body">Admins look at files themselves; the Verified badge shows it.</span></p></div>
+  <div><h3><span data-i18n="home_github">Straight from GitHub</span></h3><p><span data-i18n="home_github_body">Nothing is repacked. The launcher installs a file only when its hash matches the checked one.</span></p></div>
 </section>
 
 <section class="panel home-section">
-  <h2><span data-l10n-en="Playing in the browser?" data-l10n-fr="Vous jouez dans le navigateur ?">Playing in the browser?</span></h2>
-  <p><span data-l10n-en="The browser version takes one zip with all your addons. Pick the addons you want and get them as one pack: checked versions only, every addon folder in place." data-l10n-fr="La version navigateur accepte une archive ZIP regroupant vos AddOns. Choisissez les versions contrôlées et téléchargez un seul pack.">The browser version takes one zip with all your addons. Pick the addons you want and get them as one pack: checked versions only, every addon folder in place.</span></p>
-  <p class="actions"><a class="button" href="/packs/new"><span data-l10n-en="Build an addon pack" data-l10n-fr="Créer un pack d'AddOns">Build an addon pack</span></a> <a class="button secondary" href="/packs"><span data-l10n-en="Browse packs" data-l10n-fr="Parcourir les packs">Browse packs</span></a></p>
+  <h2><span data-i18n="home_browser">Playing in the browser?</span></h2>
+  <p><span data-i18n="home_browser_body">The browser version takes one zip with all your addons. Pick the addons you want and get them as one pack: checked versions only, every addon folder in place.</span></p>
+  <p class="actions"><a class="button" href="/packs/new"><span data-i18n="home_build_pack">Build an addon pack</span></a> <a class="button secondary" href="/packs"><span data-i18n="home_browse_packs">Browse packs</span></a></p>
 </section>
 
 {% if !popular.is_empty() %}
 <section class="home-section">
-  <div class="title-row"><h2><span data-l10n-en="Popular addons" data-l10n-fr="AddOns populaires">Popular addons</span></h2><a href="/addons"><span data-l10n-en="All addons" data-l10n-fr="Tous les AddOns">All addons</span></a></div>
+  <div class="title-row"><h2><span data-i18n="home_popular">Popular addons</span></h2><a href="/addons"><span data-i18n="home_all_addons">All addons</span></a></div>
   <div class="grid">
     {% for c in popular %}
     {% include "card.html" %}
@@ -35,8 +35,8 @@
 {% endif %}
 
 <section class="panel home-section">
-  <h2><span data-l10n-en="Made an addon?" data-l10n-fr="Vous avez créé un AddOn ?">Made an addon?</span></h2>
-  <p><span data-l10n-en="Log in with GitHub, pick your repo and the form fills itself in. Every new release shows up here and in the launcher, checked first." data-l10n-fr="Connectez-vous avec GitHub et choisissez votre dépôt : le formulaire se remplit automatiquement. Chaque nouvelle version apparaît ici et dans le lanceur après vérification.">Log in with GitHub, pick your repo and the form fills itself in. Every new release shows up here and in the launcher, checked first.</span></p>
-  <p><a class="button secondary" href="/addons/new"><span data-l10n-en="Publish it from your GitHub repo" data-l10n-fr="Publier depuis votre dépôt GitHub">Publish it from your GitHub repo</span></a></p>
+  <h2><span data-i18n="home_creator">Made an addon?</span></h2>
+  <p><span data-i18n="home_creator_body">Log in with GitHub, pick your repo and the form fills itself in. Every new release shows up here and in the launcher, checked first.</span></p>
+  <p><a class="button secondary" href="/addons/new"><span data-i18n="home_creator_publish">Publish it from your GitHub repo</span></a></p>
 </section>
 {% endblock %}
