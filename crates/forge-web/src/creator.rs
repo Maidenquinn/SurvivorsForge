@@ -607,7 +607,8 @@ pub async fn move_image(
             save_order(&state, &token, &slug, &order).await?;
         }
     }
-    Ok(Redirect::to(&format!("/addons/{slug}/images")).into_response())
+    // Back at the moved screenshot instead of the top of the page.
+    Ok(Redirect::to(&format!("/addons/{slug}/images#shot-{id}")).into_response())
 }
 
 async fn save_order(state: &AppState, token: &str, slug: &str, order: &[i64]) -> WebResult<()> {

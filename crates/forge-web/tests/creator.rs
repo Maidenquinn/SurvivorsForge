@@ -196,6 +196,16 @@ async fn screenshots_take_a_dragged_order() {
 }
 
 #[tokio::test]
+async fn moving_a_screenshot_keeps_it_in_view() {
+    // Without script the page comes back scrolled to the moved screenshot, not to the top.
+    let mut web = logged_in(owner()).await;
+    let images = web.get("/addons/lucky/images").await.body;
+    assert!(images.contains(r#"<figure data-image-id="7" id="shot-7">"#) && images.contains("data-move"), "{images}");
+    let page = web.post_form("/addons/lucky/images/7/move", &[("direction", "up")]).await;
+    assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/lucky/images#shot-7"));
+}
+
+#[tokio::test]
 async fn several_screenshots_in_one_upload() {
     let mut web = logged_in(owner()).await;
     Mock::given(method("POST"))

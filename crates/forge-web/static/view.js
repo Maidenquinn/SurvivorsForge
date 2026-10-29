@@ -114,10 +114,37 @@
       return f.getAttribute("data-image-id");
     });
     var body = new URLSearchParams({ order: ids.join(","), csrf: document.querySelector('input[name="csrf"]').value });
-    fetch(list.getAttribute("data-order-url"), { method: "POST", body: body }).then(function () {
-      location.reload();
-    });
+    saved(fetch(list.getAttribute("data-order-url"), { method: "POST", body: body }), list);
   });
+
+  // The arrow buttons move the screenshot in place too, so the page keeps its scroll position.
+  document.addEventListener("submit", function (event) {
+    var form = event.target.closest("form[data-move]");
+    if (!form) return;
+    event.preventDefault();
+    var figure = form.closest("[data-image-id]");
+    var list = figure.parentNode;
+    if (new FormData(form).get("direction") === "up") list.insertBefore(figure, figure.previousElementSibling);
+    else list.insertBefore(figure, figure.nextElementSibling && figure.nextElementSibling.nextElementSibling);
+    saved(fetch(form.action, { method: "POST", body: new URLSearchParams(new FormData(form)) }), list);
+  });
+
+  // After a move is saved the first and last arrows switch off; a failed save shows the real order.
+  function saved(request, list) {
+    request
+      .then(function (response) {
+        if (!response.ok) throw new Error(response.status);
+        var figures = list.querySelectorAll("[data-image-id]");
+        figures.forEach(function (f, i) {
+          var buttons = f.querySelectorAll("form[data-move] button");
+          buttons[0].disabled = i === 0;
+          buttons[1].disabled = i === figures.length - 1;
+        });
+      })
+      .catch(function () {
+        location.reload();
+      });
+  }
 
   // Screenshots on an addon page open in a viewer instead of a new tab: wheel, buttons, + and - or a
   // double click zoom around the pointer, dragging moves the zoomed image, the arrows step through.
