@@ -29,8 +29,8 @@ pub async fn feed(state: &AppState, slug: &str, session: &Option<(crate::templat
     let user = session.as_ref().map(|(v,_)| v.clone());
     let path = format!("/v1/addons/{}/comments{}",seg(slug),before.map(|n|format!("?before={n}")).unwrap_or_default());
     let data = state.api.get(&path,None).await?;
-    let perms = if let Some((_,token)) = &session {
-        state.api.get(&format!("/v1/addons/{}/permissions",seg(&slug)),Some(token)).await.ok()
+    let perms = if let Some((_,token)) = session {
+        state.api.get(&format!("/v1/addons/{}/permissions",seg(slug)),Some(token)).await.ok()
     } else {None};
     let moderator = user.as_ref().is_some_and(|u|u.admin) || perms.as_ref().is_some_and(|p|p["owner"]==true || p["admin"]==true || p["edit_description"]==true);
     let next = data.as_array().and_then(|items| next_cursor(items));
