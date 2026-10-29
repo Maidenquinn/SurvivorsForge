@@ -487,13 +487,14 @@ document.addEventListener("DOMContentLoaded", function () {
     if (busy) return;
     busy = true;
     controller = new AbortController();
+    var current = controller;
     old.setAttribute("aria-busy", "true");
     try {
       var response = await fetch(url, Object.assign({
         credentials: "same-origin",
         redirect: "follow",
         headers: {"Accept": "text/html"},
-        signal: controller.signal
+        signal: current.signal
       }, options || {}));
       // A redirected login/error page is not a successful comment update.
       if (!response.ok || new URL(response.url).pathname === "/login") {
@@ -522,8 +523,10 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     } finally {
       old.removeAttribute("aria-busy");
-      busy = false;
-      controller = null;
+      if (controller === current) {
+        busy = false;
+        controller = null;
+      }
     }
   }
   document.addEventListener("submit", function (event) {
