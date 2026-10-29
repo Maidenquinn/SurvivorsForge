@@ -3,9 +3,11 @@
   "use strict";
   var translations = {
   "en": {
-    "addons": "Addons",
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
+    "addons": "AddOns",
     "packs": "Packs",
-    "my_addons": "My addons",
+    "my_addons": "My AddOns",
     "admin": "Admin",
     "login": "Log in with GitHub",
     "language": "Language",
@@ -100,9 +102,11 @@
     "edit_comment": "Edit comment"
   },
   "fr": {
-    "addons": "Extensions",
+    "duplicate_issue": "Ce signalement identique a déjà été envoyé. Modifiez le titre ou la description avant de réessayer.",
+    "issue_submit_error": "Impossible d'envoyer le signalement. Veuillez réessayer.",
+    "addons": "AddOns",
     "packs": "Packs",
-    "my_addons": "Mes extensions",
+    "my_addons": "Mes AddOns",
     "admin": "Administration",
     "login": "Se connecter avec GitHub",
     "language": "Langue",
@@ -197,6 +201,8 @@
     "edit_comment": "Modifier le commentaire"
   },
   "pl": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Dodatki",
     "packs": "Pakiety",
     "my_addons": "Moje dodatki",
@@ -294,6 +300,8 @@
     "edit_comment": "Edytuj komentarz"
   },
   "cs": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Doplňky",
     "packs": "Balíčky",
     "my_addons": "Moje doplňky",
@@ -391,6 +399,8 @@
     "edit_comment": "Upravit komentář"
   },
   "de": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Addons",
     "packs": "Pakete",
     "my_addons": "Meine Addons",
@@ -488,6 +498,8 @@
     "edit_comment": "Kommentar bearbeiten"
   },
   "pt-BR": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Complementos",
     "packs": "Pacotes",
     "my_addons": "Meus complementos",
@@ -585,6 +597,8 @@
     "edit_comment": "Editar comentário"
   },
   "es": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Complementos",
     "packs": "Paquetes",
     "my_addons": "Mis complementos",
@@ -682,6 +696,8 @@
     "edit_comment": "Editar comentario"
   },
   "ro": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Suplimente",
     "packs": "Pachete",
     "my_addons": "Suplimentele mele",
@@ -779,6 +795,8 @@
     "edit_comment": "Editează comentariul"
   },
   "tr": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Eklentiler",
     "packs": "Paketler",
     "my_addons": "Eklentilerim",
@@ -876,6 +894,8 @@
     "edit_comment": "Yorumu düzenle"
   },
   "ru": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Аддоны",
     "packs": "Наборы",
     "my_addons": "Мои аддоны",
@@ -973,6 +993,8 @@
     "edit_comment": "Редактировать комментарий"
   },
   "uk": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Аддони",
     "packs": "Набори",
     "my_addons": "Мої аддони",
@@ -1070,6 +1092,8 @@
     "edit_comment": "Редагувати коментар"
   },
   "zh-Hans": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "插件",
     "packs": "整合包",
     "my_addons": "我的插件",
@@ -1167,6 +1191,8 @@
     "edit_comment": "编辑评论"
   },
   "ja": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "アドオン",
     "packs": "パック",
     "my_addons": "マイアドオン",
@@ -1264,6 +1290,8 @@
     "edit_comment": "コメントを編集"
   },
   "ko": {
+    "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
+    "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "애드온",
     "packs": "팩",
     "my_addons": "내 애드온",
@@ -1403,5 +1431,5 @@
     });
   });
   document.addEventListener("htmx:afterSwap", apply);
-  window.ForgeI18n = Object.freeze({t: function (key) { return translations[locale][key] || translations.en[key] || key; }, locale: function () { return locale; }});
+  window.ForgeI18n = Object.freeze({apply: apply, t: function (key) { return translations[locale][key] || translations.en[key] || key; }, locale: function () { return locale; }});
 })();
