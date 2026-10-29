@@ -10,7 +10,7 @@
   <label for="new-sort"><span data-l10n-en="Order (lower comes first)" data-l10n-fr="Ordre (plus petit en premier)">Order (lower comes first)</span></label><input id="new-sort" name="sort_key" inputmode="numeric" required>
   {% if kind == "categories" %}
   <label for="new-parent"><span data-l10n-en="Subcategory of" data-l10n-fr="Sous-catégorie de">Subcategory of</span></label>
-  <select id="new-parent" name="parent"><option value=""><span data-l10n-en="None (top level)" data-l10n-fr="Aucune (niveau principal)">None (top level)</span></option>{% for p in parents %}<option value="{{ p }}">{{ p }}</option>{% endfor %}</select>
+  <select id="new-parent" name="parent"><option value="" data-l10n-option-en="None (top level)" data-l10n-option-fr="Aucune (niveau principal)">None (top level)</option>{% for p in parents %}<option value="{{ p }}">{{ p }}</option>{% endfor %}</select>
   {% endif %}
   <button type="submit"><span data-l10n-en="Add" data-l10n-fr="Ajouter">Add</span></button>
 </form>
@@ -25,7 +25,7 @@
       {% if kind == "categories" %}
       <label class="sr-only" for="parent-{{ loop.index }}"><span data-l10n-en="Subcategory of" data-l10n-fr="Sous-catégorie de">Subcategory of</span></label>
       <select id="parent-{{ loop.index }}" name="parent" class="narrow-select">
-        <option value="" {% if parent == "" %}selected{% endif %}><span data-l10n-en="Top level" data-l10n-fr="Niveau principal">Top level</span></option>
+        <option value="" {% if parent == "" %}selected{% endif %} data-l10n-option-en="Top level" data-l10n-option-fr="Niveau principal">Top level</option>
         {% for p in parents %}{% if p.as_str() != name.as_str() %}<option value="{{ p }}" {% if p.as_str() == parent.as_str() %}selected{% endif %}>Under {{ p }}</option>{% endif %}{% endfor %}
       </select>
       {% endif %}
