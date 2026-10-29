@@ -94,43 +94,6 @@
   document.addEventListener("htmx:sendError", failed);
 })();
 
-/* Issues V2: filtering and disclosure without inline scripts (CSP safe). */
-document.addEventListener("DOMContentLoaded", function () {
-  var list = document.getElementById("addon-issues-list");
-  if (!list) return;
-  var rows = Array.from(list.querySelectorAll(".issue-row"));
-  var tabs = Array.from(document.querySelectorAll("[data-inline-filter]"));
-  var search = document.getElementById("addon-issues-search");
-  var empty = document.getElementById("addon-issues-empty");
-  var filter = "open";
-  function refresh() {
-    var query = (search && search.value || "").trim().toLowerCase();
-    var visible = 0;
-    rows.forEach(function (row) {
-      var status = row.dataset.status;
-      var matched = filter === "all" || (filter === "open" ? status === "open" || status === "in_progress" : status === "closed" || status === "resolved");
-      var show = matched && (row.dataset.search || "").toLowerCase().includes(query);
-      row.hidden = !show;
-      if (show) visible++;
-    });
-    if (empty) empty.hidden = visible > 0 || rows.length === 0;
-    tabs.forEach(function (tab) {
-      var active = tab.dataset.inlineFilter === filter;
-      tab.classList.toggle("active", active);
-      tab.setAttribute("aria-pressed", String(active));
-    });
-  }
-  tabs.forEach(function (tab) { tab.addEventListener("click", function () { filter = tab.dataset.inlineFilter; refresh(); }); });
-  if (search) search.addEventListener("input", refresh);
-  refresh();
-  document.querySelectorAll("[data-open-new-issue]").forEach(function (link) {
-    link.addEventListener("click", function () {
-      var details = document.getElementById("new-issue");
-      if (details) details.open = true;
-    });
-  });
-});
-
 /* Dynamic issue navigation: progressively enhances ordinary links and forms.
    The server still owns authorization, validation and CSRF checks. */
 (function () {
@@ -228,3 +191,39 @@ document.addEventListener("DOMContentLoaded", function () {
     if (panel() && new URL(location.href).searchParams.get("tab") === "issues") navigate(location.href, null, false);
   });
 })();
+
+/* Accessible screenshot lightbox. Links still open the image without JS. */
+document.addEventListener("DOMContentLoaded", function () {
+  var gallery = document.querySelector("[data-gallery]");
+  var dialog = document.getElementById("gallery-lightbox");
+  if (!gallery || !dialog || !dialog.showModal) return;
+  var links = Array.from(gallery.querySelectorAll("[data-gallery-link]"));
+  var image = dialog.querySelector("[data-gallery-image]");
+  var caption = dialog.querySelector("[data-gallery-caption]");
+  var count = dialog.querySelector("[data-gallery-count]");
+  var index = 0;
+  function display(n) {
+    index = (n + links.length) % links.length;
+    var link = links[index], img = link.querySelector("img");
+    image.src = link.href;
+    image.alt = img ? img.alt : "Screenshot";
+    caption.textContent = link.closest("figure").querySelector("figcaption")?.textContent || "";
+    count.textContent = (index + 1) + " / " + links.length;
+  }
+  links.forEach(function (link, i) {
+    link.addEventListener("click", function (event) {
+      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      display(i);
+      dialog.showModal();
+    });
+  });
+  dialog.querySelector("[data-gallery-prev]").addEventListener("click", function () { display(index - 1); });
+  dialog.querySelector("[data-gallery-next]").addEventListener("click", function () { display(index + 1); });
+  dialog.querySelector("[data-gallery-close]").addEventListener("click", function () { dialog.close(); });
+  dialog.addEventListener("click", function (event) { if (event.target === dialog) dialog.close(); });
+  dialog.addEventListener("keydown", function (event) {
+    if (event.key === "ArrowLeft") { event.preventDefault(); display(index - 1); }
+    if (event.key === "ArrowRight") { event.preventDefault(); display(index + 1); }
+  });
+});
