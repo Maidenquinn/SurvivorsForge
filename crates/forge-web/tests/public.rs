@@ -367,3 +367,13 @@ async fn the_view_switch_is_as_tall_as_other_buttons() {
     let css = web.get("/static/app.css").await.body;
     assert!(css.contains(".view-toggle button { padding: 2px 12px; font-size: var(--meta); }"), "no smaller height than the 34 px buttons");
 }
+
+#[tokio::test]
+async fn an_empty_search_offers_the_way_back() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
+    mock(&web, "/v1/addons", json!({ "total": 0, "addons": [] })).await;
+    mock(&web, "/v1/packs", json!({ "total": 0, "packs": [] })).await;
+    assert!(web.get("/addons?q=nothing").await.body.contains(r#"<a href="/addons">Show all addons</a>"#));
+    assert!(web.get("/packs?q=nothing").await.body.contains(r#"<a href="/packs">Show all packs</a>"#));
+}

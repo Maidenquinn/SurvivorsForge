@@ -24,7 +24,7 @@
     </div>
   </div>
   {% if rows.is_empty() %}
-    <section class="panel">{% if q != "" %}<p>No pack matches. Try a shorter name.</p>{% else %}<p>No pack is listed yet. Build one and tick "Show it on the public pack list".</p>{% endif %}</section>
+    <section class="panel">{% if q != "" %}<p>No pack matches. Try a shorter name.</p><p><a href="/packs">Show all packs</a></p>{% else %}<p>No pack is listed yet. Build one and tick "Show it on the public pack list".</p>{% endif %}</section>
   {% else %}
   <div class="grid">
     {% for p in rows %}
