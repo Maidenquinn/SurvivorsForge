@@ -2,26 +2,26 @@
 {% block title %}Addons - SurvivorsForge{% endblock %}
 {% block head %}<meta name="description" content="Addons for Azeroth Survivors, checked for harmful code.">{% endblock %}
 {% block content %}
-<h1>Addons</h1>
+<h1 data-i18n="addons">Addons</h1>
 <form class="search" method="get" action="/addons" role="search"
       hx-get="/addons" hx-trigger="input changed delay:300ms from:input, change from:select, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results" hx-select-oob="#result-status" hx-swap="innerHTML scroll:top">
-  <label for="q">Search</label>
-  <input id="q" type="search" name="q" value="{{ q }}" placeholder="Name or what it does" autocomplete="off">
+  <label for="q" data-i18n="search">Search</label>
+  <input id="q" type="search" name="q" value="{{ q }}" placeholder="Name or what it does" data-i18n-placeholder="search_placeholder" autocomplete="off">
   <div class="filters">
     <div>
-      <label for="trust">Safety check</label>
+      <label for="trust" data-i18n="safety">Safety check</label>
       <select id="trust" name="trust">
-        <option value="" {% if trust == "" %}selected{% endif %}>Any</option>
-        <option value="verified" {% if trust == "verified" %}selected{% endif %}>Verified</option>
-        <option value="scanned" {% if trust == "scanned" %}selected{% endif %}>Checked</option>
-        <option value="flagged" {% if trust == "flagged" %}selected{% endif %}>Flagged</option>
-        <option value="unscanned" {% if trust == "unscanned" %}selected{% endif %}>Not checked</option>
+        <option value="" {% if trust == "" %}selected{% endif %} data-i18n="any">Any</option>
+        <option value="verified" {% if trust == "verified" %}selected{% endif %} data-i18n="verified">Verified</option>
+        <option value="scanned" {% if trust == "scanned" %}selected{% endif %} data-i18n="checked">Checked</option>
+        <option value="flagged" {% if trust == "flagged" %}selected{% endif %} data-i18n="flagged">Flagged</option>
+        <option value="unscanned" {% if trust == "unscanned" %}selected{% endif %} data-i18n="not_checked">Not checked</option>
       </select>
     </div>
     <div>
-      <label for="category">Category</label>
+      <label for="category" data-i18n="category">Category</label>
       <select id="category" name="category">
-        <option value="" {% if category == "" %}selected{% endif %}>All categories</option>
+        <option value="" {% if category == "" %}selected{% endif %} data-i18n="all_categories">All categories</option>
         {% for (top, children) in categories %}
         {% if children.is_empty() %}<option value="{{ top.name }}"{% if top.name.eq_ignore_ascii_case(category) %} selected{% endif %}>{{ top.name }}</option>
         {% else %}<optgroup label="{{ top.name }}">
@@ -32,12 +32,12 @@
       </select>
     </div>
     <div>
-      <label for="sort">Sort</label>
+      <label for="sort" data-i18n="sort">Sort</label>
       <select id="sort" name="sort">
-        <option value="" {% if sort == "" %}selected{% endif %}>Best match</option>
-        <option value="downloads" {% if sort == "downloads" %}selected{% endif %}>Most downloads</option>
-        <option value="updated" {% if sort == "updated" %}selected{% endif %}>Recently updated</option>
-        <option value="name" {% if sort == "name" %}selected{% endif %}>Name</option>
+        <option value="" {% if sort == "" %}selected{% endif %} data-i18n="best_match">Best match</option>
+        <option value="downloads" {% if sort == "downloads" %}selected{% endif %} data-i18n="most_downloads">Most downloads</option>
+        <option value="updated" {% if sort == "updated" %}selected{% endif %} data-i18n="recently_updated">Recently updated</option>
+        <option value="name" {% if sort == "name" %}selected{% endif %} data-i18n="name">Name</option>
       </select>
     </div>
   </div>
@@ -51,7 +51,7 @@
     {% include "view_toggle.html" %}
   </div>
   {% if cards.is_empty() %}
-    <section class="panel"><p>No addon matches. Try fewer words or another filter.</p><p><a href="/addons">Show all addons</a></p></section>
+    <section class="panel"><p data-i18n="no_matches">No addon matches. Try fewer words or another filter.</p><p><a href="/addons" data-i18n="show_all">Show all addons</a></p></section>
   {% else %}
   <div class="grid">
     {% for c in cards %}
@@ -60,8 +60,8 @@
   </div>
   {% endif %}
   <nav class="pager">
-    {% if let Some(p) = prev %}<a href="{{ p }}">Previous</a>{% endif %}
-    {% if let Some(n) = next %}<a href="{{ n }}">Next</a>{% endif %}
+    {% if let Some(p) = prev %}<a href="{{ p }}" data-i18n="previous">Previous</a>{% endif %}
+    {% if let Some(n) = next %}<a href="{{ n }}" data-i18n="next">Next</a>{% endif %}
   </nav>
 </div>
 {% endblock %}
