@@ -62,7 +62,7 @@
   <a href="/addons/{{ slug }}?tab=issues" {% if tab == "issues" %}aria-current="page"{% endif %}>Issues</a>
   <a href="/addons/{{ slug }}?tab=gallery" {% if tab == "gallery" %}aria-current="page"{% endif %}>Gallery</a>
   <a href="/addons/{{ slug }}?tab=versions" {% if tab == "versions" %}aria-current="page"{% endif %}>Versions</a>
-  <span class="addon-tabs-future" title="Community comments coming in a future update">Comments · Soon</span>
+  <a href="/addons/{{ slug }}/comments">Comments</a>
 </nav>
 {% if tab == "issues" %}
 <section class="addon-tab-section" data-dynamic-issues>
