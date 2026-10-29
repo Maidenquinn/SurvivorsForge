@@ -184,7 +184,7 @@
     event.preventDefault();
     var submit = form.querySelector('[type="submit"]');
     if (submit) submit.disabled = true;
-    navigate(form.action, {method: "POST", body: new FormData(form)}, true).finally(function () {
+    navigate(form.action, {method: "POST", body: new URLSearchParams(new FormData(form))}, true).finally(function () {
       if (submit && submit.isConnected) submit.disabled = false;
     });
   });
