@@ -442,7 +442,15 @@
     "addon_event_comment_edited": "edited a comment",
     "addon_event_comment_deleted": "removed a comment",
     "addon_event_issue_deleted": "deleted the issue",
-    "addon_event_updated": "updated the issue"
+    "addon_event_updated": "updated the issue",
+    "js_copy_manual": "Press Ctrl+C to copy the selected link.",
+    "js_link_copied": "Link copied.",
+    "js_launcher_missing": "Nothing opened? The launcher may not be installed yet.",
+    "js_load_error": "Could not load the results. Check your connection and try again.",
+    "js_gallery_screenshot": "Screenshot",
+    "js_enter_fullscreen": "Enter fullscreen",
+    "js_exit_fullscreen": "Exit fullscreen",
+    "js_fullscreen": "Fullscreen"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -884,7 +892,15 @@
     "addon_event_comment_edited": "a modifié un commentaire",
     "addon_event_comment_deleted": "a supprimé un commentaire",
     "addon_event_issue_deleted": "a supprimé le signalement",
-    "addon_event_updated": "a mis à jour le signalement"
+    "addon_event_updated": "a mis à jour le signalement",
+    "js_copy_manual": "Appuyez sur Ctrl+C pour copier le lien sélectionné.",
+    "js_link_copied": "Lien copié.",
+    "js_launcher_missing": "Rien ne s'est ouvert ? Le lanceur n'est peut-être pas encore installé.",
+    "js_load_error": "Impossible de charger les résultats. Vérifiez votre connexion et réessayez.",
+    "js_gallery_screenshot": "Capture d'écran",
+    "js_enter_fullscreen": "Passer en plein écran",
+    "js_exit_fullscreen": "Quitter le plein écran",
+    "js_fullscreen": "Plein écran"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1326,7 +1342,15 @@
     "addon_event_comment_edited": "edytował komentarz",
     "addon_event_comment_deleted": "usunął komentarz",
     "addon_event_issue_deleted": "usunął zgłoszenie",
-    "addon_event_updated": "zaktualizował zgłoszenie"
+    "addon_event_updated": "zaktualizował zgłoszenie",
+    "js_copy_manual": "Naciśnij Ctrl+C, aby skopiować zaznaczony link.",
+    "js_link_copied": "Link skopiowany.",
+    "js_launcher_missing": "Nic się nie otworzyło? Launcher może nie być jeszcze zainstalowany.",
+    "js_load_error": "Nie udało się wczytać wyników. Sprawdź połączenie i spróbuj ponownie.",
+    "js_gallery_screenshot": "Zrzut ekranu",
+    "js_enter_fullscreen": "Przejdź na pełny ekran",
+    "js_exit_fullscreen": "Wyjdź z pełnego ekranu",
+    "js_fullscreen": "Pełny ekran"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1768,7 +1792,15 @@
     "addon_event_comment_edited": "upravil komentář",
     "addon_event_comment_deleted": "odstranil komentář",
     "addon_event_issue_deleted": "smazal hlášení",
-    "addon_event_updated": "aktualizoval hlášení"
+    "addon_event_updated": "aktualizoval hlášení",
+    "js_copy_manual": "Stisknutím Ctrl+C zkopírujete vybraný odkaz.",
+    "js_link_copied": "Odkaz zkopírován.",
+    "js_launcher_missing": "Nic se neotevřelo? Spouštěč možná ještě není nainstalován.",
+    "js_load_error": "Výsledky se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.",
+    "js_gallery_screenshot": "Snímek obrazovky",
+    "js_enter_fullscreen": "Přejít na celou obrazovku",
+    "js_exit_fullscreen": "Opustit celou obrazovku",
+    "js_fullscreen": "Celá obrazovka"
   },
   "de": {
     "tiles": "Tiles",
@@ -2210,7 +2242,15 @@
     "addon_event_comment_edited": "hat einen Kommentar bearbeitet",
     "addon_event_comment_deleted": "hat einen Kommentar entfernt",
     "addon_event_issue_deleted": "hat die Meldung gelöscht",
-    "addon_event_updated": "hat die Meldung aktualisiert"
+    "addon_event_updated": "hat die Meldung aktualisiert",
+    "js_copy_manual": "Drücke Strg+C, um den ausgewählten Link zu kopieren.",
+    "js_link_copied": "Link kopiert.",
+    "js_launcher_missing": "Nichts geöffnet? Der Launcher ist möglicherweise noch nicht installiert.",
+    "js_load_error": "Ergebnisse konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+    "js_gallery_screenshot": "Screenshot",
+    "js_enter_fullscreen": "Vollbild einschalten",
+    "js_exit_fullscreen": "Vollbild verlassen",
+    "js_fullscreen": "Vollbild"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2652,7 +2692,15 @@
     "addon_event_comment_edited": "editou um comentário",
     "addon_event_comment_deleted": "removeu um comentário",
     "addon_event_issue_deleted": "excluiu o relato",
-    "addon_event_updated": "atualizou o relato"
+    "addon_event_updated": "atualizou o relato",
+    "js_copy_manual": "Pressione Ctrl+C para copiar o link selecionado.",
+    "js_link_copied": "Link copiado.",
+    "js_launcher_missing": "Nada abriu? Talvez o launcher ainda não esteja instalado.",
+    "js_load_error": "Não foi possível carregar os resultados. Verifique a conexão e tente novamente.",
+    "js_gallery_screenshot": "Captura de tela",
+    "js_enter_fullscreen": "Entrar em tela cheia",
+    "js_exit_fullscreen": "Sair da tela cheia",
+    "js_fullscreen": "Tela cheia"
   },
   "es": {
     "tiles": "Tiles",
@@ -3094,7 +3142,15 @@
     "addon_event_comment_edited": "editó un comentario",
     "addon_event_comment_deleted": "eliminó un comentario",
     "addon_event_issue_deleted": "eliminó la incidencia",
-    "addon_event_updated": "actualizó la incidencia"
+    "addon_event_updated": "actualizó la incidencia",
+    "js_copy_manual": "Pulsa Ctrl+C para copiar el enlace seleccionado.",
+    "js_link_copied": "Enlace copiado.",
+    "js_launcher_missing": "¿No se abrió nada? Puede que el lanzador aún no esté instalado.",
+    "js_load_error": "No se pudieron cargar los resultados. Comprueba tu conexión e inténtalo de nuevo.",
+    "js_gallery_screenshot": "Captura de pantalla",
+    "js_enter_fullscreen": "Entrar en pantalla completa",
+    "js_exit_fullscreen": "Salir de pantalla completa",
+    "js_fullscreen": "Pantalla completa"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3536,7 +3592,15 @@
     "addon_event_comment_edited": "a editat un comentariu",
     "addon_event_comment_deleted": "a eliminat un comentariu",
     "addon_event_issue_deleted": "a șters raportarea",
-    "addon_event_updated": "a actualizat raportarea"
+    "addon_event_updated": "a actualizat raportarea",
+    "js_copy_manual": "Apasă Ctrl+C pentru a copia linkul selectat.",
+    "js_link_copied": "Link copiat.",
+    "js_launcher_missing": "Nu s-a deschis nimic? Poate lansatorul nu este instalat încă.",
+    "js_load_error": "Rezultatele nu au putut fi încărcate. Verifică conexiunea și încearcă din nou.",
+    "js_gallery_screenshot": "Captură de ecran",
+    "js_enter_fullscreen": "Intră în ecran complet",
+    "js_exit_fullscreen": "Ieși din ecran complet",
+    "js_fullscreen": "Ecran complet"
   },
   "tr": {
     "tiles": "Tiles",
@@ -3978,7 +4042,15 @@
     "addon_event_comment_edited": "yorumu düzenledi",
     "addon_event_comment_deleted": "yorumu kaldırdı",
     "addon_event_issue_deleted": "bildirimi sildi",
-    "addon_event_updated": "bildirimi güncelledi"
+    "addon_event_updated": "bildirimi güncelledi",
+    "js_copy_manual": "Seçili bağlantıyı kopyalamak için Ctrl+C tuşlarına basın.",
+    "js_link_copied": "Bağlantı kopyalandı.",
+    "js_launcher_missing": "Hiçbir şey açılmadı mı? Başlatıcı henüz kurulu olmayabilir.",
+    "js_load_error": "Sonuçlar yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.",
+    "js_gallery_screenshot": "Ekran görüntüsü",
+    "js_enter_fullscreen": "Tam ekrana geç",
+    "js_exit_fullscreen": "Tam ekrandan çık",
+    "js_fullscreen": "Tam ekran"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4420,7 +4492,15 @@
     "addon_event_comment_edited": "изменил комментарий",
     "addon_event_comment_deleted": "удалил комментарий",
     "addon_event_issue_deleted": "удалил обращение",
-    "addon_event_updated": "обновил обращение"
+    "addon_event_updated": "обновил обращение",
+    "js_copy_manual": "Нажмите Ctrl+C, чтобы скопировать выбранную ссылку.",
+    "js_link_copied": "Ссылка скопирована.",
+    "js_launcher_missing": "Ничего не открылось? Возможно, лаунчер ещё не установлен.",
+    "js_load_error": "Не удалось загрузить результаты. Проверьте соединение и попробуйте снова.",
+    "js_gallery_screenshot": "Снимок экрана",
+    "js_enter_fullscreen": "Включить полноэкранный режим",
+    "js_exit_fullscreen": "Выйти из полноэкранного режима",
+    "js_fullscreen": "Полный экран"
   },
   "uk": {
     "tiles": "Tiles",
@@ -4862,7 +4942,15 @@
     "addon_event_comment_edited": "змінив коментар",
     "addon_event_comment_deleted": "видалив коментар",
     "addon_event_issue_deleted": "видалив звернення",
-    "addon_event_updated": "оновив звернення"
+    "addon_event_updated": "оновив звернення",
+    "js_copy_manual": "Натисніть Ctrl+C, щоб скопіювати вибране посилання.",
+    "js_link_copied": "Посилання скопійовано.",
+    "js_launcher_missing": "Нічого не відкрилося? Можливо, лаунчер ще не встановлено.",
+    "js_load_error": "Не вдалося завантажити результати. Перевірте з'єднання та спробуйте знову.",
+    "js_gallery_screenshot": "Знімок екрана",
+    "js_enter_fullscreen": "Увімкнути повноекранний режим",
+    "js_exit_fullscreen": "Вийти з повноекранного режиму",
+    "js_fullscreen": "Повний екран"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -5304,7 +5392,15 @@
     "addon_event_comment_edited": "编辑了评论",
     "addon_event_comment_deleted": "删除了评论",
     "addon_event_issue_deleted": "删除了问题",
-    "addon_event_updated": "更新了问题"
+    "addon_event_updated": "更新了问题",
+    "js_copy_manual": "按 Ctrl+C 复制所选链接。",
+    "js_link_copied": "链接已复制。",
+    "js_launcher_missing": "没有打开任何程序？启动器可能尚未安装。",
+    "js_load_error": "无法加载结果。请检查网络连接后重试。",
+    "js_gallery_screenshot": "截图",
+    "js_enter_fullscreen": "进入全屏",
+    "js_exit_fullscreen": "退出全屏",
+    "js_fullscreen": "全屏"
   },
   "ja": {
     "tiles": "Tiles",
@@ -5746,7 +5842,15 @@
     "addon_event_comment_edited": "コメントを編集しました",
     "addon_event_comment_deleted": "コメントを削除しました",
     "addon_event_issue_deleted": "問題を削除しました",
-    "addon_event_updated": "問題を更新しました"
+    "addon_event_updated": "問題を更新しました",
+    "js_copy_manual": "選択したリンクをコピーするには Ctrl+C を押してください。",
+    "js_link_copied": "リンクをコピーしました。",
+    "js_launcher_missing": "何も開きませんか？ランチャーがまだインストールされていない可能性があります。",
+    "js_load_error": "結果を読み込めませんでした。接続を確認して再試行してください。",
+    "js_gallery_screenshot": "スクリーンショット",
+    "js_enter_fullscreen": "全画面表示にする",
+    "js_exit_fullscreen": "全画面表示を終了",
+    "js_fullscreen": "全画面表示"
   },
   "ko": {
     "tiles": "Tiles",
@@ -6188,7 +6292,15 @@
     "addon_event_comment_edited": "댓글을 수정함",
     "addon_event_comment_deleted": "댓글을 삭제함",
     "addon_event_issue_deleted": "이슈를 삭제함",
-    "addon_event_updated": "이슈를 업데이트함"
+    "addon_event_updated": "이슈를 업데이트함",
+    "js_copy_manual": "선택한 링크를 복사하려면 Ctrl+C를 누르세요.",
+    "js_link_copied": "링크를 복사했습니다.",
+    "js_launcher_missing": "아무것도 열리지 않나요? 런처가 아직 설치되지 않았을 수 있습니다.",
+    "js_load_error": "결과를 불러올 수 없습니다. 연결 상태를 확인하고 다시 시도하세요.",
+    "js_gallery_screenshot": "스크린샷",
+    "js_enter_fullscreen": "전체 화면 켜기",
+    "js_exit_fullscreen": "전체 화면 종료",
+    "js_fullscreen": "전체 화면"
   }
 };
   var supported = Object.keys(translations);
