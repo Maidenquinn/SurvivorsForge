@@ -480,13 +480,13 @@ document.addEventListener("DOMContentLoaded", function () {
   async function load(url, options, push) {
     var old = root();
     if (!old) return;
-    var requestId = ++sequence;
     // A browser Back action may supersede an in-flight request.
     if (busy && !options) {
       if (controller) controller.abort();
       busy = false;
     }
     if (busy) return;
+    var requestId = ++sequence;
     busy = true;
     controller = new AbortController();
     var current = controller;
