@@ -407,8 +407,19 @@ async fn an_empty_search_offers_the_way_back() {
 async fn the_download_says_how_to_install() {
     let mut web = with_addon("scanned", "available").await;
     let page = web.get("/addons/lucky").await.body;
-    assert!(page.contains("Unzip it into the game's <code>AddOns</code> folder"), "{page}");
-    assert!(page.contains(r#"<a href="https://rezondes.github.io/SurvivorsForge/">SurvivorsForge launcher</a>"#));
+    assert!(page.contains("unzip the download into the game's <code>AddOns</code> folder"), "{page}");
+    assert!(page.contains(r#"<a href="https://rezondes.github.io/SurvivorsForge/">"#), "where to get the launcher");
+}
+
+#[tokio::test]
+async fn the_launcher_comes_first() {
+    // The main button opens the addon in the installed launcher; GitHub is the second way.
+    let mut web = with_addon("scanned", "available").await;
+    let page = web.get("/addons/lucky").await.body;
+    let launcher = page.find(r#"<a class="button large" href="survivorsforge://addon/lucky" data-launcher>"#).expect("launcher button");
+    let github = page.find(r#"<a class="button secondary" href="#).expect("GitHub download as the second button");
+    assert!(launcher < github, "{page}");
+    assert!(page.contains(r#"data-launcher-missing"#), "a way to get the launcher when nothing opens");
 }
 
 #[tokio::test]

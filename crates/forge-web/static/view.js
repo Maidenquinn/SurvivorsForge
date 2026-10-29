@@ -57,6 +57,26 @@
     }, manual);
   });
 
+  // "Install with the launcher" opens survivorsforge://. A browser cannot tell whether that worked,
+  // but an opened app takes the focus; when it stays here, point out where to get the launcher.
+  document.addEventListener("click", function (event) {
+    var link = event.target.closest("[data-launcher]");
+    var note = document.querySelector("[data-launcher-missing]");
+    if (!link || !note) return;
+    var left = false;
+    function away() {
+      left = true;
+    }
+    window.addEventListener("blur", away, { once: true });
+    setTimeout(function () {
+      window.removeEventListener("blur", away);
+      if (left || document.hidden) return;
+      note.setAttribute("role", "status");
+      note.className = "notice warn";
+      note.firstChild.textContent = "Nothing opened? The launcher is probably not installed yet. ";
+    }, 2000);
+  });
+
   // htmx keeps the old results when a reload fails; say so above them.
   function failed(event) {
     var target = event.detail && event.detail.target;

@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 use survivorsforge::config::{self, Config};
 use survivorsforge::controller::{self, Badge, Row, RowState, UNMANAGED_PREFIX};
+use survivorsforge::deep_link;
 use survivorsforge::github::{normalize_repo, ApiGitHub, Client, GitHub};
 use survivorsforge::install::{self, Request};
 use survivorsforge::registry::{self, Origin, Registry, SourceSpec};
@@ -1090,6 +1091,17 @@ fn select_backend() -> Result<(), slint::PlatformError> {
 }
 
 fn main() -> Result<(), slint::PlatformError> {
+    // A link from the website: a running launcher opens the addon, this one ends.
+    let link = std::env::args().nth(1).and_then(|a| deep_link::addon_id(&a));
+    if let Some(id) = &link
+        && deep_link::send_to_running(id)
+    {
+        return Ok(());
+    }
+    // Debug builds leave the links to the installed launcher.
+    if !cfg!(debug_assertions) {
+        deep_link::register();
+    }
     #[cfg(target_os = "linux")]
     select_backend()?;
     let data_dir = config::data_dir();
@@ -1267,5 +1279,29 @@ fn main() -> Result<(), slint::PlatformError> {
     if !needs_setup {
         check_updates(&ui, &shared);
     }
+    let (weak, linked) = (ui.as_weak(), shared.clone());
+    deep_link::listen(move |id| {
+        let shared = linked.clone();
+        let _ = weak.upgrade_in_event_loop(move |ui| open_link(&ui, &shared, id));
+    });
+    if let Some(id) = link {
+        open_link(&ui, &shared, id);
+    }
     ui.run()
+}
+
+/// Shows the addon of a website link in Browse, in front of the other windows.
+fn open_link(ui: &AppWindow, shared: &Shared, id: String) {
+    if ui.get_needs_setup() {
+        return;
+    }
+    if lock(shared).registry.get(&id).is_none() {
+        lock(shared).set_status(format!("The addon \"{id}\" from the link is not in the list of verified addons."), true);
+        refresh(ui, shared);
+        return;
+    }
+    ui.set_page(1);
+    on_row_details(ui, shared, id);
+    ui.window().set_minimized(false);
+    ui.window().with_winit_window(|w| w.focus_window());
 }

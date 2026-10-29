@@ -1,5 +1,6 @@
 pub mod config;
 pub mod controller;
+pub mod deep_link;
 pub mod github;
 pub mod install;
 pub mod registry;
