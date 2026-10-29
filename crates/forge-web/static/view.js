@@ -523,7 +523,8 @@ document.addEventListener("DOMContentLoaded", function () {
       old.replaceWith(next);
       // POST redirects to the canonical feed. Do not add mutation URLs to history.
       if (push && !options) history.pushState({comments: true}, "", response.url);
-      else if (options && !inline && new URL(response.url).origin === location.origin) history.replaceState({comments: true}, "", response.url);
+      else if (options && inline) history.replaceState({comments: true}, "", location.pathname + "?tab=comments");
+      else if (options && new URL(response.url).origin === location.origin) history.replaceState({comments: true}, "", response.url);
       var heading = next.querySelector("h1, h2");
       if (heading) {
         heading.setAttribute("tabindex", "-1");
