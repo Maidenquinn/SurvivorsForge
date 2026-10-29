@@ -454,7 +454,8 @@
     "security_critical": "critical",
     "security_warning": "warning",
     "admin_remove_verification": "Remove verification",
-    "my_findings_count": "findings"
+    "my_findings_count": "findings",
+    "issue_information": "Issue information"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -908,7 +909,8 @@
     "security_critical": "critique",
     "security_warning": "avertissement",
     "admin_remove_verification": "Retirer la vérification",
-    "my_findings_count": "résultats d'analyse"
+    "my_findings_count": "résultats d'analyse",
+    "issue_information": "Informations sur le signalement"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1362,7 +1364,8 @@
     "security_critical": "krytyczne",
     "security_warning": "ostrzeżenie",
     "admin_remove_verification": "Cofnij weryfikację",
-    "my_findings_count": "wyniki kontroli"
+    "my_findings_count": "wyniki kontroli",
+    "issue_information": "Informacje o zgłoszeniu"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1816,7 +1819,8 @@
     "security_critical": "kritické",
     "security_warning": "varování",
     "admin_remove_verification": "Odebrat ověření",
-    "my_findings_count": "nálezy"
+    "my_findings_count": "nálezy",
+    "issue_information": "Informace o hlášení"
   },
   "de": {
     "tiles": "Tiles",
@@ -2270,7 +2274,8 @@
     "security_critical": "kritisch",
     "security_warning": "Warnung",
     "admin_remove_verification": "Verifizierung entfernen",
-    "my_findings_count": "Prüfergebnisse"
+    "my_findings_count": "Prüfergebnisse",
+    "issue_information": "Informationen zur Meldung"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2724,7 +2729,8 @@
     "security_critical": "crítico",
     "security_warning": "aviso",
     "admin_remove_verification": "Remover verificação",
-    "my_findings_count": "resultados da análise"
+    "my_findings_count": "resultados da análise",
+    "issue_information": "Informações do relato"
   },
   "es": {
     "tiles": "Tiles",
@@ -3178,7 +3184,8 @@
     "security_critical": "crítico",
     "security_warning": "advertencia",
     "admin_remove_verification": "Quitar verificación",
-    "my_findings_count": "resultados del análisis"
+    "my_findings_count": "resultados del análisis",
+    "issue_information": "Información de la incidencia"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3632,7 +3639,8 @@
     "security_critical": "critic",
     "security_warning": "avertisment",
     "admin_remove_verification": "Elimină verificarea",
-    "my_findings_count": "rezultatele verificării"
+    "my_findings_count": "rezultatele verificării",
+    "issue_information": "Informații despre raportare"
   },
   "tr": {
     "tiles": "Tiles",
@@ -4086,7 +4094,8 @@
     "security_critical": "kritik",
     "security_warning": "uyarı",
     "admin_remove_verification": "Doğrulamayı kaldır",
-    "my_findings_count": "tarama bulguları"
+    "my_findings_count": "tarama bulguları",
+    "issue_information": "Bildirim bilgileri"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4540,7 +4549,8 @@
     "security_critical": "критично",
     "security_warning": "предупреждение",
     "admin_remove_verification": "Снять проверку",
-    "my_findings_count": "результаты проверки"
+    "my_findings_count": "результаты проверки",
+    "issue_information": "Информация об обращении"
   },
   "uk": {
     "tiles": "Tiles",
@@ -4994,7 +5004,8 @@
     "security_critical": "критично",
     "security_warning": "попередження",
     "admin_remove_verification": "Зняти перевірку",
-    "my_findings_count": "результати перевірки"
+    "my_findings_count": "результати перевірки",
+    "issue_information": "Інформація про звернення"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -5448,7 +5459,8 @@
     "security_critical": "严重",
     "security_warning": "警告",
     "admin_remove_verification": "撤销验证",
-    "my_findings_count": "检查结果"
+    "my_findings_count": "检查结果",
+    "issue_information": "问题信息"
   },
   "ja": {
     "tiles": "Tiles",
@@ -5902,7 +5914,8 @@
     "security_critical": "重大",
     "security_warning": "警告",
     "admin_remove_verification": "検証を取り消す",
-    "my_findings_count": "検査結果"
+    "my_findings_count": "検査結果",
+    "issue_information": "問題の情報"
   },
   "ko": {
     "tiles": "Tiles",
@@ -6356,7 +6369,8 @@
     "security_critical": "치명적",
     "security_warning": "경고",
     "admin_remove_verification": "검증 제거",
-    "my_findings_count": "검사 결과"
+    "my_findings_count": "검사 결과",
+    "issue_information": "이슈 정보"
   }
 };
   var supported = Object.keys(translations);
