@@ -125,6 +125,7 @@
       <label for="inline-status">Status</label>
       <select id="inline-status" name="status">
         <option value="open" {% if issue.status == "open" %}selected{% endif %}>Open</option>
+        <option value="acknowledged" {% if issue.status == "acknowledged" %}selected{% endif %}>Acknowledged / Taken into account</option>
         <option value="in_progress" {% if issue.status == "in_progress" %}selected{% endif %}>In progress</option>
         <option value="resolved" {% if issue.status == "resolved" %}selected{% endif %}>Resolved</option>
         <option value="closed" {% if issue.status == "closed" %}selected{% endif %}>Closed</option>
