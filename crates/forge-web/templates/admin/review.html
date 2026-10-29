@@ -8,8 +8,8 @@
 <div class="list">
 {% for a in addons %}
 <section class="panel">
-  <h2><a href="/admin/review/{{ a.slug }}">{{ a.name }}</a> <span class="muted">{{ a.versions }} version{% if a.versions != 1 %}s{% endif %}</span>
-    {% for t in a.trusts %}<span class="badge {% if t != "scanned" %}bad{% endif %}">{{ t }}</span> {% endfor %}</h2>
+  <h2><a href="/admin/review/{{ a.slug }}">{{ a.name }}</a> <span class="muted">{{ a.versions }} <span data-i18n="admin_version_count">versions</span></span>
+    {% for t in a.trusts %}<span class="badge {% if t != "scanned" %}bad{% endif %}" data-i18n-enum="trust" data-i18n-value="{{ t }}">{{ t }}</span> {% endfor %}</h2>
   {% let bulk_slug = a.slug.as_str() %}
   {% include "admin/review_bulk.html" %}
 </section>
