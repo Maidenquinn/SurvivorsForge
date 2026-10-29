@@ -10,6 +10,7 @@ pub const RESERVED_FOLDERS: &[&str] = &[];
 pub const MAX_FOLDER_LEN: usize = 64;
 pub const MAX_NAME_LEN: usize = 64;
 pub const MAX_SUMMARY_LEN: usize = 200;
+pub const MAX_DESCRIPTION_LEN: usize = 50_000;
 
 fn invalid(code: &'static str, message: impl Into<String>) -> ApiError {
     ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, code, message)
@@ -38,6 +39,14 @@ pub fn validate_summary(summary: &str) -> Result<(), ApiError> {
         Ok(())
     } else {
         Err(invalid("invalid_summary", format!("The summary must be at most {MAX_SUMMARY_LEN} characters on one line")))
+    }
+}
+
+pub fn validate_description(description: &str) -> Result<(), ApiError> {
+    if description.chars().count() <= MAX_DESCRIPTION_LEN {
+        Ok(())
+    } else {
+        Err(invalid("description_too_long", format!("The description must be at most {MAX_DESCRIPTION_LEN} characters")))
     }
 }
 

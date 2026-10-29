@@ -137,6 +137,23 @@ async fn soft_delete_frees_slug_and_folders(pool: PgPool) {
 }
 
 #[sqlx::test]
+async fn description_is_served_as_sanitized_html_and_limited(pool: PgPool) {
+    let app = TestApp::new(pool);
+    let token = app.publish(1, "alice", "lucky").await;
+    let md = "# Lucky\n\n<script>alert(1)</script>![x](https://web.test/img/a.webp)";
+    let view = app.patch("/v1/addons/lucky", Some(&token), json!({ "description_md": md })).await.json();
+    assert_eq!(view["description_md"], md);
+    let html = view["description_html"].as_str().unwrap();
+    assert!(html.contains("<h1>Lucky</h1>"), "{html}");
+    assert!(html.contains("https://web.test/img/a.webp"), "{html}");
+    assert!(!html.contains("<script"), "{html}");
+
+    let reply = app.patch("/v1/addons/lucky", Some(&token), json!({ "description_md": "x".repeat(50_001) })).await;
+    assert_eq!((reply.status, reply.error().as_str()), (StatusCode::UNPROCESSABLE_ENTITY, "description_too_long"));
+    assert_eq!(app.patch("/v1/addons/lucky", Some(&token), json!({ "description_md": "x".repeat(50_000) })).await.status, StatusCode::OK);
+}
+
+#[sqlx::test]
 async fn banned_user_and_blocked_addon_are_read_only(pool: PgPool) {
     let app = TestApp::new(pool);
     let token = creator(&app, 1, "alice", 10, "alice/lucky").await;

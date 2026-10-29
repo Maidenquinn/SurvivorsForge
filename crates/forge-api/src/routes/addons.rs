@@ -1,6 +1,6 @@
 //! `/v1/addons`: create, read, change and delete addons.
 
-use crate::addons::{Permissions, permissions, validate_folders, validate_name, validate_slug, validate_source, validate_summary};
+use crate::addons::{Permissions, permissions, validate_description, validate_folders, validate_name, validate_slug, validate_source, validate_summary};
 use crate::app::AppState;
 use crate::auth::CurrentUser;
 use crate::error::{ApiError, ApiResult};
@@ -128,9 +128,9 @@ async fn write_folders(tx: &mut Transaction<'_, Postgres>, addon_id: i64, folder
     Ok(())
 }
 
-/// The public JSON of an addon.
-pub async fn addon_view(pool: &PgPool, id: i64) -> ApiResult<Value> {
-    let view: Value = sqlx::query_scalar(
+/// The public JSON of an addon. `description_html` is the only form clients may render as HTML.
+pub async fn addon_view(state: &AppState, id: i64) -> ApiResult<Value> {
+    let mut view: Value = sqlx::query_scalar(
         "SELECT json_build_object(
              'slug', a.slug, 'name', a.name, 'summary', a.summary, 'description_md', a.description_md,
              'category', a.category, 'repo', a.repo_full_name, 'source_type', a.source_type,
@@ -144,8 +144,10 @@ pub async fn addon_view(pool: &PgPool, id: i64) -> ApiResult<Value> {
          FROM addons a JOIN users u ON u.id = a.owner_id WHERE a.id = $1",
     )
     .bind(id)
-    .fetch_one(pool)
+    .fetch_one(&state.pool)
     .await?;
+    let html = forge_core::markdown::render(view["description_md"].as_str().unwrap_or_default(), &state.config.public_image_url);
+    view["description_html"] = Value::String(html);
     Ok(view)
 }
 
@@ -204,12 +206,12 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser, Json(body)
     .map_err(map_unique)?;
     write_folders(&mut tx, id, &body.folders).await?;
     tx.commit().await?;
-    Ok((StatusCode::CREATED, Json(addon_view(&state.pool, id).await?)))
+    Ok((StatusCode::CREATED, Json(addon_view(&state, id).await?)))
 }
 
 pub async fn show(State(state): State<AppState>, Path(slug): Path<String>) -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
-    Ok(Json(addon_view(&state.pool, addon.id).await?))
+    Ok(Json(addon_view(&state, addon.id).await?))
 }
 
 #[derive(Deserialize, Default)]
@@ -276,6 +278,9 @@ pub async fn update(
     if let Some(summary) = &body.summary {
         validate_summary(summary)?;
     }
+    if let Some(description) = &body.description_md {
+        validate_description(description)?;
+    }
     if let Some(category) = &body.category {
         check_category(&state.pool, category).await?;
     }
@@ -318,7 +323,7 @@ pub async fn update(
         write_folders(&mut tx, addon.id, folders).await?;
     }
     tx.commit().await?;
-    Ok(Json(addon_view(&state.pool, addon.id).await?))
+    Ok(Json(addon_view(&state, addon.id).await?))
 }
 
 /// Soft delete: the addon disappears, its slug, repo and folders are free again.
