@@ -85,7 +85,8 @@ pub async fn list(State(state): State<AppState>, headers: HeaderMap, RawQuery(ra
                          ELSE coalesce(ts_rank_cd(a.search, to_tsquery('simple', $2)), 0) * 10 + word_similarity($1, a.name) END AS rank
              FROM addons a
              LEFT JOIN version_trust t ON t.version_id = relevant_version(a.id)
-             WHERE a.deleted_at IS NULL AND a.blocked_at IS NULL
+             -- Blocked addons and addons whose version for players is blocked stay off the list.
+             WHERE a.deleted_at IS NULL AND a.blocked_at IS NULL AND t.trust IS DISTINCT FROM 'blocked'
                AND ($1::text IS NULL OR ($2::text IS NOT NULL AND a.search @@ to_tsquery('simple', $2)) OR word_similarity($1, a.name) >= 0.3)
                AND ($3::text IS NULL OR a.category IN (SELECT name FROM categories WHERE name = $3::citext OR parent = $3::citext))
                AND (cardinality($4::text[]) = 0 OR t.trust = ANY($4))
