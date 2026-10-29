@@ -1461,6 +1461,10 @@
       var key = el.getAttribute("data-i18n-title");
       el.title = translations[locale][key] || translations.en[key] || key;
     });
+    document.querySelectorAll("[data-l10n-en]").forEach(function (el) {
+      var value = locale === "fr" ? el.getAttribute("data-l10n-fr") : el.getAttribute("data-l10n-en");
+      if (value !== null) el.textContent = value;
+    });
     var select = document.getElementById("forge-locale");
     if (select) select.value = locale;
   }
