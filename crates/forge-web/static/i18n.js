@@ -220,7 +220,7 @@
     "admin_unblock": "Unblock",
     "admin_reason_shown": "Reason (shown on the addon page)",
     "admin_block_addon": "Block the whole addon",
-    "admin_skip_explain": "Skip takes a version off this list without verifying it: it keeps its check result.",
+    "admin_skip_explain": "Skip removes a version from this list without verifying it; its scan result stays unchanged.",
     "admin_addon_actions": "Addon actions",
     "admin_version_page": "Version page",
     "admin_compare_previous": "Changes since the previous version on GitHub",
@@ -456,7 +456,13 @@
     "admin_remove_verification": "Remove verification",
     "my_findings_count": "findings",
     "issue_information": "Issue information",
-    "catalog_in": "in"
+    "catalog_in": "in",
+    "admin_review_title": "Review",
+    "admin_flagged_note": "(required: explain why the findings are acceptable)",
+    "admin_block_note": "Blocking requires a reason.",
+    "admin_under": "Under",
+    "audit_verify": "Verified",
+    "audit_version": "Version"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -676,7 +682,7 @@
     "admin_unblock": "Débloquer",
     "admin_reason_shown": "Motif (visible sur la page de l'AddOn)",
     "admin_block_addon": "Bloquer tout l'AddOn",
-    "admin_skip_explain": "Ignorer retire une version de cette liste sans la vérifier : son résultat d'analyse reste inchangé.",
+    "admin_skip_explain": "Ignorer retire une version de cette liste sans la vérifier : le résultat de l'analyse est conservé.",
     "admin_addon_actions": "Actions sur l'AddOn",
     "admin_version_page": "Page de la version",
     "admin_compare_previous": "Modifications depuis la version précédente sur GitHub",
@@ -912,7 +918,13 @@
     "admin_remove_verification": "Retirer la vérification",
     "my_findings_count": "résultats d'analyse",
     "issue_information": "Informations sur le signalement",
-    "catalog_in": "dans"
+    "catalog_in": "dans",
+    "admin_review_title": "Examiner",
+    "admin_flagged_note": "(obligatoire : expliquer pourquoi les résultats sont acceptables)",
+    "admin_block_note": "Le blocage nécessite un motif.",
+    "admin_under": "Sous",
+    "audit_verify": "Vérifié",
+    "audit_version": "Version"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1132,7 +1144,7 @@
     "admin_unblock": "Odblokuj",
     "admin_reason_shown": "Powód (widoczny na stronie AddOn)",
     "admin_block_addon": "Zablokuj cały AddOn",
-    "admin_skip_explain": "Pominięcie usuwa wersję z tej listy bez weryfikacji; wynik analizy pozostaje bez zmian.",
+    "admin_skip_explain": "Pominięcie usuwa wersję z tej listy bez weryfikacji; wynik skanowania pozostaje bez zmian.",
     "admin_addon_actions": "Działania dotyczące AddOn",
     "admin_version_page": "Strona wersji",
     "admin_compare_previous": "Zmiany od poprzedniej wersji na GitHub",
@@ -1368,7 +1380,13 @@
     "admin_remove_verification": "Cofnij weryfikację",
     "my_findings_count": "wyniki kontroli",
     "issue_information": "Informacje o zgłoszeniu",
-    "catalog_in": "w"
+    "catalog_in": "w",
+    "admin_review_title": "Sprawdź",
+    "admin_flagged_note": "(wymagane: wyjaśnij, dlaczego wyniki są akceptowalne)",
+    "admin_block_note": "Blokowanie wymaga podania powodu.",
+    "admin_under": "Pod",
+    "audit_verify": "Zweryfikowano",
+    "audit_version": "Wersja"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1824,7 +1842,13 @@
     "admin_remove_verification": "Odebrat ověření",
     "my_findings_count": "nálezy",
     "issue_information": "Informace o hlášení",
-    "catalog_in": "v"
+    "catalog_in": "v",
+    "admin_review_title": "Zkontrolovat",
+    "admin_flagged_note": "(povinné: vysvětlete, proč jsou nálezy přijatelné)",
+    "admin_block_note": "Blokování vyžaduje důvod.",
+    "admin_under": "Pod",
+    "audit_verify": "Ověřeno",
+    "audit_version": "Verze"
   },
   "de": {
     "tiles": "Tiles",
@@ -2044,7 +2068,7 @@
     "admin_unblock": "Entsperren",
     "admin_reason_shown": "Grund (auf der AddOn-Seite sichtbar)",
     "admin_block_addon": "Gesamtes AddOn sperren",
-    "admin_skip_explain": "Überspringen entfernt eine Version aus dieser Liste, ohne sie zu verifizieren; das Prüfergebnis bleibt erhalten.",
+    "admin_skip_explain": "Überspringen entfernt eine Version ohne Verifizierung aus der Liste; das Prüfergebnis bleibt erhalten.",
     "admin_addon_actions": "AddOn-Aktionen",
     "admin_version_page": "Versionsseite",
     "admin_compare_previous": "Änderungen seit der vorherigen Version auf GitHub",
@@ -2280,7 +2304,13 @@
     "admin_remove_verification": "Verifizierung entfernen",
     "my_findings_count": "Prüfergebnisse",
     "issue_information": "Informationen zur Meldung",
-    "catalog_in": "in"
+    "catalog_in": "in",
+    "admin_review_title": "Prüfen",
+    "admin_flagged_note": "(erforderlich: erklären, warum die Funde unbedenklich sind)",
+    "admin_block_note": "Für eine Sperre ist ein Grund erforderlich.",
+    "admin_under": "Unter",
+    "audit_verify": "Verifiziert",
+    "audit_version": "Version"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2500,7 +2530,7 @@
     "admin_unblock": "Desbloquear",
     "admin_reason_shown": "Motivo (mostrado na página do AddOn)",
     "admin_block_addon": "Bloquear todo o AddOn",
-    "admin_skip_explain": "Ignorar remove uma versão desta lista sem verificá-la; o resultado da análise permanece.",
+    "admin_skip_explain": "Ignorar remove a versão desta lista sem verificá-la; o resultado da análise permanece.",
     "admin_addon_actions": "Ações do AddOn",
     "admin_version_page": "Página da versão",
     "admin_compare_previous": "Alterações desde a versão anterior no GitHub",
@@ -2736,7 +2766,13 @@
     "admin_remove_verification": "Remover verificação",
     "my_findings_count": "resultados da análise",
     "issue_information": "Informações do relato",
-    "catalog_in": "em"
+    "catalog_in": "em",
+    "admin_review_title": "Analisar",
+    "admin_flagged_note": "(obrigatório: explique por que os resultados são aceitáveis)",
+    "admin_block_note": "O bloqueio exige um motivo.",
+    "admin_under": "Sob",
+    "audit_verify": "Verificado",
+    "audit_version": "Versão"
   },
   "es": {
     "tiles": "Tiles",
@@ -2956,7 +2992,7 @@
     "admin_unblock": "Desbloquear",
     "admin_reason_shown": "Motivo (visible en la página del AddOn)",
     "admin_block_addon": "Bloquear todo el AddOn",
-    "admin_skip_explain": "Omitir quita una versión de esta lista sin verificarla; se conserva el resultado del análisis.",
+    "admin_skip_explain": "Omitir quita la versión de esta lista sin verificarla; se conserva el resultado del análisis.",
     "admin_addon_actions": "Acciones del AddOn",
     "admin_version_page": "Página de la versión",
     "admin_compare_previous": "Cambios desde la versión anterior en GitHub",
@@ -3192,7 +3228,13 @@
     "admin_remove_verification": "Quitar verificación",
     "my_findings_count": "resultados del análisis",
     "issue_information": "Información de la incidencia",
-    "catalog_in": "en"
+    "catalog_in": "en",
+    "admin_review_title": "Revisar",
+    "admin_flagged_note": "(obligatorio: explica por qué los resultados son aceptables)",
+    "admin_block_note": "El bloqueo requiere un motivo.",
+    "admin_under": "Bajo",
+    "audit_verify": "Verificado",
+    "audit_version": "Versión"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3366,7 +3408,7 @@
     "admin_manage_addon": "Gestionează AddOn: versiuni, verificare, proprietar și blocare",
     "action_find": "Caută",
     "admin_users_bans": "Utilizatori și interdicții",
-    "admin_game_versions": "Versiuni ale jocului",
+    "admin_game_versions": "Versiunile jocului",
     "admin_categories": "Categorii",
     "admin_new_entry": "Intrare nouă",
     "admin_order_lower": "Ordine (mai mic primul)",
@@ -3412,7 +3454,7 @@
     "admin_unblock": "Deblochează",
     "admin_reason_shown": "Motiv (afișat pe pagina AddOn)",
     "admin_block_addon": "Blochează întregul AddOn",
-    "admin_skip_explain": "Omiterea elimină o versiune din listă fără verificare; rezultatul analizei rămâne.",
+    "admin_skip_explain": "Omiterea scoate versiunea din listă fără verificare; rezultatul scanării se păstrează.",
     "admin_addon_actions": "Acțiuni AddOn",
     "admin_version_page": "Pagina versiunii",
     "admin_compare_previous": "Modificări față de versiunea anterioară pe GitHub",
@@ -3648,7 +3690,13 @@
     "admin_remove_verification": "Elimină verificarea",
     "my_findings_count": "rezultatele verificării",
     "issue_information": "Informații despre raportare",
-    "catalog_in": "în"
+    "catalog_in": "în",
+    "admin_review_title": "Verifică",
+    "admin_flagged_note": "(obligatoriu: explică de ce rezultatele sunt acceptabile)",
+    "admin_block_note": "Blocarea necesită un motiv.",
+    "admin_under": "Sub",
+    "audit_verify": "Verificat",
+    "audit_version": "Versiune"
   },
   "tr": {
     "tiles": "Tiles",
@@ -3868,7 +3916,7 @@
     "admin_unblock": "Engeli kaldır",
     "admin_reason_shown": "Neden (AddOn sayfasında gösterilir)",
     "admin_block_addon": "AddOn'un tamamını engelle",
-    "admin_skip_explain": "Atla seçeneği, sürümü doğrulamadan listeden kaldırır; tarama sonucu değişmez.",
+    "admin_skip_explain": "Atla, sürümü doğrulamadan listeden kaldırır; tarama sonucu korunur.",
     "admin_addon_actions": "AddOn işlemleri",
     "admin_version_page": "Sürüm sayfası",
     "admin_compare_previous": "GitHub'daki önceki sürümden bu yana değişiklikler",
@@ -4104,7 +4152,13 @@
     "admin_remove_verification": "Doğrulamayı kaldır",
     "my_findings_count": "tarama bulguları",
     "issue_information": "Bildirim bilgileri",
-    "catalog_in": "içinde"
+    "catalog_in": "içinde",
+    "admin_review_title": "İncele",
+    "admin_flagged_note": "(gerekli: bulguların neden kabul edilebilir olduğunu açıklayın)",
+    "admin_block_note": "Engelleme için gerekçe gerekir.",
+    "admin_under": "Altında",
+    "audit_verify": "Doğrulandı",
+    "audit_version": "Sürüm"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4560,7 +4614,13 @@
     "admin_remove_verification": "Снять проверку",
     "my_findings_count": "результаты проверки",
     "issue_information": "Информация об обращении",
-    "catalog_in": "в"
+    "catalog_in": "в",
+    "admin_review_title": "Проверить",
+    "admin_flagged_note": "(обязательно: объясните, почему результаты допустимы)",
+    "admin_block_note": "Для блокировки нужна причина.",
+    "admin_under": "В разделе",
+    "audit_verify": "Проверено",
+    "audit_version": "Версия"
   },
   "uk": {
     "tiles": "Tiles",
@@ -5016,7 +5076,13 @@
     "admin_remove_verification": "Зняти перевірку",
     "my_findings_count": "результати перевірки",
     "issue_information": "Інформація про звернення",
-    "catalog_in": "у"
+    "catalog_in": "у",
+    "admin_review_title": "Перевірити",
+    "admin_flagged_note": "(обов'язково: поясніть, чому результати прийнятні)",
+    "admin_block_note": "Для блокування потрібна причина.",
+    "admin_under": "У розділі",
+    "audit_verify": "Перевірено",
+    "audit_version": "Версія"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -5236,7 +5302,7 @@
     "admin_unblock": "解除屏蔽",
     "admin_reason_shown": "原因（显示在 AddOn 页面）",
     "admin_block_addon": "屏蔽整个 AddOn",
-    "admin_skip_explain": "跳过会将版本从列表移除，但不会进行验证；检查结果仍会保留。",
+    "admin_skip_explain": "跳过会将版本从列表中移除，但不会将其标记为已验证；扫描结果保持不变。",
     "admin_addon_actions": "AddOn 操作",
     "admin_version_page": "版本页面",
     "admin_compare_previous": "与 GitHub 上一个版本相比的更改",
@@ -5472,7 +5538,13 @@
     "admin_remove_verification": "撤销验证",
     "my_findings_count": "检查结果",
     "issue_information": "问题信息",
-    "catalog_in": "分类："
+    "catalog_in": "分类：",
+    "admin_review_title": "审核",
+    "admin_flagged_note": "（必填：说明为什么检测结果可以接受）",
+    "admin_block_note": "屏蔽时必须填写原因。",
+    "admin_under": "属于",
+    "audit_verify": "已验证",
+    "audit_version": "版本"
   },
   "ja": {
     "tiles": "Tiles",
@@ -5646,7 +5718,7 @@
     "admin_manage_addon": "AddOn を管理：バージョン、検証、所有者、ブロック",
     "action_find": "検索",
     "admin_users_bans": "ユーザーと停止",
-    "admin_game_versions": "ゲームのバージョン",
+    "admin_game_versions": "ゲームバージョン",
     "admin_categories": "カテゴリ",
     "admin_new_entry": "新規項目",
     "admin_order_lower": "順序（小さい値を先に）",
@@ -5692,7 +5764,7 @@
     "admin_unblock": "ブロック解除",
     "admin_reason_shown": "理由（AddOn ページに表示）",
     "admin_block_addon": "AddOn 全体をブロック",
-    "admin_skip_explain": "スキップすると検証せずに一覧から外します。検査結果はそのまま残ります。",
+    "admin_skip_explain": "スキップすると検証せずに一覧から除外します。スキャン結果は保持されます。",
     "admin_addon_actions": "AddOn の操作",
     "admin_version_page": "バージョンページ",
     "admin_compare_previous": "GitHub の前バージョンからの変更点",
@@ -5928,7 +6000,13 @@
     "admin_remove_verification": "検証を取り消す",
     "my_findings_count": "検査結果",
     "issue_information": "問題の情報",
-    "catalog_in": "カテゴリー："
+    "catalog_in": "カテゴリー：",
+    "admin_review_title": "審査",
+    "admin_flagged_note": "（必須：検出結果を許容できる理由を説明）",
+    "admin_block_note": "ブロックには理由が必要です。",
+    "admin_under": "次の下位：",
+    "audit_verify": "検証済み",
+    "audit_version": "バージョン"
   },
   "ko": {
     "tiles": "Tiles",
@@ -6148,7 +6226,7 @@
     "admin_unblock": "차단 해제",
     "admin_reason_shown": "사유(AddOn 페이지에 표시됨)",
     "admin_block_addon": "AddOn 전체 차단",
-    "admin_skip_explain": "건너뛰기는 검증 없이 목록에서 버전을 제거하지만 검사 결과는 유지됩니다.",
+    "admin_skip_explain": "건너뛰면 검증하지 않고 목록에서 제거되며 검사 결과는 유지됩니다.",
     "admin_addon_actions": "AddOn 작업",
     "admin_version_page": "버전 페이지",
     "admin_compare_previous": "GitHub 이전 버전 이후 변경 사항",
@@ -6384,7 +6462,13 @@
     "admin_remove_verification": "검증 제거",
     "my_findings_count": "검사 결과",
     "issue_information": "이슈 정보",
-    "catalog_in": "분류:"
+    "catalog_in": "분류:",
+    "admin_review_title": "검토",
+    "admin_flagged_note": "(필수: 검사 결과를 허용할 수 있는 이유를 설명)",
+    "admin_block_note": "차단에는 사유가 필요합니다.",
+    "admin_under": "하위",
+    "audit_verify": "검증됨",
+    "audit_version": "버전"
   }
 };
   var supported = Object.keys(translations);
@@ -6463,6 +6547,8 @@
         "blocked":"admin_blocked", "unscanned":"not_checked",
         "source_changed":"trust_file_changed"
       },
+      severity: {critical:"security_critical", warning:"security_warning", warn:"security_warning"},
+      audit_action: {verify:"audit_verify", unverify:"admin_remove_verification", block:"admin_block", unblock:"admin_unblock", skip:"admin_skip", block_addon:"admin_block_addon"},
       notice: {
         "Unavailable":"trust_notice_unavailable",
         "Verified":"trust_notice_verified",
@@ -6479,6 +6565,18 @@
       var original = el.getAttribute("data-i18n-value");
       var key = group && group[original];
       if (key) el.textContent = translations[locale][key] || translations.en[key] || original;
+    });
+    document.querySelectorAll("[data-i18n-under]").forEach(function(el) {
+      var parent = el.getAttribute("data-i18n-under");
+      el.textContent = (translations[locale].admin_under || translations.en.admin_under) + " " + categoryName(parent);
+    });
+    document.querySelectorAll("[data-i18n-audit-target]").forEach(function(el) {
+      var raw = el.getAttribute("data-i18n-audit-target");
+      var match = /^(version|addon|user) (.+)$/.exec(raw);
+      if (match) {
+        var key = match[1] === "version" ? "audit_version" : match[1] === "addon" ? "my_addon" : "role_user";
+        el.textContent = (translations[locale][key] || translations.en[key]) + " " + match[2];
+      }
     });
     document.querySelectorAll("[data-i18n-title]").forEach(function (el) {
       var key = el.getAttribute("data-i18n-title");
