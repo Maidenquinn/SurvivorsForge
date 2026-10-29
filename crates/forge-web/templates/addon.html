@@ -7,7 +7,7 @@
 <link rel="canonical" href="{{ canonical }}">
 {% endblock %}
 {% block content %}
-<p class="back"><a href="/addons">All addons</a></p>
+<p class="back"><a href="/addons" data-i18n="all_addons">All addons</a></p>
 <header class="addon-head">
   {% if let Some(icon) = icon_url %}<img class="icon big" src="{{ icon }}" alt="" width="96" height="96">{% endif %}
   <div>
@@ -67,17 +67,17 @@
 {% if tab == "issues" %}
 <section class="addon-tab-section" data-dynamic-issues>
   <div class="issues-heading">
-    <div><h2>Community issues</h2><p class="muted">Report a bug, request a feature or follow a discussion.</p></div>
-    {% if user.is_some() %}<a class="button" href="#new-issue" data-open-new-issue>+ New issue</a>{% else %}<a class="button secondary" href="/login">Log in to report</a>{% endif %}
+    <div><h2 data-i18n="community_issues">Community issues</h2><p class="muted" data-i18n="issue_intro">Report a bug, request a feature or follow a discussion.</p></div>
+    {% if user.is_some() %}<a class="button" href="#new-issue" data-open-new-issue data-i18n="new_issue">+ New issue</a>{% else %}<a class="button secondary" href="/login" data-i18n="login_report">Log in to report</a>{% endif %}
   </div>
   <div class="issues-board">
     <div class="issues-toolbar">
       <div class="issues-tabs" role="group" aria-label="Filter issues">
-        <button type="button" class="secondary active" data-inline-filter="open" aria-pressed="true">Open</button>
-        <button type="button" class="secondary" data-inline-filter="closed" aria-pressed="false">Closed</button>
+        <button type="button" class="secondary active" data-inline-filter="open" aria-pressed="true" data-i18n="open">Open</button>
+        <button type="button" class="secondary" data-inline-filter="closed" aria-pressed="false" data-i18n="closed">Closed</button>
         <button type="button" class="secondary" data-inline-filter="all" aria-pressed="false">All ({{ issues.len() }})</button>
       </div>
-      <label class="issues-search"><span class="sr-only">Search issues</span><input type="search" id="addon-issues-search" placeholder="Search by title or author"></label>
+      <label class="issues-search"><span class="sr-only" data-i18n="search_issues">Search issues</span><input type="search" id="addon-issues-search" placeholder="Search by title or author" data-i18n-placeholder="issue_search_placeholder"></label>
     </div>
     <div id="addon-issues-list">
     {% for issue in issues %}
@@ -90,8 +90,8 @@
         <a class="issue-row-arrow" href="/addons/{{ slug }}?tab=issues&amp;issue={{ issue.id }}#issue-detail" aria-label="Read issue #{{ issue.id }}">→</a>
       </article>
     {% endfor %}
-    <p class="issues-empty" id="addon-issues-empty" hidden>No issues match your filters.</p>
-    {% if issues.is_empty() %}<div class="issues-empty">No issues yet. Start the first discussion!</div>{% endif %}
+    <p class="issues-empty" id="addon-issues-empty" hidden data-i18n="no_issue_matches">No issues match your filters.</p>
+    {% if issues.is_empty() %}<div class="issues-empty" data-i18n="no_issues">No issues yet. Start the first discussion!</div>{% endif %}
     </div>
   </div>
   {% if let Some(issue) = selected_issue %}
@@ -100,7 +100,7 @@
       <div><h2>{{ issue.title }} <span class="issue-number">#{{ issue.id }}</span></h2>
         <p class="muted">{{ issue.author }} · <span class="badge">{{ issue.kind }}</span> <span class="badge">{% if issue.status == "in_progress" %}In progress{% else if issue.status == "acknowledged" %}Acknowledged{% else if issue.status == "resolved" %}Resolved{% else if issue.status == "closed" %}Closed{% else %}Open{% endif %}</span></p>
       </div>
-      <a class="button secondary" href="/addons/{{ slug }}?tab=issues">Close details</a>
+      <a class="button secondary" href="/addons/{{ slug }}?tab=issues" data-i18n="close_details">Close details</a>
     </div>
     <article class="issue-message issue-editable" data-inline-editor>
       <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ issue.author|truncate(1) }}</span><strong>{{ issue.author }}</strong> <span class="muted">opened this issue</span>
@@ -120,7 +120,7 @@
       {% endif %}
     </article>
     {% if !issue.events.is_empty() %}
-    <div class="panel issue-history"><h3>Activity</h3>
+    <div class="panel issue-history"><h3 data-i18n="activity">Activity</h3>
       {% for event in issue.events %}
       <p class="issue-event"><span class="issue-event-dot">•</span><strong>{{ event.actor }}</strong>
       {% if event.action == "status" %}changed status from <strong>{{ event.old_value }}</strong> to <strong>{{ event.new_value }}</strong>
@@ -146,9 +146,9 @@
     {% if user.is_some() %}
     <form class="panel issue-reply" method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments">
       <input type="hidden" name="csrf" value="{{ csrf }}">
-      <label for="inline-issue-reply">Reply</label>
-      <textarea id="inline-issue-reply" name="body" required maxlength="10000" rows="4" placeholder="Write a constructive reply"></textarea>
-      <div class="issues-form-footer"><a href="/addons/{{ slug }}/issues/{{ issue.id }}">Shareable issue link</a><button type="submit">Post comment</button></div>
+      <label for="inline-issue-reply" data-i18n="reply">Reply</label>
+      <textarea id="inline-issue-reply" name="body" required maxlength="10000" rows="4" placeholder="Write a constructive reply" data-i18n-placeholder="reply_placeholder"></textarea>
+      <div class="issues-form-footer"><a href="/addons/{{ slug }}/issues/{{ issue.id }}" data-i18n="share_issue">Shareable issue link</a><button type="submit">Post comment</button></div>
     </form>
     {% endif %}
     {% if can_manage_issues %}
@@ -162,14 +162,14 @@
         <option value="resolved" {% if issue.status == "resolved" %}selected{% endif %}>Resolved</option>
         <option value="closed" {% if issue.status == "closed" %}selected{% endif %}>Closed</option>
       </select>
-      <button type="submit">Update status</button>
+      <button type="submit" data-i18n="update_status">Update status</button>
     </form>
     {% endif %}
   </section>
   {% endif %}
   {% if user.is_some() %}
   <details class="panel issues-compose" id="new-issue" data-new-issue>
-    <summary>+ Report an issue or suggest an improvement</summary>
+    <summary data-i18n="report_issue">+ Report an issue or suggest an improvement</summary>
     <form method="post" action="/addons/{{ slug }}/issues">
       <input type="hidden" name="csrf" value="{{ csrf }}">
       <label for="addon-issue-title">Title</label><input id="addon-issue-title" name="title" minlength="3" maxlength="160" required placeholder="A short, descriptive title">
@@ -177,7 +177,7 @@
       <select id="addon-issue-kind" name="kind"><option value="bug">Bug report</option><option value="feature">Feature request</option><option value="question">Question</option></select>
       <label for="addon-issue-body">Description</label>
       <textarea id="addon-issue-body" name="body" maxlength="10000" rows="6" required placeholder="What happened? What did you expect? How can it be reproduced?"></textarea>
-      <div class="issues-form-footer"><span class="muted">Don't share private data.</span><button type="submit">Submit issue</button></div>
+      <div class="issues-form-footer"><span class="muted">Don't share private data.</span><button type="submit" data-i18n="submit_issue">Submit issue</button></div>
     </form>
   </details>
   {% endif %}
@@ -197,7 +197,7 @@
 {% endif %}
 
 
-  {% if shots.is_empty() %}<p class="muted">No screenshots uploaded yet.</p>{% endif %}
+  {% if shots.is_empty() %}<p class="muted" data-i18n="no_screenshots">No screenshots uploaded yet.</p>{% endif %}
   {% if !shots.is_empty() %}
   <dialog class="gallery-lightbox" id="gallery-lightbox" aria-label="Screenshot viewer">
     <div class="gallery-lightbox-actions"><button type="button" data-gallery-prev aria-label="Previous screenshot">←</button><span data-gallery-count></span><button type="button" data-gallery-next aria-label="Next screenshot">→</button><button type="button" data-gallery-fullscreen aria-label="Enter fullscreen" title="Fullscreen">⛶</button><button type="button" data-gallery-close aria-label="Close gallery">✕</button></div>
@@ -209,7 +209,7 @@
 {% else if tab == "versions" %}
 <section class="addon-tab-section">
   <h2>Versions</h2>
-  <p class="muted">Browse releases and download a specific version.</p>
+  <p class="muted" data-i18n="versions_intro">Browse releases and download a specific version.</p>
   {% if version_rows.is_empty() %}
   <section class="panel"><p>No release yet.</p></section>
   {% else %}
