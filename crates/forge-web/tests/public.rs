@@ -385,3 +385,11 @@ async fn an_empty_search_offers_the_way_back() {
     assert!(web.get("/addons?q=nothing").await.body.contains(r#"<a href="/addons">Show all addons</a>"#));
     assert!(web.get("/packs?q=nothing").await.body.contains(r#"<a href="/packs">Show all packs</a>"#));
 }
+
+#[tokio::test]
+async fn the_download_says_how_to_install() {
+    let mut web = with_addon("scanned", "available").await;
+    let page = web.get("/addons/lucky").await.body;
+    assert!(page.contains("Unzip it into the game's <code>AddOns</code> folder"), "{page}");
+    assert!(page.contains(r#"<a href="https://rezondes.github.io/SurvivorsForge/">SurvivorsForge launcher</a>"#));
+}
