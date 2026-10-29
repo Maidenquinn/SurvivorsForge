@@ -31,7 +31,7 @@
     <h2><span data-i18n="pub_version">Version</span> {% if l.row.tag_short != l.row.tag %}<span title="{{ l.row.tag }}">{{ l.row.tag_short }}</span>{% else %}{{ l.row.tag }}{% endif %}</h2>
     {% if l.row.published != "" %}<p class="muted"><span data-i18n="pub_published">Published</span> {{ l.row.published }}{% if let Some(n) = l.row.downloads %} · {{ n }} <span data-i18n="pub_downloads">downloads</span>{% endif %}</p>{% endif %}
     <div class="notice {{ l.row.notice.class }}" role="status">
-      <strong data-i18n-enum="trust" data-i18n-value="{{ l.row.notice.badge }}">{{ l.row.notice.badge }}</strong>. {{ l.row.notice.text }}
+      <strong data-i18n-enum="trust" data-i18n-value="{{ l.row.notice.badge }}">{{ l.row.notice.badge }}</strong>. <span data-i18n-enum="notice" data-i18n-value="{{ l.row.notice.badge }}">{{ l.row.notice.text }}</span>
     </div>
     {% if !l.findings.is_empty() %}
       <h3><span data-i18n="pub_findings">Findings</span></h3>
