@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Dependencies - SurvivorsForge{% endblock %}
 {% block content %}
-<h1>Dependencies</h1>
+<h1 data-i18n="needs">Dependencies</h1>
 {% include "creator/nav.html" %}
 {% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
 

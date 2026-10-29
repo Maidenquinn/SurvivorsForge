@@ -10,10 +10,10 @@
 <form class="panel" method="post" action="/addons/{{ slug }}/edit">
   <input type="hidden" name="csrf" value="{{ csrf }}">
   <h2>Details</h2>
-  <label for="name">Name</label>
+  <label for="name" data-i18n="name">Name</label>
   <input id="name" name="name" value="{{ name }}" maxlength="64" required>
   {% if errors.get("name") != "" %}<p class="field-error">{{ errors.get("name") }}</p>{% endif %}
-  <label for="category">Category</label>
+  <label for="category" data-i18n="category">Category</label>
   <select id="category" name="category">
     {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
   </select>
@@ -35,7 +35,7 @@
 {% if perms.edit_description %}
 <form class="panel" method="post" action="/addons/{{ slug }}/edit">
   <input type="hidden" name="csrf" value="{{ csrf }}">
-  <h2>Description</h2>
+  <h2 data-i18n="description">Description</h2>
   <label for="summary">Short description</label>
   <input id="summary" name="summary" value="{{ summary }}" maxlength="200">
   {% if errors.get("summary") != "" %}<p class="field-error">{{ errors.get("summary") }}</p>{% endif %}
