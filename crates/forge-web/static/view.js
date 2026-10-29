@@ -4,8 +4,19 @@
 (function () {
   var key = "forge-view";
   function apply(view) {
-    document.documentElement.setAttribute("data-view", view === "list" ? "list" : "tiles");
+    view = view === "list" ? "list" : "tiles";
+    document.documentElement.setAttribute("data-view", view);
+    mark();
   }
+  // The pressed state for screen readers; the buttons come again with every htmx swap.
+  function mark() {
+    var view = document.documentElement.getAttribute("data-view");
+    document.querySelectorAll("[data-set-view]").forEach(function (button) {
+      button.setAttribute("aria-pressed", String(button.getAttribute("data-set-view") === view));
+    });
+  }
+  document.addEventListener("DOMContentLoaded", mark);
+  document.addEventListener("htmx:afterSwap", mark);
   try {
     apply(localStorage.getItem(key));
   } catch (e) {

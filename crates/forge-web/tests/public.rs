@@ -297,3 +297,13 @@ async fn a_failed_reload_says_so() {
     }
     assert!(script.contains("Could not load the results"));
 }
+
+#[tokio::test]
+async fn the_view_switch_tells_which_view_is_on() {
+    // Screen readers hear the pressed state; the buttons come again with every htmx swap.
+    let mut web = TestWeb::new().await;
+    let script = web.get("/static/view.js").await.body;
+    for text in ["aria-pressed", "DOMContentLoaded", "htmx:afterSwap"] {
+        assert!(script.contains(text), "missing {text}");
+    }
+}
