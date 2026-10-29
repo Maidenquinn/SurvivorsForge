@@ -263,6 +263,10 @@ export component AppWindow inherits Window {
     in-out property <int> page: 0;
     in property <[AddonRow]> installed-rows;
     in property <[AddonRow]> browse-rows;
+    // Browse filter: "All categories" first, subcategories read "Classes: Warrior".
+    in property <[string]> category-labels;
+    in-out property <int> category-index;
+    callback category-changed(int);
     // Addons picked in Browse for an addon pack.
     in property <int> picked-count;
     in property <bool> pack-busy;
@@ -429,6 +433,12 @@ export component AppWindow inherits Window {
                         placeholder: "Search name or author";
                         text <=> root.search;
                         edited(text) => { root.search-changed(text); }
+                    }
+                    if root.page == 1 : ComboBox {
+                        width: 220px;
+                        model: root.category-labels;
+                        current-index <=> root.category-index;
+                        selected => { root.category-changed(self.current-index); }
                     }
                     Rectangle { horizontal-stretch: 1; }
                     if root.page == 0 : ActionButton {

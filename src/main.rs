@@ -39,6 +39,10 @@ struct Core {
     game_versions: Vec<controller::GameVersion>,
     /// The last check could not reach the platform: installs and updates wait.
     offline: bool,
+    /// The platform's categories; empty offline.
+    categories: Vec<controller::Category>,
+    /// The Browse category filter, `None` for all.
+    category: Option<String>,
     /// Browse addons picked for an addon pack.
     picked: std::collections::BTreeSet<String>,
     pack_busy: bool,
@@ -69,6 +73,8 @@ impl Core {
             self_update: None,
             game_versions: Vec::new(),
             offline: false,
+            categories: Vec::new(),
+            category: None,
             picked: Default::default(),
             pack_busy: false,
         };
@@ -203,12 +209,21 @@ fn refresh(ui: &AppWindow, shared: &Shared) {
             .map(|r| installed_row(r, &core))
             .collect(),
     ));
+    let choices = controller::category_choices(&core.categories, &core.registry);
+    if slint::Model::row_count(&ui.get_category_labels()) != choices.len() + 1 {
+        let mut labels: Vec<SharedString> = vec!["All categories".into()];
+        labels.extend(choices.iter().map(|c| SharedString::from(c.label())));
+        let index = core.category.as_ref().and_then(|w| choices.iter().position(|c| c.name.eq_ignore_ascii_case(w))).map_or(0, |i| i + 1);
+        ui.set_category_labels(slint::ModelRc::new(slint::VecModel::from(labels)));
+        ui.set_category_index(index as i32);
+    }
     ui.set_picked_count(core.picked.len() as i32);
     ui.set_pack_busy(core.pack_busy);
     ui.set_browse_rows(model(
         controller::browse_rows(&core.registry, &core.state)
             .into_iter()
             .filter(|b| controller::matches(&core.search, &b.name, &b.author))
+            .filter(|b| core.category.as_deref().is_none_or(|w| controller::in_category(&b.category, w, &choices)))
             .map(|b| AddonRow {
                 initial: initial(&b.name),
                 id: b.id.clone().into(),
@@ -509,6 +524,7 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
             };
             (fetch_game_versions(&client, &api), Some(updates::check_all(&github, &mut state, &registry)), self_update)
         };
+        let categories = if offline { Vec::new() } else { client.get_text(&format!("{api}/v1/categories")).map(|t| controller::parse_categories(&t)).unwrap_or_default() };
 
         let mut core = lock(shared);
         core.registry = registry;
@@ -532,6 +548,7 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
         }
         core.self_update = self_update;
         core.offline = offline;
+        core.categories = categories;
         core.checking = false;
         core.rescan();
         if offline {
@@ -1074,6 +1091,14 @@ fn main() -> Result<(), slint::PlatformError> {
         }
     });
     on!(on_settings_save, |ui, shared| on_settings_save(&ui, shared));
+    on!(on_category_changed, |ui, shared, index| {
+        {
+            let mut core = lock(shared);
+            let choices = controller::category_choices(&core.categories, &core.registry);
+            core.category = usize::try_from(index - 1).ok().and_then(|i| choices.get(i)).map(|c| c.name.clone());
+        }
+        refresh(&ui, shared);
+    });
     on!(on_row_pick, |ui, shared, id| {
         {
             let mut core = lock(shared);

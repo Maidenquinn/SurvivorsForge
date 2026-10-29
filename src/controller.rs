@@ -320,6 +320,49 @@ pub fn browse_rows(registry: &Registry, state: &State) -> Vec<BrowseRow> {
         .collect()
 }
 
+/// A category of the platform; `parent` for subcategories (Classes -> Warrior).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Category {
+    pub name: String,
+    pub parent: Option<String>,
+}
+
+impl Category {
+    pub fn label(&self) -> String {
+        match &self.parent {
+            Some(parent) => format!("{parent}: {}", self.name),
+            None => self.name.clone(),
+        }
+    }
+}
+
+/// The platform's categories in its order, from `/v1/categories`.
+pub fn parse_categories(json: &str) -> Vec<Category> {
+    let list: Vec<serde_json::Value> = serde_json::from_str(json).unwrap_or_default();
+    list.iter()
+        .filter_map(|c| Some(Category { name: c["name"].as_str()?.to_string(), parent: c["parent"].as_str().map(str::to_string) }))
+        .collect()
+}
+
+/// What the Browse filter offers: the platform's categories, or without them (offline) the ones
+/// the addon list uses.
+pub fn category_choices(platform: &[Category], registry: &Registry) -> Vec<Category> {
+    if !platform.is_empty() {
+        return platform.to_vec();
+    }
+    let mut names: Vec<String> = registry.addons.iter().map(|a| a.category.clone()).filter(|c| !c.is_empty()).collect();
+    names.sort_by_key(|n| n.to_lowercase());
+    names.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
+    names.into_iter().map(|name| Category { name, parent: None }).collect()
+}
+
+/// An addon of `category` passes the filter `wanted` when it is that category or one of its
+/// subcategories.
+pub fn in_category(category: &str, wanted: &str, categories: &[Category]) -> bool {
+    category.eq_ignore_ascii_case(wanted)
+        || categories.iter().any(|c| c.name.eq_ignore_ascii_case(category) && c.parent.as_deref().is_some_and(|p| p.eq_ignore_ascii_case(wanted)))
+}
+
 /// Whether `addon` can go into an addon pack: the same rule as the platform's, a checked or
 /// verified current version with a known SHA-256.
 pub fn packable(addon: &VerifiedAddon) -> bool {
@@ -722,5 +765,21 @@ mod tests {
             assert_eq!(packable(&addon), ok, "{trust:?} {sha:?}");
         }
         assert_eq!(pack_link("https://w", &["a".into(), "b".into()]), "https://w/packs/new?addon=a&addon=b");
+    }
+
+    #[test]
+    fn categories_filter_with_their_subcategories() {
+        let json = r#"[{"name":"Classes","parent":null},{"name":"Warrior","parent":"Classes"},{"name":"Combat","parent":null}]"#;
+        let categories = parse_categories(json);
+        assert_eq!(categories.iter().map(Category::label).collect::<Vec<_>>(), ["Classes", "Classes: Warrior", "Combat"]);
+        assert!(in_category("Warrior", "Classes", &categories));
+        assert!(in_category("warrior", "Warrior", &categories));
+        assert!(!in_category("Combat", "Classes", &categories));
+        assert!(!in_category("Warrior", "Combat", &categories));
+
+        let registry = crate::registry::embedded();
+        assert_eq!(category_choices(&categories, &registry), categories);
+        let offline: Vec<String> = category_choices(&[], &registry).into_iter().map(|c| c.name).collect();
+        assert_eq!(offline, ["Action Bars", "Combat", "Miscellaneous", "Unit Frames"], "from the built-in list");
     }
 }
