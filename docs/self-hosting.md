@@ -17,8 +17,11 @@ To try everything on your own machine first, see [local-setup.md](local-setup.md
 ## What you need
 
 - A Linux server with Docker and the Compose plugin (2.24 or newer). Ports 3080 (website) and
-  3081 (API) reachable for the TLS proxy in front of it, e.g. Cloudflare with an origin rule that
-  sends each domain to its port. To let Caddy get certificates itself instead, publish 80 and 443
+  3081 (API) reachable for the TLS proxy in front of it, e.g. NGINX Proxy Manager or Cloudflare
+  with an origin rule, that sends each domain to its port. Caddy stays behind that proxy: it serves
+  images and packs from the volumes and passes the visitor's address on. It trusts
+  `CF-Connecting-IP` and `X-Forwarded-For` only from Cloudflare and private networks, so a proxy
+  on a public address of its own shows up as one visitor. To let Caddy get certificates itself instead, publish 80 and 443
   in a `compose.override.yaml` and set `DOMAIN_WEB` and `DOMAIN_API` to the bare domains.
 - Two DNS `A` (or `AAAA`) records pointing at the server, for example `forge.example.com` for
   the website and `api.forge.example.com` for the API.
