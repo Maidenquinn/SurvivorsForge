@@ -164,3 +164,12 @@ async fn static_files_and_not_found() {
     assert_eq!((js.status, js.headers["content-type"].to_str().unwrap()), (StatusCode::OK, "text/javascript"));
     assert_eq!(web.get("/nope").await.status, StatusCode::NOT_FOUND);
 }
+
+#[tokio::test]
+async fn checkboxes_are_drawn_like_the_launcher() {
+    let mut web = TestWeb::new().await;
+    let css = web.get("/static/app.css").await.body;
+    let rule = css.split("input[type=\"checkbox\"] {").nth(1).expect("own checkbox rule").split('}').next().unwrap().to_string();
+    assert!(rule.contains("appearance: none") && rule.contains("var(--field)") && rule.contains("var(--outline)"), "{rule}");
+    assert!(css.contains("input[type=\"checkbox\"]:checked"), "a gold square when ticked");
+}
