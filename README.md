@@ -231,7 +231,9 @@ Besides the launcher, this repository holds the SurvivorsForge platform: an API 
 a website (`crates/forge-web`), the addon scanner (`crates/forge-scan`) and the code they share
 with the launcher (`crates/forge-core`). Creators log in with GitHub and publish addons from their
 own repos, every release is scanned for harmful code, and admins verify versions. Downloads stay
-on GitHub. How to run it: [docs/self-hosting.md](docs/self-hosting.md).
+on GitHub. Players of the browser version bundle several addons into one zip, an addon pack, on
+the website or in the launcher (*Browse*, tick the addons, *Save as zip* or *Share as link*). How to
+run it: [docs/self-hosting.md](docs/self-hosting.md).
 
 ## Data locations
 

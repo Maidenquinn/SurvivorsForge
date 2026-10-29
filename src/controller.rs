@@ -320,6 +320,18 @@ pub fn browse_rows(registry: &Registry, state: &State) -> Vec<BrowseRow> {
         .collect()
 }
 
+/// Whether `addon` can go into an addon pack: the same rule as the platform's, a checked or
+/// verified current version with a known SHA-256.
+pub fn packable(addon: &VerifiedAddon) -> bool {
+    addon.latest.as_ref().is_some_and(|l| matches!(l.trust, Trust::Scanned | Trust::Verified) && l.sha256.is_some())
+}
+
+/// The website's pack builder with `ids` ticked.
+pub fn pack_link(web: &str, ids: &[String]) -> String {
+    let query: Vec<String> = ids.iter().map(|id| format!("addon={id}")).collect();
+    format!("{web}/packs/new?{}", query.join("&"))
+}
+
 pub fn matches(query: &str, name: &str, author: &str) -> bool {
     let query = query.trim().to_lowercase();
     query.is_empty() || name.to_lowercase().contains(&query) || author.to_lowercase().contains(&query)
@@ -689,5 +701,26 @@ mod tests {
     #[test]
     fn optional_dependencies_listed() {
         assert_eq!(dependency_plan("ui", &dep_registry(), &State::default()).optional, ["EXTRAS"]);
+    }
+
+    #[test]
+    fn only_checked_versions_with_a_hash_go_into_packs() {
+        let mut addon = crate::registry::embedded().addons.remove(0);
+        assert!(!packable(&addon), "the plain verified list has no versions");
+        let latest = |trust, sha256: Option<&str>| crate::registry::LatestVersion {
+            tag: "v1".into(),
+            asset_url: "https://github.com/a.zip".into(),
+            sha256: sha256.map(str::to_string),
+            size: None,
+            trust,
+            findings: Default::default(),
+            game_min: None,
+            game_max: None,
+        };
+        for (trust, sha, ok) in [(Trust::Scanned, Some("ab"), true), (Trust::Verified, Some("ab"), true), (Trust::Verified, None, false), (Trust::Flagged, Some("ab"), false)] {
+            addon.latest = Some(latest(trust, sha));
+            assert_eq!(packable(&addon), ok, "{trust:?} {sha:?}");
+        }
+        assert_eq!(pack_link("https://w", &["a".into(), "b".into()]), "https://w/packs/new?addon=a&addon=b");
     }
 }

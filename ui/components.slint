@@ -17,6 +17,9 @@ export struct AddonRow {
     can-remove: bool,
     can-open: bool,
     warning: string,
+    // Browse only: the row can go into an addon pack, and is picked for one.
+    can-pick: bool,
+    picked: bool,
 }
 
 // Outlined gold button; `primary` is the deep red one with the gold rim.
@@ -305,11 +308,57 @@ component Pill inherits Rectangle {
     }
 }
 
+// Square tick box in the gold outline style; the tick is a filled square, no glyph needed.
+export component PickBox inherits Rectangle {
+    in property <bool> checked;
+    in property <string> label;
+    callback toggled();
+
+    accessible-role: checkbox;
+    accessible-label: root.label;
+    accessible-checked: root.checked;
+    width: Theme.touch ? 44px : 24px;
+    height: self.width;
+
+    Rectangle {
+        width: 20px;
+        height: 20px;
+        border-radius: Theme.radius;
+        border-width: focus.has-focus ? 2px : 1px;
+        border-color: focus.has-focus ? Theme.outline-active : touch.has-hover ? Theme.outline-hover : Theme.outline;
+        background: Theme.field;
+        if root.checked : Rectangle {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            background: Theme.gold;
+        }
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.toggled(); }
+    }
+
+    focus := FocusScope {
+        width: 0;
+        height: 0;
+        key-pressed(event) => {
+            if (event.text == " " || event.text == Key.Return) {
+                root.toggled();
+                return accept;
+            }
+            reject
+        }
+    }
+}
+
 export component AddonRowView inherits Rectangle {
     in property <AddonRow> addon;
     callback action();
     callback remove();
     callback open();
+    callback pick();
 
     // Touch: room for the 44px action button and 44px links stacked in the last column.
     height: Theme.touch ? 104px : 84px;
@@ -327,6 +376,14 @@ export component AddonRowView inherits Rectangle {
         padding-left: 14px;
         padding-right: 14px;
         spacing: 16px;
+        if root.addon.can-pick : VerticalLayout {
+            alignment: center;
+            PickBox {
+                checked: root.addon.picked;
+                label: "Pick " + root.addon.name + " for a pack";
+                toggled => { root.pick(); }
+            }
+        }
 
         VerticalLayout {
             alignment: center;

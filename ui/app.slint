@@ -2,7 +2,7 @@ import { Theme } from "theme.slint";
 import { ComboBox } from "std-widgets.slint";
 import {
     AddonRow, ActionButton, TabButton, SectionHeading, Field, ScrollPanel, AddonRowView,
-    Overlay, Panel, DialogCard, TitleBar, ResizeEdges
+    Overlay, Panel, DialogCard, TitleBar, ResizeEdges, LinkButton
 } from "components.slint";
 
 export { AddonRow, Theme }
@@ -263,6 +263,13 @@ export component AppWindow inherits Window {
     in-out property <int> page: 0;
     in property <[AddonRow]> installed-rows;
     in property <[AddonRow]> browse-rows;
+    // Addons picked in Browse for an addon pack.
+    in property <int> picked-count;
+    in property <bool> pack-busy;
+    callback row-pick(string);
+    callback pack-save();
+    callback pack-share();
+    callback pack-clear();
     in property <int> installed-total;
     in-out property <string> search;
     callback search-changed(string);
@@ -462,12 +469,43 @@ export component AppWindow inherits Window {
                     }
                 }
 
+                // One zip with every picked addon, for the browser version of the game.
+                if root.page == 1 && root.picked-count > 0 : HorizontalLayout {
+                    spacing: 10px;
+                    Text {
+                        text: root.picked-count == 1 ? "1 addon picked for a pack" : root.picked-count + " addons picked for a pack";
+                        font-size: Theme.body;
+                        color: Theme.gold;
+                        vertical-alignment: center;
+                    }
+                    Rectangle { horizontal-stretch: 1; }
+                    ActionButton {
+                        text: root.pack-busy ? "Packing..." : "Save as zip";
+                        primary: true;
+                        enabled: !root.pack-busy;
+                        clicked => { root.pack-save(); }
+                    }
+                    ActionButton {
+                        text: "Share as link";
+                        enabled: !root.pack-busy && !root.game-mode;
+                        clicked => { root.pack-share(); }
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        LinkButton {
+                            text: "Clear";
+                            clicked => { root.pack-clear(); }
+                        }
+                    }
+                }
+
                 if root.page == 1 : ScrollPanel {
                     vertical-stretch: 1;
                     for row in root.browse-rows : AddonRowView {
                         addon: row;
                         action => { root.row-action(row.id); }
                         open => { root.row-open(row.id); }
+                        pick => { root.row-pick(row.id); }
                     }
                     if root.browse-rows.length == 0 : Text {
                         text: "No verified addon matches your search.";

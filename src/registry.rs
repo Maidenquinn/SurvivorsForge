@@ -10,22 +10,29 @@ use std::time::{Duration, SystemTime};
 
 pub const EMBEDDED: &str = include_str!("../registry/verified.json");
 const CACHE_FILE: &str = "verified.json";
-/// Stands in until a release build sets the real address with `SURVIVORSFORGE_API_URL`.
+/// Stand in until a release build sets the real addresses with `SURVIVORSFORGE_API_URL` and
+/// `SURVIVORSFORGE_WEB_URL`.
 pub const PLACEHOLDER_API_URL: &str = "https://api.survivorsforge.invalid";
+pub const PLACEHOLDER_WEB_URL: &str = "https://survivorsforge.invalid";
 
 /// The platform API: `SURVIVORSFORGE_API_URL` at run time (self-hosting, tests), else the address
 /// compiled in by the release build, else the placeholder.
 pub fn api_url() -> String {
-    pick_api_url(std::env::var("SURVIVORSFORGE_API_URL").ok().as_deref(), option_env!("SURVIVORSFORGE_API_URL"))
+    pick_url(std::env::var("SURVIVORSFORGE_API_URL").ok().as_deref(), option_env!("SURVIVORSFORGE_API_URL"), PLACEHOLDER_API_URL)
 }
 
-fn pick_api_url(runtime: Option<&str>, build: Option<&str>) -> String {
+/// The platform website, for links the launcher opens in the browser; chosen like `api_url`.
+pub fn web_url() -> String {
+    pick_url(std::env::var("SURVIVORSFORGE_WEB_URL").ok().as_deref(), option_env!("SURVIVORSFORGE_WEB_URL"), PLACEHOLDER_WEB_URL)
+}
+
+fn pick_url(runtime: Option<&str>, build: Option<&str>, placeholder: &str) -> String {
     [runtime, build]
         .into_iter()
         .flatten()
         .map(|u| u.trim().trim_end_matches('/'))
         .find(|u| !u.is_empty())
-        .unwrap_or(PLACEHOLDER_API_URL)
+        .unwrap_or(placeholder)
         .to_string()
 }
 
@@ -126,9 +133,9 @@ mod tests {
 
     #[test]
     fn api_url_runtime_before_build_before_placeholder() {
-        assert_eq!(pick_api_url(Some("http://localhost:8080/"), Some("https://api.real")), "http://localhost:8080");
-        assert_eq!(pick_api_url(Some(" "), Some("https://api.real")), "https://api.real");
-        assert_eq!(pick_api_url(None, None), PLACEHOLDER_API_URL);
+        assert_eq!(pick_url(Some("http://localhost:8080/"), Some("https://api.real"), PLACEHOLDER_API_URL), "http://localhost:8080");
+        assert_eq!(pick_url(Some(" "), Some("https://api.real"), PLACEHOLDER_API_URL), "https://api.real");
+        assert_eq!(pick_url(None, None, PLACEHOLDER_WEB_URL), PLACEHOLDER_WEB_URL);
         assert_eq!(registry_url("https://api.test"), "https://api.test/v1/registry");
     }
 

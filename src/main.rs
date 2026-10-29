@@ -39,6 +39,9 @@ struct Core {
     game_versions: Vec<controller::GameVersion>,
     /// The last check could not reach the platform: installs and updates wait.
     offline: bool,
+    /// Browse addons picked for an addon pack.
+    picked: std::collections::BTreeSet<String>,
+    pack_busy: bool,
 }
 
 type Shared = Arc<Mutex<Core>>;
@@ -66,6 +69,8 @@ impl Core {
             self_update: None,
             game_versions: Vec::new(),
             offline: false,
+            picked: Default::default(),
+            pack_busy: false,
         };
         if let Some(config) = config {
             core.switch_config(config);
@@ -179,6 +184,8 @@ fn installed_row(row: &Row, core: &Core) -> AddonRow {
         can_remove: true,
         can_open: row.repo.is_some(),
         warning: warning.into(),
+        can_pick: false,
+        picked: false,
     }
 }
 
@@ -196,6 +203,8 @@ fn refresh(ui: &AppWindow, shared: &Shared) {
             .map(|r| installed_row(r, &core))
             .collect(),
     ));
+    ui.set_picked_count(core.picked.len() as i32);
+    ui.set_pack_busy(core.pack_busy);
     ui.set_browse_rows(model(
         controller::browse_rows(&core.registry, &core.state)
             .into_iter()
@@ -223,6 +232,8 @@ fn refresh(ui: &AppWindow, shared: &Shared) {
                 busy: core.busy.contains(&b.id),
                 can_remove: false,
                 can_open: true,
+                can_pick: core.registry.get(&b.id).is_some_and(controller::packable),
+                picked: core.picked.contains(&b.id),
                 warning: SharedString::new(),
             })
             .collect(),
@@ -812,6 +823,70 @@ fn fill_game_versions(ui: &AppWindow, core: &Core) {
     ui.set_settings_game_index(index as i32);
 }
 
+/// Downloads the current version of every picked addon, checks its hash and packs them into one
+/// zip with every addon folder at its root, for the browser version of the game. Without a file
+/// dialog (Game Mode) the zip goes to the Downloads folder.
+fn on_pack_save(ui: &AppWindow, shared: &Shared) {
+    let name = "SurvivorsForge-pack.zip";
+    let dest = if ui.get_file_dialog() && !ui.get_game_mode() {
+        let Some(dest) = rfd::FileDialog::new().add_filter("Zip archive", &["zip"]).set_file_name(name).save_file() else { return };
+        dest
+    } else {
+        match directories::UserDirs::new().and_then(|d| d.download_dir().map(|p| p.join(name))) {
+            Some(dest) => dest,
+            None => return lock(shared).set_status("No Downloads folder found".into(), true),
+        }
+    };
+    let parts: Vec<(String, String, String)> = {
+        let mut core = lock(shared);
+        if core.offline {
+            return core.set_status(Error::Offline.to_string(), true);
+        }
+        core.pack_busy = true;
+        core.picked
+            .iter()
+            .filter_map(|id| core.registry.get(id))
+            .filter_map(|a| a.latest.as_ref().map(|l| (a.name.clone(), l.asset_url.clone(), l.sha256.clone().unwrap_or_default())))
+            .collect()
+    };
+    refresh(ui, shared);
+    run_bg(ui.as_weak(), shared.clone(), None, move |shared| {
+        let (client, downloads) = {
+            let core = lock(shared);
+            (core.client(), core.downloads())
+        };
+        let mut files = Vec::new();
+        let result = (|| -> survivorsforge::Result<String> {
+            for (name, url, sha256) in &parts {
+                let zip = downloads.join(format!("{}.zip", unique_name()));
+                files.push(zip.clone());
+                client.download(url, &zip)?;
+                if install::sha256_of(&zip)? != *sha256 {
+                    return Err(Error::NotInstallable(format!("{name} is not the file that was checked, nothing was saved")));
+                }
+            }
+            let readers = files.iter().map(std::fs::File::open).collect::<std::io::Result<Vec<_>>>()?;
+            let part = dest.with_extension("zip.part");
+            let bundled = std::fs::File::create(&part).map_err(Error::from).and_then(|out| Ok(forge_core::pack::bundle(readers, out, 1_000_000_000)?));
+            match bundled {
+                Ok(done) => {
+                    std::fs::rename(&part, &dest)?;
+                    Ok(format!("Saved {} addons ({:.1} MB) to {}", parts.len(), done.packed_bytes as f64 / 1e6, dest.display()))
+                }
+                Err(e) => {
+                    let _ = std::fs::remove_file(&part);
+                    Err(e)
+                }
+            }
+        })();
+        for file in &files {
+            let _ = std::fs::remove_file(file);
+        }
+        lock(shared).pack_busy = false;
+        result
+    });
+}
+
 /// The platform's game versions, oldest first. Empty when there is no platform or it fails.
 fn fetch_game_versions(client: &Client, api: &str) -> Vec<controller::GameVersion> {
     let Ok(text) = client.get_text(&format!("{api}/v1/game-versions")) else { return Vec::new() };
@@ -999,6 +1074,29 @@ fn main() -> Result<(), slint::PlatformError> {
         }
     });
     on!(on_settings_save, |ui, shared| on_settings_save(&ui, shared));
+    on!(on_row_pick, |ui, shared, id| {
+        {
+            let mut core = lock(shared);
+            let id = id.to_string();
+            if !core.picked.remove(&id) {
+                core.picked.insert(id);
+            }
+        }
+        refresh(&ui, shared);
+    });
+    on!(on_pack_clear, |ui, shared| {
+        lock(shared).picked.clear();
+        refresh(&ui, shared);
+    });
+    on!(on_pack_share, |ui, shared| {
+        let ids: Vec<String> = lock(shared).picked.iter().cloned().collect();
+        let link = controller::pack_link(&registry::web_url(), &ids);
+        if open::that(&link).is_err() {
+            lock(shared).set_status(format!("Open {link} in your browser"), false);
+            refresh(&ui, shared);
+        }
+    });
+    on!(on_pack_save, |ui, shared| on_pack_save(&ui, shared));
     on!(on_self_update, |ui, shared| on_self_update(&ui, shared));
 
     // Own window frame (`no-frame`): moving, resizing and the caption buttons go through winit.
