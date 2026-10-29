@@ -218,6 +218,7 @@
   </form>
   {% else %}<p class="panel"><span data-i18n="anonymous_read">You can read comments without signing in.</span> <a href="/login" data-i18n="login_participate">Log in to participate</a>.</p>{% endif %}
   <section class="issue-discussion" aria-label="Comments" data-i18n-aria-label="comments">
+    {% if comments.is_empty() %}<p class="panel muted" data-i18n="empty_comments">No comments yet. Start the discussion!</p>{% endif %}
     {% for comment in comments %}
     <article class="issue-message" data-inline-editor id="comment-{{ comment.id }}">
       <header class="issue-message-head">
@@ -235,7 +236,7 @@
         <div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel data-i18n="cancel">Cancel</button><button type="submit" data-i18n="save">Save changes</button></div>
       </form>{% endif %}
     </article>
-    {% else %}<p class="panel muted" data-i18n="empty_comments">No comments yet. Start the discussion!</p>{% endfor %}
+    {% endfor %}
   </section>
   {% if let Some(id) = comments_next %}<p><a class="button secondary" href="/addons/{{ slug }}?tab=comments&amp;before={{ id }}" data-i18n="older_comments">Older comments →</a></p>{% endif %}
 </section>
