@@ -1462,7 +1462,8 @@
       el.title = translations[locale][key] || translations.en[key] || key;
     });
     document.querySelectorAll("[data-l10n-en]").forEach(function (el) {
-      var value = locale === "fr" ? el.getAttribute("data-l10n-fr") : el.getAttribute("data-l10n-en");
+      var original = el.getAttribute("data-l10n-en");
+      var value = locale === "fr" ? el.getAttribute("data-l10n-fr") : original;
       if (value !== null) el.textContent = value;
     });
     var select = document.getElementById("forge-locale");
