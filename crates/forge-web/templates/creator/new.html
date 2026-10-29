@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Publish an addon - SurvivorsForge{% endblock %}
 {% block content %}
-<h1>Publish an addon</h1>
+<h1><span data-l10n-en="Publish an addon" data-l10n-fr="Publier un AddOn">Publish an addon</span></h1>
 {% if errors.get("form") != "" %}<div class="notice bad" role="alert">{{ errors.get("form") }}</div>{% endif %}
 
 {% match filled %}
@@ -12,64 +12,64 @@
 
 <form class="panel" method="post" action="/addons/new" enctype="multipart/form-data">
   <input type="hidden" name="csrf" value="{{ csrf }}">
-  <h2>1. Your repo</h2>
+  <h2><span data-l10n-en="1. Your repo" data-l10n-fr="1. Votre dépôt">1. Your repo</span></h2>
   {% include "creator/repo_field.html" %}
-  <p class="muted">Type the repo name and pick it from the list to fill in the form from its newest release.</p>
+  <p class="muted"><span data-l10n-en="Type the repo name and pick it from the list to fill in the form from its newest release." data-l10n-fr="Saisissez le nom du dépôt et sélectionnez-le pour remplir le formulaire à partir de sa dernière version.">Type the repo name and pick it from the list to fill in the form from its newest release.</span></p>
   {% if errors.get("repo") != "" %}<p class="field-error">{{ errors.get("repo") }}</p>{% endif %}
 
-  <h2>2. About the addon</h2>
-  <label for="name">Name</label>
+  <h2><span data-l10n-en="2. About the addon" data-l10n-fr="2. Informations sur l'AddOn">2. About the addon</span></h2>
+  <label for="name"><span data-l10n-en="Name" data-l10n-fr="Nom">Name</span></label>
   <input id="name" name="name" value="{{ form.name }}" maxlength="64" required>
   {% if errors.get("name") != "" %}<p class="field-error">{{ errors.get("name") }}</p>{% endif %}
 
-  <label for="slug">Address on this site</label>
+  <label for="slug"><span data-l10n-en="Address on this site" data-l10n-fr="Adresse sur le site">Address on this site</span></label>
   <input id="slug" name="slug" value="{{ form.slug }}" placeholder="lucky-odds" pattern="[a-z0-9][a-z0-9-]{1,48}" required>
-  <p class="muted">Lowercase letters, digits and dashes. It cannot be changed later.</p>
+  <p class="muted"><span data-l10n-en="Lowercase letters, digits and dashes. It cannot be changed later." data-l10n-fr="Lettres minuscules, chiffres et tirets. Cette adresse ne pourra plus être modifiée.">Lowercase letters, digits and dashes. It cannot be changed later.</span></p>
   {% if errors.get("slug") != "" %}<p class="field-error">{{ errors.get("slug") }}</p>{% endif %}
 
-  <label for="summary">Short description</label>
+  <label for="summary"><span data-l10n-en="Short description" data-l10n-fr="Description courte">Short description</span></label>
   <input id="summary" name="summary" value="{{ form.summary }}" maxlength="200">
-  <p class="muted">One sentence, shown in lists and search results.</p>
+  <p class="muted"><span data-l10n-en="One sentence, shown in lists and search results." data-l10n-fr="Une phrase affichée dans les listes et les résultats de recherche.">One sentence, shown in lists and search results.</span></p>
   {% if errors.get("summary") != "" %}<p class="field-error">{{ errors.get("summary") }}</p>{% endif %}
 
-  <label for="category">Category</label>
+  <label for="category"><span data-l10n-en="Category" data-l10n-fr="Catégorie">Category</span></label>
   <select id="category" name="category">
     {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(form.category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
   </select>
   {% if errors.get("category") != "" %}<p class="field-error">{{ errors.get("category") }}</p>{% endif %}
 
-  <label for="source_type">Downloads come from</label>
+  <label for="source_type"><span data-l10n-en="Downloads come from" data-l10n-fr="Source des téléchargements">Downloads come from</span></label>
   <select id="source_type" name="source_type">
-    <option value="release" {% if form.source_type == "release" %}selected{% endif %}>A zip attached to each release</option>
-    <option value="tag" {% if form.source_type == "tag" %}selected{% endif %}>The source zip of each tag</option>
+    <option value="release" {% if form.source_type == "release" %}selected{% endif %}><span data-l10n-en="A zip attached to each release" data-l10n-fr="Une archive ZIP jointe à chaque version">A zip attached to each release</span></option>
+    <option value="tag" {% if form.source_type == "tag" %}selected{% endif %}><span data-l10n-en="The source zip of each tag" data-l10n-fr="L'archive ZIP source de chaque tag">The source zip of each tag</span></option>
   </select>
 
-  <label for="asset_pattern">Release zip name</label>
+  <label for="asset_pattern"><span data-l10n-en="Release zip name" data-l10n-fr="Nom de l'archive ZIP">Release zip name</span></label>
   <input id="asset_pattern" name="asset_pattern" value="{{ form.asset_pattern }}" placeholder="LuckyOdds-v*.zip">
   <p class="muted">For releases only. <code>*</code> stands for the version.</p>
   {% if errors.get("asset_pattern") != "" %}<p class="field-error">{{ errors.get("asset_pattern") }}</p>{% endif %}
 
-  <label for="folders">Addon folders in the zip</label>
+  <label for="folders"><span data-l10n-en="Addon folders in the zip" data-l10n-fr="Dossiers des AddOns dans l'archive">Addon folders in the zip</span></label>
   <textarea id="folders" name="folders" rows="3" placeholder="LuckyOdds" required>{{ form.folders }}</textarea>
-  <p class="muted">One per line. Each folder belongs to one addon on the whole platform.</p>
+  <p class="muted"><span data-l10n-en="One per line. Each folder belongs to one addon on the whole platform." data-l10n-fr="Un dossier par ligne. Chaque dossier appartient à un seul AddOn sur la plateforme.">One per line. Each folder belongs to one addon on the whole platform.</span></p>
   {% if errors.get("folders") != "" %}<p class="field-error">{{ errors.get("folders") }}</p>{% endif %}
 
-  <h2>3. Description</h2>
-  <label for="description_md">Description (Markdown)</label>
+  <h2><span data-l10n-en="3. Description" data-l10n-fr="3. Description">3. Description</span></h2>
+  <label for="description_md"><span data-l10n-en="Description (Markdown)" data-l10n-fr="Description (Markdown)">Description (Markdown)</span></label>
   <textarea id="description_md" name="description_md" rows="12" placeholder="## Features&#10;&#10;- ..."
             hx-post="/addons/new/preview" hx-trigger="input changed delay:500ms" hx-target="#preview">{{ form.description_md }}</textarea>
   {% if errors.get("description") != "" %}<p class="field-error">{{ errors.get("description") }}</p>{% endif %}
   <p class="muted"><code># Heading</code> (with a space), <code>**bold**</code>, <code>*italic*</code>, <code>- list</code>, <code>[link](https://...)</code>. Every line break is kept.</p>
-  <h3>Preview</h3>
+  <h3><span data-l10n-en="Preview" data-l10n-fr="Aperçu">Preview</span></h3>
   <div id="preview" class="description preview"></div>
 
-  <h2>4. Icon and screenshots</h2>
-  <p class="muted">Optional, and you can change them any time later. PNG, JPEG or WebP, at most 5 MB each.</p>
-  <label for="icon">Icon (cropped to a 256 px square)</label>
+  <h2><span data-l10n-en="4. Icon and screenshots" data-l10n-fr="4. Icône et captures d'écran">4. Icon and screenshots</span></h2>
+  <p class="muted"><span data-l10n-en="Optional, and you can change them any time later. PNG, JPEG or WebP, at most 5 MB each." data-l10n-fr="Facultatif, modifiable ultérieurement. PNG, JPEG ou WebP, 5 Mo maximum par fichier.">Optional, and you can change them any time later. PNG, JPEG or WebP, at most 5 MB each.</span></p>
+  <label for="icon"><span data-l10n-en="Icon (cropped to a 256 px square)" data-l10n-fr="Icône (recadrée à 256 × 256 pixels)">Icon (cropped to a 256 px square)</span></label>
   <input id="icon" type="file" name="icon" accept="image/png,image/jpeg,image/webp">
-  <label for="screenshots">Screenshots (up to 10, scaled to at most 1920 px)</label>
+  <label for="screenshots"><span data-l10n-en="Screenshots (up to 10, scaled to at most 1920 px)" data-l10n-fr="Captures d'écran (10 maximum, redimensionnées à 1920 pixels)">Screenshots (up to 10, scaled to at most 1920 px)</span></label>
   <input id="screenshots" type="file" name="screenshots" accept="image/png,image/jpeg,image/webp" multiple>
 
-  <p><button type="submit">Publish</button></p>
+  <p><button type="submit"><span data-l10n-en="Publish" data-l10n-fr="Publier">Publish</span></button></p>
 </form>
 {% endblock %}
