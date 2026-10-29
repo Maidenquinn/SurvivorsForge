@@ -5823,6 +5823,29 @@
       var original = el.getAttribute("data-category-all");
       el.textContent = categoryName("All Classes") + ": " + categoryName(original);
     });
+    var enumKeys = {
+      issue_status: {
+        open:"open", acknowledged:"acknowledged", in_progress:"in_progress",
+        resolved:"resolved", closed:"closed"
+      },
+      issue_kind: {bug:"bug_report", feature:"feature_request", question:"question"},
+      role: {
+        owner:"role_owner", editor:"role_editor", contributor:"role_contributor",
+        claimable:"my_unclaimed"
+      },
+      trust: {
+        "Verified":"verified", "Verified author":"trust_verified_author",
+        "Checked":"checked", "Flagged":"flagged",
+        "Not checked":"not_checked", "Blocked":"admin_blocked",
+        "Unavailable":"trust_unavailable"
+      }
+    };
+    document.querySelectorAll("[data-i18n-enum]").forEach(function (el) {
+      var group = enumKeys[el.getAttribute("data-i18n-enum")];
+      var original = el.getAttribute("data-i18n-value");
+      var key = group && group[original];
+      if (key) el.textContent = translations[locale][key] || translations.en[key] || original;
+    });
     document.querySelectorAll("[data-i18n-title]").forEach(function (el) {
       var key = el.getAttribute("data-i18n-title");
       el.title = translations[locale][key] || translations.en[key] || key;
