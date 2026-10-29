@@ -369,6 +369,74 @@ pub fn packable(addon: &VerifiedAddon) -> bool {
     addon.latest.as_ref().is_some_and(|l| matches!(l.trust, Trust::Scanned | Trust::Verified) && l.sha256.is_some())
 }
 
+/// What the detail view tells about an addon besides its row; empty where nothing is known.
+#[derive(Debug, Default, PartialEq)]
+pub struct Details {
+    pub category: String,
+    /// What the check of the newest version means for the user.
+    pub safety: String,
+    pub game: String,
+    pub folders: String,
+    pub needs: String,
+}
+
+/// The facts for the detail view: from the platform's entry when there is one, else only the
+/// installed `folders` (GitHub and zip addons).
+pub fn details(addon: Option<&VerifiedAddon>, registry: &Registry, folders: &[String]) -> Details {
+    let Some(addon) = addon else { return Details { folders: folders.join(", "), ..Details::default() } };
+    let latest = addon.latest.as_ref();
+    let safety = match latest.map(|l| l.trust) {
+        Some(Trust::Verified) => "An admin checked this exact file by hand.",
+        Some(Trust::Scanned) if addon.verified_author == Some(true) => {
+            "An admin verified an earlier version of this author; this one was checked automatically."
+        }
+        Some(Trust::Scanned) => "The automatic check found nothing. No admin has looked at it by hand.",
+        Some(Trust::Flagged) => "The automatic check found something suspicious. You are asked before it is installed.",
+        Some(Trust::Unscanned) => "The automatic check has not run yet. You are asked before it is installed.",
+        Some(Trust::Blocked) => "An admin blocked this version. It cannot be installed.",
+        Some(Trust::SourceChanged) => "The file on GitHub changed after it was checked. It cannot be installed until an admin looks at it.",
+        None => "",
+    };
+    let game = match latest.map(|l| (l.game_min.as_deref(), l.game_max.as_deref())) {
+        Some((Some(min), Some(max))) => format!("{min} to {max}"),
+        Some((Some(min), None)) => format!("{min} and later"),
+        Some((None, Some(max))) => format!("up to {max}"),
+        Some((None, None)) => "Every version".into(),
+        None => String::new(),
+    };
+    let needs: Vec<String> = addon
+        .dependencies
+        .iter()
+        .map(|d| {
+            let name = registry.get(&d.id).map_or(d.id.as_str(), |a| a.name.as_str());
+            format!("{name} ({})", if d.required { "required" } else { "optional" })
+        })
+        .collect();
+    Details { category: addon.category.clone(), safety: safety.into(), game, folders: addon.folders.join(", "), needs: needs.join(", ") }
+}
+
+/// An addon's Markdown description as plain text for the launcher: no heading marks, emphasis,
+/// code ticks or images, links as their text.
+// ponytail: line-based, no nested or reference links; a Markdown parser if descriptions need more.
+pub fn plain_text(md: &str) -> String {
+    let lines: Vec<String> = md
+        .lines()
+        .filter(|l| !l.trim_start().starts_with("!["))
+        .map(|l| {
+            let mut line = l.trim_start_matches('#').trim_start().replace("**", "").replace("__", "").replace('`', "");
+            while let (Some(open), Some(mid)) = (line.find('['), line.find("](")) {
+                let Some(close) = line[mid..].find(')').map(|c| mid + c) else { break };
+                if open > mid {
+                    break;
+                }
+                line = format!("{}{}{}", &line[..open], &line[open + 1..mid], &line[close + 1..]);
+            }
+            line
+        })
+        .collect();
+    lines.join("\n").trim().to_string()
+}
+
 /// The website's pack builder with `ids` ticked.
 pub fn pack_link(web: &str, ids: &[String]) -> String {
     let query: Vec<String> = ids.iter().map(|id| format!("addon={id}")).collect();
@@ -645,6 +713,45 @@ mod tests {
             game_max: max.map(str::to_string),
         });
         addon
+    }
+
+    #[test]
+    fn details_of_an_addon() {
+        let mut registry = crate::registry::embedded();
+        let mut addon = latest(Trust::Flagged, true, Some("0.68"), None);
+        addon.category = "Bags".into();
+        addon.folders = vec!["Lucky".into(), "LuckyLib".into()];
+        let mut lib = addon.clone();
+        lib.id = "lib".into();
+        lib.name = "Lib".into();
+        addon.dependencies = vec![
+            forge_core::registry::DependencyRef { id: "lib".into(), required: true },
+            forge_core::registry::DependencyRef { id: "gone".into(), required: false },
+        ];
+        registry.addons = vec![addon.clone(), lib];
+
+        let facts = details(Some(&addon), &registry, &[]);
+        assert_eq!(facts.category, "Bags");
+        assert!(facts.safety.contains("found something") && facts.safety.contains("asked"), "{}", facts.safety);
+        assert_eq!(facts.game, "0.68 and later");
+        assert_eq!(facts.folders, "Lucky, LuckyLib");
+        assert_eq!(facts.needs, "Lib (required), gone (optional)");
+
+        let mut both = latest(Trust::Verified, true, Some("0.68"), Some("0.69"));
+        both.dependencies.clear();
+        let facts = details(Some(&both), &registry, &[]);
+        assert_eq!((facts.game.as_str(), facts.needs.as_str()), ("0.68 to 0.69", ""));
+        assert!(facts.safety.contains("by hand"));
+        assert_eq!(details(Some(&latest(Trust::Verified, true, None, Some("0.69"))), &registry, &[]).game, "up to 0.69");
+
+        let own = details(None, &registry, &["Mine".to_string()]);
+        assert_eq!((own.folders.as_str(), own.safety.as_str(), own.game.as_str()), ("Mine", "", ""), "a GitHub or zip addon: what the folder tells");
+    }
+
+    #[test]
+    fn markdown_reads_as_text() {
+        let md = "# Lucky\n\nRolls **twice** as `/lucky`, see [the wiki](https://x.test).\n![shot](https://x.test/a.png)\n- one\n- two";
+        assert_eq!(plain_text(md), "Lucky\n\nRolls twice as /lucky, see the wiki.\n- one\n- two");
     }
 
     fn games() -> Vec<GameVersion> {

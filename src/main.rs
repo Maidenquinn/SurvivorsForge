@@ -46,6 +46,10 @@ struct Core {
     /// Browse addons picked for an addon pack.
     picked: std::collections::BTreeSet<String>,
     pack_busy: bool,
+    /// The addon in the detail view, and whether it was opened from Browse (else Installed).
+    detail: Option<(String, bool)>,
+    /// Long descriptions from the platform by addon id; `None` while one is fetched.
+    about: HashMap<String, Option<String>>,
 }
 
 type Shared = Arc<Mutex<Core>>;
@@ -77,6 +81,8 @@ impl Core {
             category: None,
             picked: Default::default(),
             pack_busy: false,
+            detail: None,
+            about: HashMap::new(),
         };
         if let Some(config) = config {
             core.switch_config(config);
@@ -203,6 +209,106 @@ fn installed_row(row: &Row, core: &Core) -> AddonRow {
     }
 }
 
+fn browse_row(b: controller::BrowseRow, core: &Core) -> AddonRow {
+    AddonRow {
+        initial: initial(&b.name),
+        id: b.id.clone().into(),
+        name: b.name.into(),
+        author: b.author.into(),
+        version: SharedString::new(),
+        badge: b.trust.map(str::to_string).unwrap_or(b.category).into(),
+        description: b.description.into(),
+        status: match (b.installed, b.installable) {
+            (true, _) => "Installed",
+            (false, false) => "Not installable",
+            (false, true) => "",
+        }
+        .into(),
+        status_kind: match (b.installed, b.installable) {
+            (true, _) => 1,
+            (false, false) => 3,
+            (false, true) => 0,
+        },
+        action: if b.installed || !b.installable { "" } else { "Install" }.into(),
+        busy: core.busy.contains(&b.id),
+        can_remove: false,
+        can_open: true,
+        can_pick: core.registry.get(&b.id).is_some_and(controller::packable),
+        picked: core.picked.contains(&b.id),
+        warning: SharedString::new(),
+    }
+}
+
+/// The platform entry behind an installed entry or a Browse row; `None` for GitHub and zip addons.
+fn registry_entry<'a>(core: &'a Core, id: &str) -> Option<&'a registry::VerifiedAddon> {
+    match core.state.get(id).map(|e| &e.source) {
+        Some(Source::Verified { registry_id }) => core.registry.get(registry_id),
+        Some(_) => None,
+        None => core.registry.get(id),
+    }
+}
+
+/// The detail view of `core.detail`, built like its row in the list it was opened from.
+fn detail(core: &Core, rows: &[Row]) -> Option<AddonDetail> {
+    let (id, browse) = core.detail.as_ref()?;
+    let (row, folders) = if *browse {
+        let b = controller::browse_rows(&core.registry, &core.state).into_iter().find(|b| &b.id == id)?;
+        (browse_row(b, core), Vec::new())
+    } else {
+        let r = rows.iter().find(|r| &r.id == id)?;
+        (installed_row(r, core), r.folders.clone())
+    };
+    let entry = registry_entry(core, id);
+    let mut row = row;
+    if let (true, Some(latest)) = (row.version.is_empty(), entry.and_then(|a| a.latest.as_ref())) {
+        row.version = controller::display_version(&latest.tag).into();
+    }
+    let facts = controller::details(entry, &core.registry, &folders);
+    let about = entry.and_then(|a| core.about.get(&a.id));
+    Some(AddonDetail {
+        row,
+        category: facts.category.into(),
+        safety: facts.safety.into(),
+        game: facts.game.into(),
+        folders: facts.folders.into(),
+        needs: facts.needs.into(),
+        about: about.cloned().flatten().map(|md| controller::plain_text(&md)).unwrap_or_default().into(),
+        about_loading: matches!(about, Some(None)),
+        on_website: entry.is_some(),
+    })
+}
+
+/// Opens the detail view of a row and fetches its long description once.
+fn on_row_details(ui: &AppWindow, shared: &Shared, id: String) {
+    let fetch = {
+        let mut core = lock(shared);
+        core.detail = Some((id.clone(), ui.get_page() == 1));
+        match registry_entry(&core, &id).map(|a| a.id.clone()) {
+            Some(rid) if !core.about.contains_key(&rid) => {
+                core.about.insert(rid.clone(), None);
+                Some((rid, core.client(), core.api_url()))
+            }
+            _ => None,
+        }
+    };
+    refresh(ui, shared);
+    ui.set_detail_page(ui.get_page());
+    if let Some((rid, client, api)) = fetch {
+        let (weak, shared) = (ui.as_weak(), shared.clone());
+        std::thread::spawn(move || {
+            // Offline or without a description the summary stays; the next start asks again.
+            let about = client
+                .get_text(&format!("{api}/v1/addons/{rid}"))
+                .ok()
+                .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+                .and_then(|v| v["description_md"].as_str().map(str::to_string))
+                .unwrap_or_default();
+            lock(&shared).about.insert(rid, Some(about));
+            let _ = weak.upgrade_in_event_loop(move |ui| refresh(&ui, &shared));
+        });
+    }
+}
+
 fn refresh(ui: &AppWindow, shared: &Shared) {
     let core = lock(shared);
     // The game version list arrives with the update check; fill it once it is there.
@@ -232,35 +338,14 @@ fn refresh(ui: &AppWindow, shared: &Shared) {
             .into_iter()
             .filter(|b| controller::matches(&core.search, &b.name, &b.author))
             .filter(|b| core.category.as_deref().is_none_or(|w| controller::in_category(&b.category, w, &choices)))
-            .map(|b| AddonRow {
-                initial: initial(&b.name),
-                id: b.id.clone().into(),
-                name: b.name.into(),
-                author: b.author.into(),
-                version: SharedString::new(),
-                badge: b.trust.map(str::to_string).unwrap_or(b.category).into(),
-                description: b.description.into(),
-                status: match (b.installed, b.installable) {
-                    (true, _) => "Installed",
-                    (false, false) => "Not installable",
-                    (false, true) => "",
-                }
-                .into(),
-                status_kind: match (b.installed, b.installable) {
-                    (true, _) => 1,
-                    (false, false) => 3,
-                    (false, true) => 0,
-                },
-                action: if b.installed || !b.installable { "" } else { "Install" }.into(),
-                busy: core.busy.contains(&b.id),
-                can_remove: false,
-                can_open: true,
-                can_pick: core.registry.get(&b.id).is_some_and(controller::packable),
-                picked: core.picked.contains(&b.id),
-                warning: SharedString::new(),
-            })
+            .map(|b| browse_row(b, &core))
             .collect(),
     ));
+    match detail(&core, &rows) {
+        Some(detail) => ui.set_detail(detail),
+        // Removed meanwhile: back to the list.
+        None => ui.set_detail_page(-1),
+    }
     ui.set_update_count(controller::update_all_ids(&core.statuses).len() as i32);
     ui.set_checking(core.checking);
     ui.set_status_text(core.status.clone().into());
@@ -1096,6 +1181,13 @@ fn main() -> Result<(), slint::PlatformError> {
     on!(on_row_remove, |ui, shared, id| on_row_remove(&ui, shared, id.to_string()));
     on!(on_row_open, |_ui, shared, id| if let Some(repo) = lock(shared).repo_of(&id) {
         let _ = open::that(format!("https://github.com/{repo}"));
+    });
+    on!(on_row_details, |ui, shared, id| on_row_details(&ui, shared, id.to_string()));
+    on!(on_detail_website, |_ui, shared| {
+        let core = lock(shared);
+        if let Some(entry) = core.detail.as_ref().and_then(|(id, _)| registry_entry(&core, id)) {
+            let _ = open::that(format!("{}/addons/{}", core.web_url(), entry.id));
+        }
     });
     on!(on_confirm_accept, |ui, _shared| {
         ui.set_confirm_open(false);
