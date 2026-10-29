@@ -18,6 +18,12 @@ fn invalid() -> ApiError {
 fn forbidden() -> ApiError {
     ApiError::new(StatusCode::FORBIDDEN, "forbidden", "You cannot modify this comment")
 }
+fn may_edit(author: i64, actor: i64, admin: bool) -> bool {
+    author == actor || admin
+}
+fn may_delete(author: i64, actor: i64, admin: bool, addon_moderator: bool) -> bool {
+    may_edit(author, actor, admin) || addon_moderator
+}
 fn valid(text: &str) -> bool {
     let n = text.trim().chars().count();
     (1..=10000).contains(&n)
@@ -76,7 +82,7 @@ pub async fn edit(State(state): State<AppState>, user: CurrentUser,
         "SELECT author_id FROM addon_comments WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL"
     ).bind(id).bind(addon.id).fetch_optional(&state.pool).await?;
     let author = author.ok_or_else(ApiError::not_found)?;
-    if author != user.id && !user.is_admin() { return Err(forbidden()); }
+    if !may_edit(author, user.id, user.is_admin()) { return Err(forbidden()); }
     let updated = sqlx::query("UPDATE addon_comments SET body=$3,edited_at=$4 WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL AND author_id=$5")
         .bind(id).bind(addon.id).bind(body.body.trim()).bind((state.clock)()).bind(author).execute(&state.pool).await?;
     if updated.rows_affected() == 0 { return Err(ApiError::not_found()); }
@@ -92,7 +98,7 @@ pub async fn remove(State(state): State<AppState>, user: CurrentUser,
     ).bind(id).bind(addon.id).fetch_optional(&state.pool).await?;
     let author = author.ok_or_else(ApiError::not_found)?;
     let rights = user_permissions(&state.pool, &addon, &user).await?;
-    if author != user.id && !user.is_admin() && !rights.owner && !rights.admin && !rights.edit_description {
+    if !may_delete(author, user.id, user.is_admin(), rights.owner || rights.admin || rights.edit_description) {
         return Err(forbidden());
     }
     let removed = sqlx::query("UPDATE addon_comments SET deleted_at=$3,deleted_by=$4 WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL")
@@ -103,7 +109,21 @@ pub async fn remove(State(state): State<AppState>, user: CurrentUser,
 
 #[cfg(test)]
 mod tests {
-    use super::valid;
+    use super::{valid, may_edit, may_delete};
+
+    #[test]
+    fn author_admin_and_moderator_permissions() {
+        assert!(may_edit(1, 1, false));
+        assert!(may_edit(1, 2, true));
+        assert!(!may_edit(1, 2, false));
+        assert!(may_delete(1, 1, false, false));
+        assert!(may_delete(1, 2, true, false));
+        assert!(may_delete(1, 2, false, true));
+        assert!(!may_delete(1, 2, false, false));
+        // Addon moderators can remove other users comments but cannot edit them.
+        assert!(!may_edit(1, 2, false));
+    }
+
 
     #[test]
     fn rejects_blank_and_whitespace_only_comments() {
