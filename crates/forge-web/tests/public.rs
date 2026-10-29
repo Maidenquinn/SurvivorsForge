@@ -535,3 +535,12 @@ async fn the_home_page_shows_popular_addons() {
     assert_eq!(page.status, StatusCode::OK);
     assert!(!page.body.contains("Popular addons"));
 }
+
+#[tokio::test]
+async fn the_home_page_explains_the_checks() {
+    let mut web = TestWeb::new().await;
+    let page = web.get("/").await.body;
+    for text in ["Checked automatically", "Verified by hand", "Straight from GitHub"] {
+        assert!(page.contains(&format!("<h3>{text}</h3>")), "missing {text}: {page}");
+    }
+}
