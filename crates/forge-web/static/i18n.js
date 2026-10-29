@@ -6421,6 +6421,7 @@
         resolved:"resolved", closed:"closed"
       },
       issue_kind: {bug:"bug_report", feature:"feature_request", question:"question"},
+      admin_version_action: {verify:"admin_verify_file", unverify:"admin_remove_verification", block:"admin_block", unblock:"admin_unblock"},
       role: {
         owner:"role_owner", editor:"role_editor", contributor:"role_contributor",
         claimable:"my_unclaimed", admin:"admin", user:"role_user"
