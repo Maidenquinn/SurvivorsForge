@@ -57,6 +57,7 @@ fn version_row(v: &Value, verified_author: bool) -> VersionRow {
         game: range(&v["game_min"], &v["game_max"]),
         critical: v["findings"]["critical"].as_i64().unwrap_or(0),
         warn: v["findings"]["warn"].as_i64().unwrap_or(0),
+        downloads: v["downloads"].as_i64().filter(|n| *n > 0).map(grouped),
     }
 }
 

@@ -144,6 +144,8 @@ pub struct VersionRow {
     pub game: String,
     pub critical: i64,
     pub warn: i64,
+    /// Grouped like `1,234`; `None` when GitHub counted nothing (versions from tags have no count).
+    pub downloads: Option<String>,
 }
 
 pub struct Shot {

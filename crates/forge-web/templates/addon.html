@@ -26,6 +26,7 @@
   {% match latest %}
   {% when Some with (l) %}
     <h2>Version {{ l.row.tag }}</h2>
+    {% if l.row.published != "" %}<p class="muted">Published {{ l.row.published }}{% if let Some(n) = l.row.downloads %} · {{ n }} downloads{% endif %}</p>{% endif %}
     <div class="notice {{ l.row.notice.class }}" role="status">
       <strong>{{ l.row.notice.badge }}.</strong> {{ l.row.notice.text }}
     </div>

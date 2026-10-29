@@ -404,3 +404,14 @@ async fn screenshots_without_caption_still_have_a_text() {
     let page = web.get("/addons/lucky").await.body;
     assert!(page.contains(r#"alt="Screenshot 1 of Lucky Odds""#), "{page}");
 }
+
+#[tokio::test]
+async fn the_version_says_when_and_how_often() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/addons/lucky", addon("scanned")).await;
+    let mut list = versions("scanned", "available");
+    list[0]["downloads"] = json!(1234);
+    mock(&web, "/v1/addons/lucky/versions", list).await;
+    let page = web.get("/addons/lucky").await.body;
+    assert!(page.contains("Published 2026-05-01 · 1,234 downloads"), "{page}");
+}
