@@ -461,6 +461,7 @@ document.addEventListener("DOMContentLoaded", function () {
   "use strict";
   var busy = false;
   var controller = null;
+  var sequence = 0;
   function root() { return document.querySelector("[data-dynamic-comments]"); }
   function t(key, fallback) {
     return window.ForgeI18n ? window.ForgeI18n.t(key) : fallback;
@@ -479,6 +480,7 @@ document.addEventListener("DOMContentLoaded", function () {
   async function load(url, options, push) {
     var old = root();
     if (!old) return;
+    var requestId = ++sequence;
     // A browser Back action may supersede an in-flight request.
     if (busy && !options) {
       if (controller) controller.abort();
@@ -507,7 +509,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var html = new DOMParser().parseFromString(await response.text(), "text/html");
       var next = html.querySelector("[data-dynamic-comments]");
       if (!next) throw new Error("Unexpected response");
-      if (old !== root()) return;
+      if (requestId !== sequence || old !== root()) return;
       old.replaceWith(next);
       // POST redirects to the canonical feed. Do not add mutation URLs to history.
       if (push && !options) history.pushState({comments: true}, "", response.url);
@@ -519,11 +521,11 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       document.dispatchEvent(new Event("htmx:afterSwap"));
     } catch (err) {
-      if (err.name !== "AbortError" && old.isConnected) {
+      if (requestId === sequence && err.name !== "AbortError" && old.isConnected) {
         errorMessage(old, "comment_update_error", "Could not update comments. Check your connection and try again.");
       }
     } finally {
-      old.removeAttribute("aria-busy");
+      if (requestId === sequence) old.removeAttribute("aria-busy");
       if (controller === current) {
         busy = false;
         controller = null;
@@ -537,7 +539,11 @@ document.addEventListener("DOMContentLoaded", function () {
     if (busy) return;
     if (form.hasAttribute("data-confirm-delete") && !window.confirm(form.getAttribute("data-confirm-delete"))) return;
     if (!form.reportValidity()) return;
-    load(form.action, {method: "POST", body: new FormData(form)}, false);
+    var submit = form.querySelector('button[type="submit"]');
+    if (submit) submit.disabled = true;
+    load(form.action, {method: "POST", body: new FormData(form)}, false).finally(function () {
+      if (submit && submit.isConnected) submit.disabled = false;
+    });
   });
   document.addEventListener("click", function (event) {
     var cancel = event.target.closest("[data-dynamic-comments] [data-edit-cancel]");
