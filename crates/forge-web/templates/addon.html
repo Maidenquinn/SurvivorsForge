@@ -62,7 +62,7 @@
   <a href="/addons/{{ slug }}?tab=issues" {% if tab == "issues" %}aria-current="page"{% endif %} data-i18n="issues">Issues</a>
   <a href="/addons/{{ slug }}?tab=gallery" {% if tab == "gallery" %}aria-current="page"{% endif %} data-i18n="gallery">Gallery</a>
   <a href="/addons/{{ slug }}?tab=versions" {% if tab == "versions" %}aria-current="page"{% endif %} data-i18n="versions">Versions</a>
-  <a href="/addons/{{ slug }}/comments" data-i18n="comments_tab">Comments</a>
+  <a href="/addons/{{ slug }}?tab=comments" {% if tab == "comments" %}aria-current="page"{% endif %} data-i18n="comments_tab">Comments</a>
 </nav>
 {% if tab == "issues" %}
 <section class="addon-tab-section" data-dynamic-issues>
@@ -205,6 +205,39 @@
     <p data-gallery-caption></p>
   </dialog>
   {% endif %}
+</section>
+{% else if tab == "comments" %}
+<section class="addon-tab-section addon-comments" data-dynamic-comments aria-busy="false">
+  <div class="issues-heading"><div><h2 data-i18n="comments">Community comments</h2><p class="muted" data-i18n="comments_intro">Discuss this addon with its creator and community.</p></div></div>
+  {% if user.is_some() %}
+  <form class="panel issue-reply" method="post" action="/addons/{{ slug }}/comments">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="new-comment" data-i18n="your_comment">Your comment</label>
+    <textarea id="new-comment" name="body" required minlength="1" maxlength="10000" rows="4" data-i18n-placeholder="comment_placeholder" placeholder="Share your feedback..."></textarea>
+    <div class="issues-form-footer"><button type="submit" data-i18n="post">Post comment</button></div>
+  </form>
+  {% else %}<p class="panel"><span data-i18n="anonymous_read">You can read comments without signing in.</span> <a href="/login" data-i18n="login_participate">Log in to participate</a>.</p>{% endif %}
+  <section class="issue-discussion" aria-label="Comments" data-i18n-aria-label="comments">
+    {% for comment in comments %}
+    <article class="issue-message" data-inline-editor id="comment-{{ comment.id }}">
+      <header class="issue-message-head">
+        {% if !comment.avatar.is_empty() %}<img class="issue-avatar" src="{{ comment.avatar }}" alt="" width="32" height="32">{% endif %}
+        <strong>{{ comment.author }}</strong><span class="muted">{{ comment.created }}{% if comment.edited %} · <span data-i18n="edited">edited</span>{% endif %}</span>
+        <span class="issue-action-spacer"></span>
+        {% if comment.can_edit %}<button type="button" class="issue-action" data-edit-toggle data-i18n="edit">Edit</button>{% endif %}
+        {% if comment.can_delete %}<form method="post" action="/addons/{{ slug }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?" data-i18n-confirm="confirm_delete"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="issue-action issue-danger" data-i18n="delete">Delete</button></form>{% endif %}
+      </header>
+      <div class="issue-message-body" data-edit-view>{{ comment.body }}</div>
+      {% if comment.can_edit %}
+      <form class="issue-inline-form" data-edit-form hidden method="post" action="/addons/{{ slug }}/comments/{{ comment.id }}/edit">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <textarea name="body" required minlength="1" maxlength="10000" rows="4" aria-label="Edit comment" data-i18n-aria-label="edit_comment">{{ comment.body }}</textarea>
+        <div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel data-i18n="cancel">Cancel</button><button type="submit" data-i18n="save">Save changes</button></div>
+      </form>{% endif %}
+    </article>
+    {% else %}<p class="panel muted" data-i18n="empty_comments">No comments yet. Start the discussion!</p>{% endfor %}
+  </section>
+  {% if let Some(id) = comments_next %}<p><a class="button secondary" href="/addons/{{ slug }}/comments?before={{ id }}" data-i18n="older_comments">Older comments →</a></p>{% endif %}
 </section>
 {% else if tab == "versions" %}
 <section class="addon-tab-section">
