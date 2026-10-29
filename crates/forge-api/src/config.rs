@@ -196,6 +196,17 @@ mod tests {
     }
 
     #[test]
+    fn self_hosting_doc_lists_every_variable() {
+        let example = include_str!("../../../.env.example");
+        let doc = include_str!("../../../docs/self-hosting.md");
+        for line in example.lines().filter(|l| !l.starts_with('#')) {
+            if let Some((name, _)) = line.split_once('=') {
+                assert!(doc.contains(&format!("`{name}`")), "{name} is not explained in docs/self-hosting.md");
+            }
+        }
+    }
+
+    #[test]
     fn env_example_lists_every_variable() {
         let example = include_str!("../../../.env.example");
         for name in Config::VARIABLES {

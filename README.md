@@ -223,6 +223,14 @@ Load order at runtime:
 
 To change the list for all users, edit the file on `main`. No new release is needed.
 
+## Platform
+
+Besides the launcher, this repository holds the SurvivorsForge platform: an API (`crates/forge-api`),
+a website (`crates/forge-web`), the addon scanner (`crates/forge-scan`) and the code they share
+with the launcher (`crates/forge-core`). Creators log in with GitHub and publish addons from their
+own repos, every release is scanned for harmful code, and admins verify versions. Downloads stay
+on GitHub. How to run it: [docs/self-hosting.md](docs/self-hosting.md).
+
 ## Data locations
 
 | What | Where |
