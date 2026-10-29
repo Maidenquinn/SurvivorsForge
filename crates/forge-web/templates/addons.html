@@ -4,7 +4,7 @@
 {% block content %}
 <h1>Addons</h1>
 <form class="search" method="get" action="/addons" role="search"
-      hx-get="/addons" hx-trigger="input changed delay:300ms from:input, change from:select, search" hx-target="#results" hx-select="#results" hx-push-url="true">
+      hx-get="/addons" hx-trigger="input changed delay:300ms from:input, change from:select, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results">
   <label for="q">Search</label>
   <input id="q" type="search" name="q" value="{{ q }}" placeholder="Name or what it does" autocomplete="off">
   <div class="filters">

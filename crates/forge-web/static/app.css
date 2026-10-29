@@ -258,6 +258,9 @@ input[readonly] { color: var(--gold-bright); }
 .inline-action input { width: 12em; min-height: 34px; }
 .preview { border: 1px dashed var(--outline); border-radius: var(--radius); padding: 12px; min-height: 48px; background: var(--field); }
 .htmx-indicator { display: none; }
+/* Search results being reloaded: dimmed until the new ones arrive */
+#results { transition: opacity .15s; }
+#results.htmx-request { opacity: .5; pointer-events: none; }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline; }
 
 .tile { display: block; text-decoration: none; color: var(--text); }

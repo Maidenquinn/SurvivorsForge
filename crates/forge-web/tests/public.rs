@@ -273,3 +273,16 @@ async fn card_lists_switch_between_tiles_and_a_list() {
     let script = web.get("/static/view.js").await;
     assert!(script.headers["content-type"].to_str().unwrap().starts_with("text/javascript") && script.body.contains("localStorage"));
 }
+
+#[tokio::test]
+async fn searching_shows_that_it_loads() {
+    // While htmx fetches new results the old ones are dimmed, so a slow answer does not look frozen.
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
+    mock(&web, "/v1/addons", json!({ "total": 0, "addons": [] })).await;
+    mock(&web, "/v1/packs", json!({ "total": 0, "packs": [] })).await;
+    for page in ["/addons", "/packs"] {
+        assert!(web.get(page).await.body.contains(r##"hx-indicator="#results""##), "{page}");
+    }
+    assert!(web.get("/static/app.css").await.body.contains("#results.htmx-request"));
+}
