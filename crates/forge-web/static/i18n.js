@@ -5995,7 +5995,20 @@
         "Verified":"verified", "Verified author":"trust_verified_author",
         "Checked":"checked", "Flagged":"flagged",
         "Not checked":"not_checked", "Blocked":"admin_blocked",
-        "Unavailable":"trust_unavailable"
+        "Unavailable":"trust_unavailable", "File changed":"trust_file_changed",
+        "verified":"verified", "scanned":"checked", "flagged":"flagged",
+        "blocked":"admin_blocked", "unscanned":"not_checked",
+        "source_changed":"trust_file_changed"
+      },
+      notice: {
+        "Unavailable":"trust_notice_unavailable",
+        "Verified":"trust_notice_verified",
+        "Verified author":"trust_notice_verified_author",
+        "Checked":"trust_notice_checked",
+        "Flagged":"trust_notice_flagged",
+        "Blocked":"trust_notice_blocked",
+        "File changed":"trust_notice_file_changed",
+        "Not checked":"trust_notice_not_checked"
       }
     };
     document.querySelectorAll("[data-i18n-enum]").forEach(function (el) {
