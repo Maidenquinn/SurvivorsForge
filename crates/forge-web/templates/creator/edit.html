@@ -3,7 +3,7 @@
 {% block content %}
 <h1><span data-i18n="edit">Edit</span> {{ name }}</h1>
 {% include "creator/nav.html" %}
-{% if saved %}<div class="notice ok" role="status">Saved.</div>{% endif %}
+{% if saved %}<div class="notice ok" role="status" data-i18n="creator_saved">Saved.</div>{% endif %}
 {% if errors.get("form") != "" %}<div class="notice bad" role="alert">{{ errors.get("form") }}</div>{% endif %}
 
 {% if perms.owner %}
@@ -22,7 +22,7 @@
     <option value="release" {% if source_type == "release" %}selected{% endif %} data-i18n="source_release_zip">A zip attached to each release</option>
     <option value="tag" {% if source_type == "tag" %}selected{% endif %} data-i18n="source_tag_zip">The source zip of each tag</option>
   </select>
-  <label for="asset_pattern">Release zip name</label>
+  <label for="asset_pattern" data-i18n="creator_zip_name">Release zip name</label>
   <input id="asset_pattern" name="asset_pattern" value="{{ asset_pattern }}">
   {% if errors.get("asset_pattern") != "" %}<p class="field-error">{{ errors.get("asset_pattern") }}</p>{% endif %}
   <label for="folders" data-i18n="creator_folder_label">Addon folders</label>
