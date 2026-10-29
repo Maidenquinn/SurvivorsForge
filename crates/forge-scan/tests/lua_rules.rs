@@ -22,7 +22,7 @@ fn lacks(src: &str, rule: &str) {
 
 #[test]
 fn forbidden_global_positive() {
-    for src in ["os.execute('x')", "local f = io.open('x')", "debug.getinfo(1)", "require('socket')", "x = getfenv(0)", "loadlib('a', 'b')",
+    for src in ["os.execute('x')", "local f = io.open('x')", "debug.getinfo(1)", "require('socket')", "loadlib('a', 'b')",
         "dofile('x')", "local s = string.dump(f)", "collectgarbage()"] {
         has(src, "lua.forbidden_global", Severity::Critical);
     }
@@ -72,14 +72,19 @@ fn dynamic_code_negative() {
 fn folded_concat_and_dynamic_global() {
     let src = r#"local o = "o".."s"; _G[o].execute("x")"#;
     has(src, "lua.forbidden_name_string", Severity::Critical);
-    has(src, "lua.dynamic_global", Severity::Warn);
+    has(src, "lua.dynamic_global", Severity::Notice);
 }
 
 #[test]
 fn dynamic_global_positive() {
-    has("local f = getglobal(name)", "lua.dynamic_global", Severity::Warn);
-    has("setglobal(n, 1)", "lua.dynamic_global", Severity::Warn);
-    has("local v = _G[k]", "lua.dynamic_global", Severity::Warn);
+    has("local f = getglobal(name)", "lua.dynamic_global", Severity::Info);
+    has("local g = getfenv(0)", "lua.environment", Severity::Info);
+    has("setfenv(1, env)", "lua.environment", Severity::Info);
+    lacks("local g = getfenv(0)", "lua.forbidden_global");
+    lacks("setfenv(1, env)", "lua.forbidden_global");
+    lacks("if opts['debug'] then end", "lua.forbidden_name_string");
+    has("setglobal(n, 1)", "lua.dynamic_global", Severity::Notice);
+    has("local v = _G[k]", "lua.dynamic_global", Severity::Notice);
 }
 
 #[test]
@@ -116,7 +121,7 @@ fn chat_send_negative() {
 #[test]
 fn api_override_positive() {
     has("SendChatMessage = function() end", "lua.api_override", Severity::Warn);
-    has("function ChatFrame_OnEvent(event) end", "lua.api_override", Severity::Warn);
+    has("function ChatFrame_OnEvent(event) end", "lua.api_override", Severity::Info);
 }
 
 #[test]
@@ -127,8 +132,11 @@ fn api_override_negative() {
 
 #[test]
 fn url_positive() {
-    has("local u = 'https://evil.test/x'", "lua.url", Severity::Warn);
-    has("print('join discord.gg/abc')", "lua.url", Severity::Warn);
+    has("local u = 'https://evil.test/x'", "lua.url", Severity::Notice);
+    has("print('join discord.gg/abc')", "lua.url", Severity::Notice);
+    let mut report = forge_scan::finding::Report::default();
+    forge_scan::lua_rules::check("a.lua", b"local KOFI = \"https://ko-fi.com/morderous\"", 0, &mut report);
+    assert!(!report.flagged(), "a web address alone does not flag the addon");
 }
 
 #[test]
@@ -172,6 +180,15 @@ fn obfuscation_entropy_positive() {
 }
 
 #[test]
+fn long_descriptions_are_not_encoded_data() {
+    // A tooltip text from a real addon that the old rule flagged.
+    let text = "In a co-op run, a frame for each friend: the health in the class's color, DOWN while down, a gold fill while you                 bring them back; hover one for their damage. It puts the game's party frames away. From the options: Lock, Scale,                 Show in solo runs (Off, 1-5), Colors by class (On).";
+    lacks(&format!("local tip = \"{text}\""), "lua.obfuscation_entropy");
+    let hex: String = (0..260).map(|i| char::from(b"0123456789abcdef"[(i * 7) % 16])).collect();
+    has(&format!("local s = '{hex}'"), "lua.obfuscation_entropy", Severity::Warn);
+}
+
+#[test]
 fn obfuscation_entropy_negative() {
     let prose = "This addon shows your luck for rare cards and keeps a small history of the last runs. ".repeat(4);
     lacks(&format!("local s = '{prose}'"), "lua.obfuscation_entropy");
@@ -179,7 +196,7 @@ fn obfuscation_entropy_negative() {
 
 #[test]
 fn long_line_positive() {
-    has(&format!("local x = {}", "1 + ".repeat(600)), "lua.long_line", Severity::Warn);
+    has(&format!("local x = {}", "1 + ".repeat(600)), "lua.long_line", Severity::Notice);
 }
 
 #[test]

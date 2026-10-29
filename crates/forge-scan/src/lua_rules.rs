@@ -6,17 +6,22 @@ use crate::finding::{Report, Severity};
 use full_moon::LuaVersion;
 use full_moon::tokenizer::{Lexer, LexerResult, Symbol, TokenType};
 
-/// Globals that reach the file system, the OS, other code or the interpreter itself.
+/// Globals that reach the file system, the OS, other code or the interpreter itself. `getfenv` and
+/// `setfenv` are not among them: 1.12 addons and their libraries use them for the global table and
+/// their own environments.
 pub const FORBIDDEN_GLOBALS: &[&str] = &[
-    "os", "io", "debug", "package", "require", "loadlib", "dofile", "loadfile", "load", "getfenv", "setfenv", "newproxy",
-    "collectgarbage",
+    "os", "io", "debug", "package", "require", "loadlib", "dofile", "loadfile", "load", "newproxy", "collectgarbage",
 ];
-/// Strings that only make sense to reach a forbidden global by name.
+/// Strings that only make sense to reach a forbidden global by name. Not "debug": it is an
+/// everyday settings key and log level.
 const FORBIDDEN_NAME_STRINGS: &[&str] = &[
-    "os", "io", "debug", "package", "require", "loadlib", "dofile", "loadfile", "load", "getfenv", "setfenv", "newproxy",
-    "collectgarbage", "loadstring", "RunScript",
+    "os", "io", "package", "require", "loadlib", "dofile", "loadfile", "load", "newproxy", "collectgarbage", "loadstring",
+    "RunScript",
 ];
 pub const CHAT_SEND: &[&str] = &["SendChatMessage", "SendAddonMessage", "GuildInvite", "InviteByName"];
+/// Game functions that 1.12 addons commonly hook by replacing them and calling the original;
+/// replacing them is only noted.
+pub const USUAL_HOOKS: &[&str] = &["ChatFrame_OnEvent"];
 /// Game functions an addon should hook, not replace.
 pub const API_OVERRIDE: &[&str] = &[
     "SendChatMessage", "SendAddonMessage", "ChatFrame_OnEvent", "ChatEdit_SendText", "GuildInvite", "InviteByName", "RunScript",
@@ -28,7 +33,10 @@ pub const MAX_LINE: usize = 2000;
 pub const MIN_CHAR_ARGS: usize = 8;
 pub const MIN_ESCAPE_RUN: usize = 8;
 pub const ENTROPY_MIN_LEN: usize = 200;
-pub const ENTROPY_LIMIT: f64 = 4.5;
+/// Base64 and similar encodings have about 6 bits per character, English text about 4.2.
+pub const ENTROPY_LIMIT: f64 = 5.0;
+/// Encoded data has (almost) no spaces; any text has far more than this share.
+pub const MAX_ENCODED_SPACES: f64 = 0.02;
 
 #[derive(Debug, Clone, PartialEq)]
 enum Tok {
@@ -194,7 +202,7 @@ pub fn check(path: &str, source: &[u8], line_offset: u32, report: &mut Report) {
     }
     let text = String::from_utf8_lossy(source);
     if let Some((n, _)) = text.lines().enumerate().find(|(_, l)| l.chars().count() > MAX_LINE) {
-        report.add("lua.long_line", Severity::Warn, path, Some(n as u32 + 1 + line_offset), format!("A line longer than {MAX_LINE} characters"));
+        report.add("lua.long_line", Severity::Notice, path, Some(n as u32 + 1 + line_offset), format!("A line longer than {MAX_LINE} characters"));
     }
     let parsed = full_moon::parse_fallible(&text, LuaVersion::lua51());
     if let Some(error) = parsed.errors().first() {
@@ -244,11 +252,19 @@ fn check_ident(lua: &Lua, i: usize, name: &str, report: &mut Report) {
                 lua.add(report, "lua.dynamic_code", Severity::Critical, i, format!("{name} runs code that is built at run time"));
             }
         }
-        "getglobal" | "setglobal" if lua.is_call(i) && !lua.first_arg_constant(i) => {
-            lua.add(report, "lua.dynamic_global", Severity::Warn, i, format!("{name} with a computed name"));
+        // getglobal(this:GetName() .. "Text") is everyday 1.12 code; writing one is rarer.
+        "getglobal" if lua.is_call(i) && !lua.first_arg_constant(i) => {
+            lua.add(report, "lua.dynamic_global", Severity::Info, i, "getglobal with a computed name");
+        }
+        // setglobal(name, wrapper) is how 1.12 addons hook game functions.
+        "setglobal" if lua.is_call(i) && !lua.first_arg_constant(i) => {
+            lua.add(report, "lua.dynamic_global", Severity::Notice, i, "setglobal with a computed name");
+        }
+        "getfenv" | "setfenv" if !lua.is_member(i) => {
+            lua.add(report, "lua.environment", Severity::Info, i, format!("{name} works with function environments"));
         }
         "_G" if lua.is_sym(i + 1, Symbol::LeftBracket) && !(lua.is_str(i + 2) && lua.is_sym(i + 3, Symbol::RightBracket)) => {
-            lua.add(report, "lua.dynamic_global", Severity::Warn, i, "_G with a computed name");
+            lua.add(report, "lua.dynamic_global", Severity::Notice, i, "_G with a computed name");
         }
         "setmetatable" if lua.is_sym(i + 1, Symbol::LeftParen) && lua.is_ident(i + 2, "_G") => {
             lua.add(report, "lua.global_metatable", Severity::Critical, i, "Changes how every global is looked up");
@@ -259,12 +275,15 @@ fn check_ident(lua: &Lua, i: usize, name: &str, report: &mut Report) {
         _ => {}
     }
     if CHAT_SEND.contains(&name) {
-        lua.add(report, "lua.chat_send", Severity::Warn, i, format!("{name} sends messages or invites in the player's name"));
+        // Addon messages stay between addons and are how groups share data; the rest reaches people.
+        let severity = if name == "SendAddonMessage" { Severity::Notice } else { Severity::Warn };
+        lua.add(report, "lua.chat_send", severity, i, format!("{name} sends messages or invites in the player's name"));
     }
     let assigned = lua.is_sym(i + 1, Symbol::Equal) && !(i > 0 && lua.is_sym(i - 1, Symbol::Local));
     let declared = i > 0 && lua.is_sym(i - 1, Symbol::Function) && lua.is_sym(i + 1, Symbol::LeftParen);
     if API_OVERRIDE.contains(&name) && (assigned || declared) {
-        lua.add(report, "lua.api_override", Severity::Warn, i, format!("Replaces the game function {name}"));
+        let severity = if USUAL_HOOKS.contains(&name) { Severity::Info } else { Severity::Warn };
+        lua.add(report, "lua.api_override", severity, i, format!("Replaces the game function {name}"));
     }
 }
 
@@ -288,14 +307,28 @@ fn check_string(lua: &Lua, i: usize, raw: &str, value: &str, report: &mut Report
     }
     let lower = value.to_ascii_lowercase();
     if URL_MARKERS.iter().any(|m| lower.contains(m)) {
-        lua.add(report, "lua.url", Severity::Warn, i, "Contains a web address");
+        lua.add(report, "lua.url", Severity::Notice, i, "Contains a web address");
     }
     if escape_run(raw) >= MIN_ESCAPE_RUN {
         lua.add(report, "lua.obfuscation_escape", Severity::Warn, i, "A long run of escaped bytes hides text");
     }
-    if value.chars().count() > ENTROPY_MIN_LEN && shannon(value) > ENTROPY_LIMIT {
+    if looks_encoded(value) {
         lua.add(report, "lua.obfuscation_entropy", Severity::Warn, i, "A long string that looks encrypted or encoded");
     }
+}
+
+/// A long string without spaces whose characters are as varied as encoded data, or one made only
+/// of hex digits. Prose, even with capitals and punctuation, has spaces.
+pub fn looks_encoded(value: &str) -> bool {
+    let len = value.chars().count();
+    if len <= ENTROPY_MIN_LEN {
+        return false;
+    }
+    let spaces = value.chars().filter(|c| c.is_whitespace()).count();
+    if spaces as f64 / len as f64 > MAX_ENCODED_SPACES {
+        return false;
+    }
+    value.chars().all(|c| c.is_ascii_hexdigit()) || shannon(value) > ENTROPY_LIMIT
 }
 
 #[cfg(test)]

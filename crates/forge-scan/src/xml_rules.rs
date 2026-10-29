@@ -14,6 +14,27 @@ fn is_script_element(name: &[u8], in_scripts: bool) -> bool {
     name == b"Script" || (in_scripts && name.starts_with(b"On"))
 }
 
+/// The lowercase zip paths `path` loads through `<Script file>` and `<Include file>`.
+pub fn referenced_files(path: &str, source: &[u8]) -> Vec<String> {
+    let dir = path.rsplit_once('/').map(|(d, _)| format!("{d}/")).unwrap_or_default();
+    let mut reader = Reader::from_reader(source);
+    let mut buf = Vec::new();
+    let mut files = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Ok(Event::Start(e)) | Ok(Event::Empty(e)) if matches!(e.name().as_ref(), b"Script" | b"Include") => {
+                if let Some(file) = e.try_get_attribute("file").ok().flatten() {
+                    files.push(format!("{dir}{}", String::from_utf8_lossy(&file.value).replace('\\', "/")).to_ascii_lowercase());
+                }
+            }
+            Ok(Event::Eof) | Err(_) => break,
+            _ => {}
+        }
+        buf.clear();
+    }
+    files
+}
+
 /// Checks the XML file `path`. `zip_files` are all paths in the zip, for `<Script file>`.
 pub fn check(path: &str, source: &[u8], zip_files: &[String], report: &mut Report) {
     let mut reader = Reader::from_reader(source);

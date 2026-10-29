@@ -57,7 +57,7 @@ pub async fn findings(State(state): State<AppState>, Path((slug, tag)): Path<(St
                           'findings', (SELECT coalesce(json_agg(json_build_object(
                                               'rule', f.rule, 'severity', f.severity, 'file', f.file, 'line', f.line,
                                               'message', f.message, 'snippet', f.snippet)
-                                          ORDER BY CASE f.severity WHEN 'critical' THEN 0 WHEN 'warn' THEN 1 ELSE 2 END, f.id), '[]')
+                                          ORDER BY CASE f.severity WHEN 'critical' THEN 0 WHEN 'warn' THEN 1 WHEN 'notice' THEN 2 ELSE 3 END, f.id), '[]')
                                        FROM findings f WHERE f.scan_id = s.id))
                       FROM scans s WHERE s.version_id = v.id ORDER BY s.id DESC LIMIT 1))
          FROM versions v WHERE v.addon_id = $1 AND v.tag = $2",

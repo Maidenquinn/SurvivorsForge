@@ -2,6 +2,7 @@
 
 use crate::finding::{Report, Severity};
 use forge_core::archive::{analyze_reader, safe_components};
+use std::collections::{HashMap, HashSet};
 use std::io::{Cursor, Read};
 
 pub const MAX_ENTRIES: usize = 5000;
@@ -31,10 +32,13 @@ fn extension(path: &str) -> Option<String> {
 
 fn is_hidden(path: &str) -> bool {
     let lower = path.to_ascii_lowercase();
+    let name = lower.rsplit('/').next().unwrap_or(&lower);
     lower.starts_with("__macosx/")
-        || lower.split('/').any(|p| p == ".git")
-        || lower.ends_with(".ds_store")
-        || lower.ends_with("thumbs.db")
+        || lower.split('/').any(|p| p == ".git" || p == ".github")
+        || name.starts_with(".git")
+        || name == ".editorconfig"
+        || name.ends_with(".ds_store")
+        || name == "thumbs.db"
 }
 
 /// What the first bytes say a file is, if it is something an addon must never contain.
@@ -102,11 +106,16 @@ pub fn check(zip: &[u8], expected_folders: &[String], foreign_folders: &[String]
                 continue;
             }
         };
-        if path.contains('\0') || path.contains('\\') || safe_components(&path).is_err() {
-            report.add("zip.path_traversal", Severity::Critical, &path, None, "The path could write outside the addon folder");
-            unsafe_paths = true;
-            continue;
-        }
+        // Zips packed on Windows may use `\` as separator: a separator, not an escape. `..`,
+        // absolute paths and drive letters stay forbidden in either form.
+        let path = match safe_components(&path) {
+            Ok(parts) if !path.contains('\0') => parts.join("/"),
+            _ => {
+                report.add("zip.path_traversal", Severity::Critical, &path, None, "The path could write outside the addon folder");
+                unsafe_paths = true;
+                continue;
+            }
+        };
         if mode.is_some_and(|m| m & 0o170000 == 0o120000) {
             report.add("zip.symlink", Severity::Critical, &path, None, "Symbolic links are not allowed");
             continue;
@@ -190,7 +199,7 @@ pub fn check(zip: &[u8], expected_folders: &[String], foreign_folders: &[String]
             None => LICENSE_NAMES.contains(&stem.as_str()),
         };
         if !allowed {
-            report.add("zip.extension", Severity::Warn, &path, None, "This file type does not belong in an addon");
+            report.add("zip.extension", Severity::Notice, &path, None, "This file type does not belong in an addon");
         }
         if keep {
             texts.push(TextFile { path, bytes: kept });
@@ -224,6 +233,38 @@ fn check_folders(zip: &[u8], expected: &[String], foreign: &[String], texts: &[T
             report.add("zip.missing_folder", Severity::Warn, "", None, format!("The registered folder {folder} is not in the zip"));
         }
     }
+}
+
+/// The lowercase paths the game loads: every file a `.toc` lists, then every file a loaded XML pulls
+/// in with `<Script file>` or `<Include file>`. `None` when no addon with a `.toc` is found; then
+/// everything counts as loaded.
+pub fn loaded_files(zip: &[u8], texts: &[TextFile]) -> Option<HashSet<String>> {
+    let detected = analyze_reader(Cursor::new(zip)).ok()?;
+    let by_path: HashMap<String, &TextFile> = texts.iter().map(|t| (t.path.to_ascii_lowercase(), t)).collect();
+    let mut loaded = HashSet::new();
+    let mut queue = Vec::new();
+    for addon in &detected {
+        let dir = if addon.prefix.is_empty() { String::new() } else { format!("{}/", addon.prefix) };
+        let Some(toc) = by_path.get(&format!("{dir}{}.toc", addon.name).to_ascii_lowercase()) else { continue };
+        for line in String::from_utf8_lossy(&toc.bytes).lines() {
+            let line = line.trim().trim_start_matches('\u{feff}');
+            if !line.is_empty() && !line.starts_with('#') {
+                queue.push(format!("{dir}{}", line.replace('\\', "/")).to_ascii_lowercase());
+            }
+        }
+    }
+    if queue.is_empty() {
+        return None;
+    }
+    while let Some(path) = queue.pop() {
+        if !loaded.insert(path.clone()) {
+            continue;
+        }
+        if let Some(xml) = by_path.get(&path).filter(|_| path.ends_with(".xml")) {
+            queue.extend(crate::xml_rules::referenced_files(&xml.path, &xml.bytes));
+        }
+    }
+    Some(loaded)
 }
 
 /// Every file the `.toc` loads exists in the addon folder.

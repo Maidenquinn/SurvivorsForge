@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 pub enum Severity {
     /// Shown, but the zip still counts as clean.
     Info,
+    /// Worth a look and shown like a warning, but the zip still counts as clean.
+    Notice,
     /// Makes the zip "flagged".
     Warn,
     /// Makes the zip "flagged"; a strong sign of harm.

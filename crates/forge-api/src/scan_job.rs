@@ -114,6 +114,7 @@ async fn store(
         for f in &report.findings {
             let severity = match f.severity {
                 Severity::Info => "info",
+                Severity::Notice => "notice",
                 Severity::Warn => "warn",
                 Severity::Critical => "critical",
             };

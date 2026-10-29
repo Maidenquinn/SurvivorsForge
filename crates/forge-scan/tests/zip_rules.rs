@@ -30,11 +30,24 @@ fn clean_addon_has_no_warnings() {
 
 #[test]
 fn path_traversal_is_critical() {
-    for bad in ["../evil.lua", "/abs.lua", "C:/win.lua", "Lucky\\..\\x.lua"] {
+    for bad in ["../evil.lua", "/abs.lua", "C:/win.lua", "Lucky\\..\\x.lua", "\\abs.lua", "Lucky\\C:\\x.lua"] {
         let report = lucky(&with(&[(bad, b"x")]));
         let f = finding(&report, "zip.path_traversal");
         assert_eq!((f.severity, f.file.as_str()), (Severity::Critical, bad));
     }
+}
+
+#[test]
+fn windows_separators_are_paths_not_attacks() {
+    // Zips packed with Windows tools: the same addon, `\` as separator.
+    let report = lucky(&zip(&[
+        ("Lucky\\Lucky.toc", b"## Interface: 11200\nLucky.lua\n"),
+        ("Lucky\\Lucky.lua", b"local f = CreateFrame(\"Frame\")\n"),
+        ("Lucky\\media\\icon.tga", b"\x00\x00\x02\x00"),
+    ]));
+    assert!(report.findings.iter().all(|f| f.rule != "zip.path_traversal"), "{:#?}", report.findings);
+    assert!(report.findings.iter().all(|f| f.rule != "zip.toc_missing_file"), "the .toc finds its files: {:#?}", report.findings);
+    assert!(!report.flagged(), "{:#?}", report.findings);
 }
 
 #[test]
@@ -101,11 +114,11 @@ fn too_many_entries_is_critical() {
 }
 
 #[test]
-fn unknown_extension_warns() {
+fn unknown_extension_is_a_notice() {
     let report = lucky(&with(&[("Lucky/tool.dll.bak", b"hello"), ("Lucky/run.ps1", b"Write-Host hi")]));
     let hits: Vec<_> = report.findings.iter().filter(|f| f.rule == "zip.extension").map(|f| f.file.as_str()).collect();
     assert_eq!(hits, ["Lucky/tool.dll.bak", "Lucky/run.ps1"]);
-    assert!(report.findings.iter().filter(|f| f.rule == "zip.extension").all(|f| f.severity == Severity::Warn));
+    assert!(report.findings.iter().filter(|f| f.rule == "zip.extension").all(|f| f.severity == Severity::Notice));
     assert!(!lucky(&with(&[("Lucky/LICENSE", b"MIT"), ("Lucky/README.md", b"# x")])).flagged(), "license and readme are fine");
 }
 
@@ -157,6 +170,14 @@ fn macosx_is_info() {
 }
 
 #[test]
+fn git_files_are_info() {
+    let files: &[(&str, &[u8])] = &[("Lucky/.gitignore", b"*.bak"), ("Lucky/.gitattributes", b"* text=auto"), ("Lucky/.github/workflows/ci.yml", b"on: push")];
+    let report = lucky(&with(files));
+    assert!(report.findings.iter().all(|f| f.rule != "zip.extension"), "{:#?}", report.findings);
+    assert!(!report.flagged(), "{:#?}", report.findings);
+}
+
+#[test]
 fn deep_nesting_warns() {
     let report = lucky(&with(&[("Lucky/a/b/c/d/e/f/g/h/i/j/k.lua", b"x")]));
     assert_eq!(finding(&report, "zip.deep_nesting").severity, Severity::Warn);
@@ -181,4 +202,41 @@ fn encrypted_entry_is_critical() {
 fn garbage_is_unreadable() {
     let report = lucky(b"definitely not a zip");
     assert_eq!(finding(&report, "zip.unreadable").severity, Severity::Critical);
+}
+
+#[test]
+fn only_files_the_game_loads_can_flag() {
+    // The author's tests use io and dofile, but no .toc or XML loads them.
+    let tests: &[(&str, &[u8])] = &[("Lucky/tests/runner.lua", b"for l in io.lines('x') do end
+dofile('mock.lua')
+")];
+    let report = lucky(&with(tests));
+    let f = finding(&report, "lua.forbidden_global");
+    assert_eq!(f.severity, Severity::Info);
+    assert!(f.message.ends_with("(in a file the game does not load)"), "{}", f.message);
+    assert!(!report.flagged(), "{:#?}", report.findings);
+
+    // Loaded through the .toc: still critical.
+    let loaded = zip(&[
+        ("Lucky/Lucky.toc", b"## Interface: 11200
+Lucky.lua
+Frames.xml
+"),
+        ("Lucky/Lucky.lua", b"os.execute('x')
+"),
+        ("Lucky/Frames.xml", b"<Ui><Include file=\"UI\\Inner.xml\"/></Ui>"),
+        ("Lucky/UI/Inner.xml", b"<Ui><Script file=\"Inner.lua\"/></Ui>"),
+        ("Lucky/UI/Inner.lua", b"io.open('x')
+"),
+    ]);
+    let report = lucky(&loaded);
+    let critical: Vec<&str> = report.findings.iter().filter(|f| f.severity == Severity::Critical).map(|f| f.file.as_str()).collect();
+    assert_eq!(critical, ["Lucky/Lucky.lua", "Lucky/UI/Inner.lua"], "reached through Include and Script file");
+}
+
+#[test]
+fn without_a_toc_everything_counts() {
+    let report = scan(&zip(&[("Loose/Loose.lua", b"os.execute('x')
+")]), &folders(&["Loose"]), &[]);
+    assert!(report.flagged(), "{:#?}", report.findings);
 }
