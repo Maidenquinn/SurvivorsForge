@@ -2,7 +2,7 @@
 {% block title %}{{ title }} - Admin - SurvivorsForge{% endblock %}
 {% block content %}
 <p><a href="/admin"><span data-i18n="admin">Admin</span></a></p>
-<h1>{{ title }}</h1>
+<h1 data-i18n="{% if kind == "categories" %}admin_categories{% else %}admin_game_versions{% endif %}">{{ title }}</h1>
 {% include "admin/flash.html" %}
 <form class="panel admin-actions" method="post" action="/admin/list/{{ kind }}">
   <input type="hidden" name="csrf" value="{{ csrf }}">
@@ -26,7 +26,7 @@
       <label class="sr-only" for="parent-{{ loop.index }}"><span data-i18n="admin_subcategory">Subcategory of</span></label>
       <select id="parent-{{ loop.index }}" name="parent" class="narrow-select">
         <option value="" {% if parent == "" %}selected{% endif %} data-i18n="admin_top_level">Top level</option>
-        {% for p in parents %}{% if p.as_str() != name.as_str() %}<option value="{{ p }}" {% if p.as_str() == parent.as_str() %}selected{% endif %}>Under {{ p }}</option>{% endif %}{% endfor %}
+        {% for p in parents %}{% if p.as_str() != name.as_str() %}<option value="{{ p }}" {% if p.as_str() == parent.as_str() %}selected{% endif %} data-i18n-under="{{ p }}">Under {{ p }}</option>{% endif %}{% endfor %}
       </select>
       {% endif %}
       <button type="submit" class="secondary"><span data-i18n="action_save">Save</span></button>
