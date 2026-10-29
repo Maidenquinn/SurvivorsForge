@@ -423,7 +423,13 @@
     "trust_notice_blocked": "An admin blocked this version. It cannot be downloaded.",
     "trust_notice_file_changed": "The file on GitHub changed after verification. An admin must inspect it again before it can be downloaded.",
     "trust_notice_not_checked": "The automatic check has not run yet. Install at your own risk.",
-    "trust_file_changed": "File changed"
+    "trust_file_changed": "File changed",
+    "admin_versions_to_review": "versions to review",
+    "admin_open_reports_count": "open reports",
+    "admin_version_count": "versions",
+    "admin_role_label": "Role:",
+    "admin_owns_label": "Owns",
+    "role_user": "user"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -846,7 +852,13 @@
     "trust_notice_blocked": "Un administrateur a bloqué cette version. Elle ne peut pas être téléchargée.",
     "trust_notice_file_changed": "Le fichier sur GitHub a changé après sa vérification. Un administrateur doit le contrôler avant tout téléchargement.",
     "trust_notice_not_checked": "L'analyse automatique n'a pas encore été effectuée. Installez à vos risques et périls.",
-    "trust_file_changed": "Fichier modifié"
+    "trust_file_changed": "Fichier modifié",
+    "admin_versions_to_review": "versions à vérifier",
+    "admin_open_reports_count": "signalements ouverts",
+    "admin_version_count": "versions",
+    "admin_role_label": "Rôle :",
+    "admin_owns_label": "Possède",
+    "role_user": "utilisateur"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1269,7 +1281,13 @@
     "trust_notice_blocked": "Administrator zablokował tę wersję. Nie można jej pobrać.",
     "trust_notice_file_changed": "Plik na GitHub zmienił się po kontroli. Administrator musi go ponownie sprawdzić przed pobraniem.",
     "trust_notice_not_checked": "Automatyczna kontrola jeszcze się nie odbyła. Instalujesz na własne ryzyko.",
-    "trust_file_changed": "Plik zmieniony"
+    "trust_file_changed": "Plik zmieniony",
+    "admin_versions_to_review": "wersji do sprawdzenia",
+    "admin_open_reports_count": "otwarte zgłoszenia",
+    "admin_version_count": "wersje",
+    "admin_role_label": "Rola:",
+    "admin_owns_label": "Posiada",
+    "role_user": "użytkownik"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1692,7 +1710,13 @@
     "trust_notice_blocked": "Správce tuto verzi zablokoval. Nelze ji stáhnout.",
     "trust_notice_file_changed": "Soubor na GitHubu se po kontrole změnil. Před stažením jej musí znovu prověřit správce.",
     "trust_notice_not_checked": "Automatická kontrola ještě neproběhla. Instalace je na vlastní riziko.",
-    "trust_file_changed": "Soubor změněn"
+    "trust_file_changed": "Soubor změněn",
+    "admin_versions_to_review": "verzí k ověření",
+    "admin_open_reports_count": "otevřená hlášení",
+    "admin_version_count": "verze",
+    "admin_role_label": "Role:",
+    "admin_owns_label": "Vlastní",
+    "role_user": "uživatel"
   },
   "de": {
     "tiles": "Tiles",
@@ -2115,7 +2139,13 @@
     "trust_notice_blocked": "Ein Administrator hat diese Version gesperrt. Sie kann nicht heruntergeladen werden.",
     "trust_notice_file_changed": "Die GitHub-Datei wurde nach der Prüfung verändert. Vor dem Download muss ein Administrator sie erneut prüfen.",
     "trust_notice_not_checked": "Die automatische Prüfung ist noch nicht abgeschlossen. Installation auf eigenes Risiko.",
-    "trust_file_changed": "Datei geändert"
+    "trust_file_changed": "Datei geändert",
+    "admin_versions_to_review": "Versionen zu prüfen",
+    "admin_open_reports_count": "offene Meldungen",
+    "admin_version_count": "Versionen",
+    "admin_role_label": "Rolle:",
+    "admin_owns_label": "Besitzt",
+    "role_user": "Benutzer"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2538,7 +2568,13 @@
     "trust_notice_blocked": "Um administrador bloqueou esta versão. Não é possível baixá-la.",
     "trust_notice_file_changed": "O arquivo no GitHub mudou após a verificação. Um administrador precisa analisá-lo novamente antes do download.",
     "trust_notice_not_checked": "A análise automática ainda não foi executada. Instale por sua conta e risco.",
-    "trust_file_changed": "Arquivo alterado"
+    "trust_file_changed": "Arquivo alterado",
+    "admin_versions_to_review": "versões para revisar",
+    "admin_open_reports_count": "denúncias abertas",
+    "admin_version_count": "versões",
+    "admin_role_label": "Função:",
+    "admin_owns_label": "Possui",
+    "role_user": "usuário"
   },
   "es": {
     "tiles": "Tiles",
@@ -2961,7 +2997,13 @@
     "trust_notice_blocked": "Un administrador ha bloqueado esta versión. No se puede descargar.",
     "trust_notice_file_changed": "El archivo de GitHub cambió después de la comprobación. Un administrador debe revisarlo antes de permitir la descarga.",
     "trust_notice_not_checked": "La comprobación automática aún no se ha ejecutado. Instala bajo tu responsabilidad.",
-    "trust_file_changed": "Archivo modificado"
+    "trust_file_changed": "Archivo modificado",
+    "admin_versions_to_review": "versiones para revisar",
+    "admin_open_reports_count": "denuncias abiertas",
+    "admin_version_count": "versiones",
+    "admin_role_label": "Función:",
+    "admin_owns_label": "Tiene",
+    "role_user": "usuario"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3384,7 +3426,13 @@
     "trust_notice_blocked": "Un administrator a blocat această versiune. Nu poate fi descărcată.",
     "trust_notice_file_changed": "Fișierul de pe GitHub s-a schimbat după verificare. Un administrator trebuie să îl verifice din nou înainte de descărcare.",
     "trust_notice_not_checked": "Verificarea automată nu a rulat încă. Instalează pe propriul risc.",
-    "trust_file_changed": "Fișier modificat"
+    "trust_file_changed": "Fișier modificat",
+    "admin_versions_to_review": "versiuni de verificat",
+    "admin_open_reports_count": "raportări deschise",
+    "admin_version_count": "versiuni",
+    "admin_role_label": "Rol:",
+    "admin_owns_label": "Deține",
+    "role_user": "utilizator"
   },
   "tr": {
     "tiles": "Tiles",
@@ -3807,7 +3855,13 @@
     "trust_notice_blocked": "Bir yönetici bu sürümü engelledi. İndirilemez.",
     "trust_notice_file_changed": "GitHub'daki dosya denetimden sonra değişti. İndirilmeden önce bir yöneticinin yeniden incelemesi gerekir.",
     "trust_notice_not_checked": "Otomatik denetim henüz çalışmadı. Yükleme riski size aittir.",
-    "trust_file_changed": "Dosya değişti"
+    "trust_file_changed": "Dosya değişti",
+    "admin_versions_to_review": "incelenecek sürüm",
+    "admin_open_reports_count": "açık bildirim",
+    "admin_version_count": "sürüm",
+    "admin_role_label": "Rol:",
+    "admin_owns_label": "Sahip olduğu",
+    "role_user": "kullanıcı"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4230,7 +4284,13 @@
     "trust_notice_blocked": "Администратор заблокировал эту версию. Скачать её нельзя.",
     "trust_notice_file_changed": "Файл на GitHub изменился после проверки. Перед скачиванием администратор должен проверить его заново.",
     "trust_notice_not_checked": "Автоматическая проверка ещё не выполнялась. Устанавливайте на свой риск.",
-    "trust_file_changed": "Файл изменён"
+    "trust_file_changed": "Файл изменён",
+    "admin_versions_to_review": "версий на проверку",
+    "admin_open_reports_count": "открытых жалоб",
+    "admin_version_count": "версии",
+    "admin_role_label": "Роль:",
+    "admin_owns_label": "Владеет",
+    "role_user": "пользователь"
   },
   "uk": {
     "tiles": "Tiles",
@@ -4653,7 +4713,13 @@
     "trust_notice_blocked": "Адміністратор заблокував цю версію. Завантажити її не можна.",
     "trust_notice_file_changed": "Файл на GitHub змінився після перевірки. Перед завантаженням адміністратор має перевірити його знову.",
     "trust_notice_not_checked": "Автоматична перевірка ще не виконувалась. Установлюйте на власний ризик.",
-    "trust_file_changed": "Файл змінено"
+    "trust_file_changed": "Файл змінено",
+    "admin_versions_to_review": "версій на перевірку",
+    "admin_open_reports_count": "відкритих скарг",
+    "admin_version_count": "версії",
+    "admin_role_label": "Роль:",
+    "admin_owns_label": "Володіє",
+    "role_user": "користувач"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -5076,7 +5142,13 @@
     "trust_notice_blocked": "管理员已屏蔽此版本，无法下载。",
     "trust_notice_file_changed": "GitHub 上的文件在检查后发生变化。再次下载前必须由管理员重新审核。",
     "trust_notice_not_checked": "自动检查尚未运行。安装风险由你自行承担。",
-    "trust_file_changed": "文件已更改"
+    "trust_file_changed": "文件已更改",
+    "admin_versions_to_review": "待审核版本",
+    "admin_open_reports_count": "待处理举报",
+    "admin_version_count": "版本",
+    "admin_role_label": "角色：",
+    "admin_owns_label": "拥有",
+    "role_user": "用户"
   },
   "ja": {
     "tiles": "Tiles",
@@ -5499,7 +5571,13 @@
     "trust_notice_blocked": "管理者がこのバージョンをブロックしました。ダウンロードできません。",
     "trust_notice_file_changed": "検証後に GitHub のファイルが変更されました。再ダウンロードには管理者の確認が必要です。",
     "trust_notice_not_checked": "自動チェックはまだ行われていません。自己責任でインストールしてください。",
-    "trust_file_changed": "ファイルが変更されました"
+    "trust_file_changed": "ファイルが変更されました",
+    "admin_versions_to_review": "確認待ちのバージョン",
+    "admin_open_reports_count": "未処理の報告",
+    "admin_version_count": "バージョン",
+    "admin_role_label": "役割：",
+    "admin_owns_label": "所有 AddOns：",
+    "role_user": "ユーザー"
   },
   "ko": {
     "tiles": "Tiles",
@@ -5922,7 +6000,13 @@
     "trust_notice_blocked": "관리자가 이 버전을 차단하여 다운로드할 수 없습니다.",
     "trust_notice_file_changed": "검증 후 GitHub 파일이 변경되었습니다. 다운로드하려면 관리자의 재검토가 필요합니다.",
     "trust_notice_not_checked": "자동 검사가 아직 실행되지 않았습니다. 설치는 본인의 책임입니다.",
-    "trust_file_changed": "파일 변경됨"
+    "trust_file_changed": "파일 변경됨",
+    "admin_versions_to_review": "검토할 버전",
+    "admin_open_reports_count": "열린 신고",
+    "admin_version_count": "버전",
+    "admin_role_label": "역할:",
+    "admin_owns_label": "소유",
+    "role_user": "사용자"
   }
 };
   var supported = Object.keys(translations);
