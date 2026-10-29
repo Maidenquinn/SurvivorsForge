@@ -31,7 +31,7 @@
 {% if let Some(u) = found %}
 <section class="panel">
   <h2>{{ u.login }}</h2>
-  <p>Role: {{ u.role }} · Owns {{ u.addons }} addon{% if u.addons != 1 %}s{% endif %}{% if u.banned %} · <span class="badge bad">Banned</span> {{ u.ban_reason }}{% endif %}</p>
+  <p><span data-i18n="admin_role_label">Role:</span> <span data-i18n-enum="role" data-i18n-value="{{ u.role }}">{{ u.role }}</span> · <span data-i18n="admin_owns_label">Owns</span> {{ u.addons }} <span data-i18n="my_addon">AddOn</span>{% if u.banned %} · <span class="badge bad" data-i18n="admin_banned">Banned</span> {{ u.ban_reason }}{% endif %}</p>
   {% if u.banned %}
   <form method="post" action="/admin/users/{{ u.github_id }}/unban" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="login" value="{{ u.login }}">
@@ -43,13 +43,13 @@
     <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="login" value="{{ u.login }}">
     <label for="grant-note"><span data-i18n="admin_why">Why</span></label><input id="grant-note" name="note" required>
     <p class="muted"><span data-i18n="admin_admins_scope">Admins review and verify versions, block addons, ban users and manage the lists.</span></p>
-    <button type="submit">Make {{ u.login }} an admin</button>
+    <button type="submit"><span data-i18n="admin_make_admin">Make an admin</span> {{ u.login }}</button>
   </form>
   <form method="post" action="/admin/users/{{ u.github_id }}/ban" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="login" value="{{ u.login }}">
     <label for="ban-note"><span data-i18n="admin_reason">Reason</span></label><input id="ban-note" name="note" required>
     <p class="muted"><span data-i18n="admin_ban_effect">Banning ends their sessions and blocks every addon they own until the ban is lifted.</span></p>
-    <button type="submit" class="danger">Ban {{ u.login }}</button>
+    <button type="submit" class="danger"><span data-i18n="admin_ban_user">Ban</span> {{ u.login }}</button>
   </form>
   {% endif %}
 </section>
