@@ -5,7 +5,7 @@
 {% block head %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <h1>{% if name != "" %}{{ name }}{% else %}<span data-i18n="pack_show_title">Addon pack</span>{% endif %}</h1>
-<p class="muted">{{ entries.len() }} addon{% if entries.len() != 1 %}s{% endif %}{% if created_by != "" %} · <span data-i18n="pack_by">by</span> {{ created_by }}{% endif %} · {{ created }}</p>
+<p class="muted">{{ entries.len() }} <span data-i18n="pack_addons">AddOns</span>{% if created_by != "" %} · <span data-i18n="pack_by">by</span> {{ created_by }}{% endif %} · {{ created }}</p>
 
 <section class="panel download">
   {% if available %}
@@ -26,7 +26,7 @@
   <h2 data-i18n="pack_included">In this pack</h2>
   <div class="table-wrap">
     <table class="pack-table">
-      <thead><tr><th>Addon</th><th>Version</th><th data-i18n="safety">Safety check</th><th data-i18n="pack_folders">Folders</th></tr></thead>
+      <thead><tr><th data-i18n="my_addon">AddOn</th><th data-i18n="pub_version">Version</th><th data-i18n="safety">Safety check</th><th data-i18n="pack_folders">Folders</th></tr></thead>
       <tbody>
         {% for e in entries %}
         <tr>
