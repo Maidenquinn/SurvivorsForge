@@ -21,7 +21,7 @@
       <input type="checkbox" name="addon" value="{{ c.slug }}" {% if c.checked %}checked{% endif %}>
       <span class="pick-name">{{ c.name }}</span>
       <span class="muted">{{ c.tag }}{% if c.size != "" %} · {{ c.size }}{% endif %}</span>
-      <span class="badge {{ c.notice.class }}">{{ c.notice.badge }}</span>
+      <span class="badge {{ c.notice.class }}" data-i18n-enum="trust" data-i18n-value="{{ c.notice.badge }}">{{ c.notice.badge }}</span>
     </label>
     {% endfor %}
   </fieldset>
