@@ -307,3 +307,17 @@ async fn the_view_switch_tells_which_view_is_on() {
         assert!(script.contains(text), "missing {text}");
     }
 }
+
+#[tokio::test]
+async fn the_result_count_is_announced() {
+    // A live region outside the swapped results, updated with them: screen readers hear the new count.
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
+    mock(&web, "/v1/addons", json!({ "total": 3, "addons": [] })).await;
+    mock(&web, "/v1/packs", json!({ "total": 1, "packs": [] })).await;
+    for (page, count) in [("/addons", "3 addons"), ("/packs", "1 pack")] {
+        let body = web.get(page).await.body;
+        assert!(body.contains(&format!(r#"<p id="result-status" class="sr-only" role="status">{count}</p>"#)), "{page}: {body}");
+        assert!(body.contains(r##"hx-select-oob="#result-status""##), "{page}");
+    }
+}

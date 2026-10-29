@@ -4,7 +4,7 @@
 {% block content %}
 <h1>Addons</h1>
 <form class="search" method="get" action="/addons" role="search"
-      hx-get="/addons" hx-trigger="input changed delay:300ms from:input, change from:select, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results">
+      hx-get="/addons" hx-trigger="input changed delay:300ms from:input, change from:select, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results" hx-select-oob="#result-status">
   <label for="q">Search</label>
   <input id="q" type="search" name="q" value="{{ q }}" placeholder="Name or what it does" autocomplete="off">
   <div class="filters">
@@ -38,6 +38,7 @@
   <noscript><button type="submit">Search</button></noscript>
 </form>
 
+<p id="result-status" class="sr-only" role="status">{{ total }} addon{% if total != 1 %}s{% endif %}</p>
 <div id="results" class="list">
   <div class="result-bar">
   <p class="muted">{{ total }} addon{% if total != 1 %}s{% endif %}{% if category != "" %} in {{ category }} (<a href="/addons">all categories</a>){% endif %}</p>

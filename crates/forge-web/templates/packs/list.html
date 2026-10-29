@@ -8,12 +8,13 @@
 </div>
 <p class="muted">Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show.</p>
 <form class="search" method="get" action="/packs" role="search"
-      hx-get="/packs" hx-trigger="input changed delay:300ms from:input, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results">
+      hx-get="/packs" hx-trigger="input changed delay:300ms from:input, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results" hx-select-oob="#result-status">
   <label for="q">Search</label>
   <input id="q" type="search" name="q" value="{{ q }}" placeholder="Pack name or an addon in it" autocomplete="off">
   <noscript><button type="submit">Search</button></noscript>
 </form>
 
+<p id="result-status" class="sr-only" role="status">{{ total }} pack{% if total != 1 %}s{% endif %}</p>
 <div id="results" class="list">
   <div class="result-bar">
     <p class="muted">{{ total }} pack{% if total != 1 %}s{% endif %}</p>
