@@ -38,12 +38,12 @@ for (const file of allTemplates) {
   for (const match of html.matchAll(/data-i18n(?:-placeholder|-confirm|-aria-label|-title)?="([^"]+)"/g)) {
     if (!(match[1] in catalog.en)) unknown.push(filename + ": " + match[1]);
   }
-  if (/<option\\b[^>]*>\\s*<span\\b/i.test(html)) unknown.push(filename + ": invalid nested span in <option>");
-  for (const match of html.matchAll(/<span\\b[^>]*data-l10n-en="([^"]+)"[^>]*>/g)) {
+  if (/<option\b[^>]*>\s*<span\b/i.test(html)) unknown.push(filename + ": invalid nested span in <option>");
+  for (const match of html.matchAll(/<span\b[^>]*data-l10n-en="([^"]+)"[^>]*>/g)) {
     if (!/data-l10n-fr="[^"]+"/.test(match[0])) unknown.push(filename + ": missing French annotation for " + match[1]);
   }
 }
-if (unknown.length) throw new Error("Invalid template translations:\\n" + unknown.join("\\n"));
+if (unknown.length) throw new Error("Invalid template translations:\n" + unknown.join("\n"));
 vm.runInNewContext(source, {
   document: {addEventListener() {}},
   window: {},
