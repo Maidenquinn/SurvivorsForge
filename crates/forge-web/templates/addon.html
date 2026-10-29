@@ -54,7 +54,60 @@
   {% endmatch %}
 </section>
 
-{% if !shots.is_empty() %}
+
+<nav class="addon-tabs" aria-label="Addon sections">
+  <a href="/addons/{{ slug }}" {% if tab == "overview" %}aria-current="page"{% endif %}>Overview</a>
+  <a href="/addons/{{ slug }}?tab=issues" {% if tab == "issues" %}aria-current="page"{% endif %}>Issues</a>
+  <a href="/addons/{{ slug }}?tab=gallery" {% if tab == "gallery" %}aria-current="page"{% endif %}>Gallery</a>
+  <a href="/addons/{{ slug }}?tab=versions" {% if tab == "versions" %}aria-current="page"{% endif %}>Versions</a>
+  <span class="addon-tabs-future" title="Community comments coming in a future update">Comments · Soon</span>
+</nav>
+{% if tab == "issues" %}
+<section class="addon-tab-section">
+  <div class="issues-heading">
+    <div><h2>Community issues</h2><p class="muted">Report a bug, request a feature or follow a discussion.</p></div>
+    {% if user.is_some() %}<a class="button" href="#new-issue">+ New issue</a>{% else %}<a class="button secondary" href="/login">Log in to report</a>{% endif %}
+  </div>
+  <div class="issues-board">
+    <div class="issues-toolbar">
+      <div class="issues-tabs" role="group" aria-label="Filter issues">
+        <a class="button secondary" href="#issue-list">All issues ({{ issues.len() }})</a>
+      </div>
+      <p class="muted">Select an issue to read and reply</p>
+    </div>
+    <div id="issue-list">
+    {% for issue in issues %}
+      <article class="issue-row">
+        <span class="issue-state" aria-hidden="true">{% if issue.status == "open" %}◉{% else if issue.status == "in_progress" %}◷{% else %}✓{% endif %}</span>
+        <div class="issue-row-content">
+          <a class="issue-row-title" href="/addons/{{ slug }}/issues/{{ issue.id }}">{{ issue.title }}</a>
+          <div class="issue-row-meta">#{{ issue.id }} · {{ issue.author }} <span class="badge">{{ issue.kind }}</span> <span class="badge">{{ issue.status }}</span></div>
+        </div>
+        <a class="issue-row-arrow" href="/addons/{{ slug }}/issues/{{ issue.id }}" aria-label="View issue #{{ issue.id }}">→</a>
+      </article>
+    {% endfor %}
+    {% if issues.is_empty() %}<div class="issues-empty">No issues yet. Start the first discussion!</div>{% endif %}
+    </div>
+  </div>
+  {% if user.is_some() %}
+  <details class="panel issues-compose" id="new-issue">
+    <summary>+ Report an issue or suggest an improvement</summary>
+    <form method="post" action="/addons/{{ slug }}/issues">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label for="addon-issue-title">Title</label><input id="addon-issue-title" name="title" minlength="3" maxlength="160" required placeholder="A short, descriptive title">
+      <label for="addon-issue-kind">Category</label>
+      <select id="addon-issue-kind" name="kind"><option value="bug">Bug report</option><option value="feature">Feature request</option><option value="question">Question</option></select>
+      <label for="addon-issue-body">Description</label>
+      <textarea id="addon-issue-body" name="body" maxlength="10000" rows="6" required placeholder="What happened? What did you expect? How can it be reproduced?"></textarea>
+      <div class="issues-form-footer"><span class="muted">Don't share private data.</span><button type="submit">Submit issue</button></div>
+    </form>
+  </details>
+  {% endif %}
+</section>
+{% else if tab == "gallery" %}
+<section class="addon-tab-section">
+  <h2>Gallery</h2>
+  {% if !shots.is_empty() %}
 <section class="shots" aria-label="Screenshots">
   {% for shot in shots %}
   <figure>
@@ -65,6 +118,17 @@
 </section>
 {% endif %}
 
+
+  {% if shots.is_empty() %}<p class="muted">No screenshots uploaded yet.</p>{% endif %}
+</section>
+{% else if tab == "versions" %}
+<section class="addon-tab-section">
+  <h2>Versions</h2>
+  <p>Browse all published releases, download previous versions and inspect their status.</p>
+  <a class="button secondary" href="/addons/{{ slug }}/versions">View all versions</a>
+</section>
+{% else %}
+<section class="addon-tab-section">
 {% if !description_html.trim().is_empty() %}
 <section class="panel description">
   {{ description_html|safe }}
@@ -83,12 +147,14 @@
 </section>
 {% endif %}
 
-<section class="panel"><h2>Community issues</h2><p><a href="/addons/{{ slug }}/issues">Browse issues, report bugs or suggest improvements</a></p></section>
 
 {% if !contributors.is_empty() %}
 <section class="panel">
   <h2>Contributors</h2>
   <p>{% for c in contributors %}{{ c }}{% if !loop.last %}, {% endif %}{% endfor %}</p>
+</section>
+{% endif %}
+
 </section>
 {% endif %}
 {% endblock %}
