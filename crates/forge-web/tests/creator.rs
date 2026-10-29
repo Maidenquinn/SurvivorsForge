@@ -145,6 +145,23 @@ async fn image_upload_messages() {
 }
 
 #[tokio::test]
+async fn the_edit_toolbar_stays_on_every_edit_page() {
+    let mut web = logged_in(owner()).await;
+    get_json(&web, "/v1/addons/lucky/members", json!([])).await;
+    get_json(&web, "/v1/addons/lucky/versions", json!([{ "tag": "v1", "game_min": null, "game_max": null }])).await;
+    get_json(&web, "/v1/game-versions", json!([{ "name": "0.69.0" }])).await;
+    let toolbar = r#"<nav class="subnav" aria-label="Edit addon">"#;
+    for page in ["/addons/lucky/edit", "/addons/lucky/images", "/addons/lucky/members", "/addons/lucky/dependencies", "/addons/lucky/versions", "/addons/lucky/versions/v1/edit", "/addons/lucky/delete"] {
+        let body = web.get(page).await.body;
+        assert!(body.contains(toolbar), "{page}: {body}");
+    }
+    let mut anonymous = TestWeb::new().await;
+    get_json(&anonymous, "/v1/addons/lucky", json!({ "slug": "lucky", "name": "Lucky", "blocked": false, "verified_author": false })).await;
+    get_json(&anonymous, "/v1/addons/lucky/versions", json!([])).await;
+    assert!(!anonymous.get("/addons/lucky/versions").await.body.contains(toolbar), "only for those who may edit");
+}
+
+#[tokio::test]
 async fn several_screenshots_in_one_upload() {
     let mut web = logged_in(owner()).await;
     Mock::given(method("POST"))

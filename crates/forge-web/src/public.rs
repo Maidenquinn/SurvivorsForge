@@ -232,16 +232,22 @@ pub async fn addon(
 }
 
 pub async fn versions(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(slug): Path<String>) -> WebResult<Html<String>> {
-    let user = visitor(&state, &jar).await?.map(|(v, _)| v);
+    let visitor = visitor(&state, &jar).await?;
     let a = state.api.get(&format!("/v1/addons/{}", seg(&slug)), None).await?;
     if a["blocked"] == true {
         return Err(WebError::NotFound);
     }
+    // Owners and contributors come here from the edit toolbar; keep it for them.
+    let perms = match &visitor {
+        Some((_, token)) => crate::creator::perms(&state, &slug, token).await.ok().filter(|p| p.owner || p.edit_description || p.edit_images),
+        None => None,
+    };
+    let user = visitor.map(|(v, _)| v);
     let list = state.api.get(&format!("/v1/addons/{}/versions", seg(&slug)), None).await?;
     let verified_author = a["verified_author"] == true;
     let rows = list.as_array().into_iter().flatten().map(|v| version_row(v, verified_author)).collect::<Vec<_>>();
     let rows = rows.into_iter().map(|r| (download_href(&slug, &r), r)).collect();
-    Ok(render(&VersionsPage { user, csrf: csrf.0, slug, name: s(&a["name"]), rows }))
+    Ok(render(&VersionsPage { user, csrf: csrf.0, slug, name: s(&a["name"]), rows, perms }))
 }
 
 async fn version_data(state: &AppState, slug: &str, tag: &str) -> WebResult<(Value, VersionRow)> {
