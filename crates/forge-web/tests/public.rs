@@ -551,3 +551,10 @@ async fn addon_authors_find_how_to_publish() {
     let page = web.get("/").await.body;
     assert!(page.contains("Made an addon?") && page.contains(r#"href="/addons/new">Publish it from your GitHub repo</a>"#), "{page}");
 }
+
+#[tokio::test]
+async fn the_home_page_describes_itself_to_search_engines() {
+    let mut web = TestWeb::new().await;
+    let page = web.get("/").await.body;
+    assert!(page.contains(r#"<meta name="description" content="Addons for Azeroth Survivors, checked for harmful code."#), "{page}");
+}
