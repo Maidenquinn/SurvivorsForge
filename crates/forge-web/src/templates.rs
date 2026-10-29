@@ -48,6 +48,38 @@ pub struct IndexPage {
 
 pub use crate::trust::Notice;
 
+/// A category as lists and selects show it: subcategories read "Classes: Warrior".
+#[derive(Debug, Clone, PartialEq)]
+pub struct CategoryOption {
+    pub name: String,
+    pub label: String,
+    pub parent: String,
+    pub sort_key: String,
+    /// Addons can go into it (it has no subcategories).
+    pub selectable: bool,
+}
+
+impl CategoryOption {
+    /// The API's `/v1/categories`, in its order.
+    pub fn list(api: &Value) -> Vec<CategoryOption> {
+        let text = |v: &Value| v.as_str().unwrap_or_default().to_string();
+        api.as_array()
+            .into_iter()
+            .flatten()
+            .map(|c| {
+                let (name, parent) = (text(&c["name"]), text(&c["parent"]));
+                CategoryOption {
+                    label: if parent.is_empty() { name.clone() } else { format!("{parent}: {name}") },
+                    sort_key: c["sort_key"].as_i64().map(|k| k.to_string()).unwrap_or_default(),
+                    selectable: c["selectable"] != false,
+                    name,
+                    parent,
+                }
+            })
+            .collect()
+    }
+}
+
 pub struct Card {
     pub slug: String,
     pub name: String,
@@ -69,6 +101,8 @@ pub struct AddonsPage {
     pub trust: String,
     pub sort: String,
     pub total: i64,
+    /// For the filter, all of them.
+    pub categories: Vec<CategoryOption>,
     pub cards: Vec<Card>,
     pub prev: Option<String>,
     pub next: Option<String>,
@@ -226,7 +260,7 @@ pub struct NewAddonPage {
     pub user: Option<Visitor>,
     pub csrf: String,
     pub install_url: String,
-    pub categories: Vec<String>,
+    pub categories: Vec<CategoryOption>,
     pub form: crate::creator::NewAddonForm,
     pub errors: Errors,
 }
@@ -239,7 +273,7 @@ pub struct EditAddonPage {
     pub slug: String,
     pub name: String,
     pub category: String,
-    pub categories: Vec<String>,
+    pub categories: Vec<CategoryOption>,
     pub source_type: String,
     pub asset_pattern: String,
     pub folders: String,
@@ -410,7 +444,7 @@ pub struct AdminAddonPage {
 pub struct AdminAddAddonPage {
     pub user: Option<Visitor>,
     pub csrf: String,
-    pub categories: Vec<String>,
+    pub categories: Vec<CategoryOption>,
     pub form: crate::admin::AdminAddonForm,
     pub error: Option<String>,
 }
@@ -423,8 +457,10 @@ pub struct AdminListPage {
     /// `game-versions` or `categories`.
     pub kind: String,
     pub title: String,
-    /// (key, name, sort key)
-    pub rows: Vec<(String, String, String)>,
+    /// (key, name, sort key, parent); the parent only for categories.
+    pub rows: Vec<(String, String, String, String)>,
+    /// Categories a new or moved category can sit under.
+    pub parents: Vec<String>,
     pub msg: Option<String>,
     pub error: Option<String>,
 }

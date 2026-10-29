@@ -126,7 +126,7 @@ impl TestApp {
 pub fn addon_body(slug: &str, repo: &str, folders: &[&str]) -> serde_json::Value {
     serde_json::json!({
         "slug": slug, "name": format!("Addon {slug}"), "repo": repo, "source_type": "release",
-        "asset_pattern": format!("{slug}-v*.zip"), "category": "UI", "summary": "Short.", "folders": folders,
+        "asset_pattern": format!("{slug}-v*.zip"), "category": "Unit Frames", "summary": "Short.", "folders": folders,
     })
 }
 

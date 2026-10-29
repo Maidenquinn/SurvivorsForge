@@ -171,7 +171,7 @@ async fn only_admins_add_addons_without_app_checks(pool: PgPool) {
     let admin = app.login(99, "root").await;
     let body = json!({
         "slug": "luckyodds", "name": "LuckyOdds", "repo": "cadoky/LuckyOdds", "source_type": "release",
-        "asset_pattern": "LuckyOdds-v*.zip", "category": "Info", "summary": "Odds.", "folders": ["LuckyOdds"], "author_name": "cadoky"
+        "asset_pattern": "LuckyOdds-v*.zip", "category": "Miscellaneous", "summary": "Odds.", "folders": ["LuckyOdds"], "author_name": "cadoky"
     });
     assert_eq!(app.post("/v1/admin/addons", Some(&user), body.clone()).await.status, StatusCode::FORBIDDEN);
     assert_eq!(app.post("/v1/addons", Some(&user), body.clone()).await.error(), "app_not_installed", "the normal way needs the App");

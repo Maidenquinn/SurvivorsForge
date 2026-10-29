@@ -201,7 +201,7 @@ SURVIVORSFORGE_API_URL=http://127.0.0.1:8080 cargo test --lib -- --ignored api_l
       "author": "morderous",
       "repo": "morderous/survivor-ui",
       "description": "Complete Survivor UI including Survivor Plates (nameplates).",
-      "category": "UI",
+      "category": "Unit Frames",
       "folders": ["SurvivorUI", "SurvivorPlates"],
       "source": { "type": "release", "asset": "SurvivorUI-v*.zip" }
     }
@@ -212,6 +212,7 @@ SURVIVORSFORGE_API_URL=http://127.0.0.1:8080 cargo test --lib -- --ignored api_l
 | Field | Meaning |
 |---|---|
 | `id` | Stable key, stored in `state.json`. Never change it for an existing addon. |
+| `category` | A platform category without subcategories: Warrior to Druid (under Classes), Combat, Libraries, Unit Frames, Action Bars or Miscellaneous. Admins change the list on the website. |
 | `folders` | Every folder the addon installs. Used for adoption and conflict checks. |
 | `source.type` | `release` (needs `asset`), `tag` or `branch` |
 

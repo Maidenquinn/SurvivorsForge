@@ -97,6 +97,8 @@ pub async fn user(State(state): State<AppState>, AdminUser(_): AdminUser, Path(l
 pub struct CategoryBody {
     name: Option<String>,
     sort_key: Option<i32>,
+    /// The top-level category this one sits under; on an update `""` moves it to the top.
+    parent: Option<String>,
     #[serde(default)]
     note: String,
 }
@@ -109,18 +111,49 @@ fn valid_category(name: &str) -> ApiResult<&str> {
     Ok(name)
 }
 
+/// `parent` may only be a top-level category without addons of its own: one level of
+/// subcategories, and addons only in categories without subcategories.
+async fn check_parent(state: &AppState, parent: &str, child: Option<&str>) -> ApiResult<()> {
+    let unfit = |message: &str| ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "invalid_parent", message.to_string());
+    let top: Option<bool> = sqlx::query_scalar("SELECT parent IS NULL FROM categories WHERE name = $1::citext").bind(parent).fetch_optional(&state.pool).await?;
+    match top {
+        None => return Err(unfit("Unknown parent category")),
+        Some(false) => return Err(unfit("Subcategories cannot have subcategories")),
+        Some(true) => {}
+    }
+    if child.is_some_and(|c| c.eq_ignore_ascii_case(parent)) {
+        return Err(unfit("A category cannot sit under itself"));
+    }
+    if let Some(child) = child {
+        let has_children: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM categories WHERE parent = $1::citext)").bind(child).fetch_one(&state.pool).await?;
+        if has_children {
+            return Err(unfit("A category with subcategories stays at the top"));
+        }
+    }
+    let used: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM addons WHERE category = $1::citext)").bind(parent).fetch_one(&state.pool).await?;
+    if used {
+        return Err(ApiError::new(StatusCode::CONFLICT, "category_in_use", "Addons use the parent category; move them first"));
+    }
+    Ok(())
+}
+
 pub async fn create_category(State(state): State<AppState>, AdminUser(admin): AdminUser, Json(body): Json<CategoryBody>) -> ApiResult<StatusCode> {
     let name = valid_category(body.name.as_deref().unwrap_or_default())?;
+    let parent = body.parent.as_deref().map(str::trim).filter(|p| !p.is_empty());
+    if let Some(parent) = parent {
+        check_parent(&state, parent, None).await?;
+    }
     let mut tx = state.pool.begin().await?;
-    let inserted = sqlx::query("INSERT INTO categories (name, sort_key) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+    let inserted = sqlx::query("INSERT INTO categories (name, sort_key, parent) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING")
         .bind(name)
         .bind(body.sort_key.unwrap_or(100))
+        .bind(parent)
         .execute(&mut *tx)
         .await?;
     if inserted.rows_affected() == 0 {
         return Err(ApiError::new(StatusCode::CONFLICT, "name_taken", "This category exists already"));
     }
-    let entry = Entry { admin_id: admin.id, action: "category_create", target_type: "category", target_id: name.into(), note: &body.note, details: json!({}) };
+    let entry = Entry { admin_id: admin.id, action: "category_create", target_type: "category", target_id: name.into(), note: &body.note, details: json!({ "parent": parent }) };
     audit::record(&mut tx, entry, (state.clock)()).await?;
     tx.commit().await?;
     Ok(StatusCode::CREATED)
@@ -137,11 +170,20 @@ pub async fn update_category(
         Some(n) => Some(valid_category(n)?.to_string()),
         None => None,
     };
+    let parent = body.parent.as_deref().map(str::trim);
+    if let Some(parent) = parent.filter(|p| !p.is_empty()) {
+        check_parent(&state, parent, Some(&name)).await?;
+    }
     let mut tx = state.pool.begin().await?;
-    let changed = sqlx::query("UPDATE categories SET name = coalesce($2, name), sort_key = coalesce($3, sort_key) WHERE name = $1::citext")
+    let changed = sqlx::query(
+        "UPDATE categories SET name = coalesce($2, name), sort_key = coalesce($3, sort_key),
+                parent = CASE WHEN $4::text IS NULL THEN parent ELSE nullif($4, '')::citext END
+         WHERE name = $1::citext",
+    )
         .bind(&name)
         .bind(&new_name)
         .bind(body.sort_key)
+        .bind(parent)
         .execute(&mut *tx)
         .await
         .map_err(|e| match &e {
@@ -151,7 +193,7 @@ pub async fn update_category(
     if changed.rows_affected() == 0 {
         return Err(ApiError::not_found());
     }
-    let details = json!({ "name": new_name, "sort_key": body.sort_key });
+    let details = json!({ "name": new_name, "sort_key": body.sort_key, "parent": parent });
     let entry = Entry { admin_id: admin.id, action: "category_update", target_type: "category", target_id: name, note: &body.note, details };
     audit::record(&mut tx, entry, (state.clock)()).await?;
     tx.commit().await?;
@@ -162,6 +204,10 @@ pub async fn delete_category(State(state): State<AppState>, AdminUser(admin): Ad
     let used: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM addons WHERE category = $1::citext)").bind(&name).fetch_one(&state.pool).await?;
     if used {
         return Err(ApiError::new(StatusCode::CONFLICT, "category_in_use", "Addons still use this category"));
+    }
+    let has_children: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM categories WHERE parent = $1::citext)").bind(&name).fetch_one(&state.pool).await?;
+    if has_children {
+        return Err(ApiError::new(StatusCode::CONFLICT, "category_has_subcategories", "Delete or move its subcategories first"));
     }
     let mut tx = state.pool.begin().await?;
     let removed = sqlx::query("DELETE FROM categories WHERE name = $1::citext").bind(&name).execute(&mut *tx).await?;

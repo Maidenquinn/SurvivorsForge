@@ -61,8 +61,8 @@ fn folders_of(text: &str) -> Vec<String> {
     text.split([',', '\n']).map(str::trim).filter(|f| !f.is_empty()).map(str::to_string).collect()
 }
 
-async fn categories(state: &AppState) -> WebResult<Vec<String>> {
-    Ok(state.api.get("/v1/categories", None).await?.as_array().into_iter().flatten().map(s).collect())
+async fn categories(state: &AppState) -> WebResult<Vec<crate::templates::CategoryOption>> {
+    crate::app::selectable_categories(state).await
 }
 
 async fn perms(state: &AppState, slug: &str, token: &str) -> WebResult<Perms> {

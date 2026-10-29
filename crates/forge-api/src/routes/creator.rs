@@ -37,9 +37,17 @@ pub async fn my_permissions(State(state): State<AppState>, user: CurrentUser, Pa
     })))
 }
 
+/// Every category in display order: each top-level one followed by its subcategories.
+/// `selectable` is false for the ones with subcategories; addons go into the others.
 pub async fn categories(State(state): State<AppState>) -> ApiResult<Json<Value>> {
-    let list: Value = sqlx::query_scalar("SELECT coalesce(json_agg(name::text ORDER BY sort_key, name), '[]') FROM categories")
-        .fetch_one(&state.pool)
-        .await?;
+    let list: Value = sqlx::query_scalar(
+        "SELECT coalesce(json_agg(json_build_object(
+                    'name', c.name::text, 'parent', c.parent::text, 'sort_key', c.sort_key,
+                    'selectable', NOT EXISTS (SELECT 1 FROM categories k WHERE k.parent = c.name))
+                ORDER BY coalesce(p.sort_key, c.sort_key), coalesce(p.name, c.name), c.parent IS NOT NULL, c.sort_key, c.name), '[]')
+         FROM categories c LEFT JOIN categories p ON p.name = c.parent",
+    )
+    .fetch_one(&state.pool)
+    .await?;
     Ok(Json(list))
 }

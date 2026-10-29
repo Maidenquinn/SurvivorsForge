@@ -57,6 +57,16 @@ impl FromRef<AppState> for Key {
     }
 }
 
+/// Every category in display order.
+pub async fn categories(state: &AppState) -> WebResult<Vec<crate::templates::CategoryOption>> {
+    Ok(crate::templates::CategoryOption::list(&state.api.get("/v1/categories", None).await?))
+}
+
+/// The categories an addon can go into.
+pub async fn selectable_categories(state: &AppState) -> WebResult<Vec<crate::templates::CategoryOption>> {
+    Ok(categories(state).await?.into_iter().filter(|c| c.selectable).collect())
+}
+
 /// The logged-in visitor and their API token, if there is a session.
 pub async fn visitor(state: &AppState, jar: &PrivateCookieJar) -> WebResult<Option<(Visitor, String)>> {
     let Some(token) = session::token(jar) else { return Ok(None) };

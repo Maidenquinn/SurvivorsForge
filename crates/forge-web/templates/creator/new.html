@@ -33,7 +33,7 @@
 
   <label for="category">Category</label>
   <select id="category" name="category">
-    {% for c in categories %}<option value="{{ c }}" {% if *c == form.category %}selected{% endif %}>{{ c }}</option>{% endfor %}
+    {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(form.category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
   </select>
   {% if errors.get("category") != "" %}<p class="field-error">{{ errors.get("category") }}</p>{% endif %}
 

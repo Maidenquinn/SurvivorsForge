@@ -8,7 +8,7 @@ use sqlx::PgPool;
 fn addon(slug: &str, repo: &str, folders: &[&str]) -> Value {
     json!({
         "slug": slug, "name": format!("Addon {slug}"), "repo": repo, "source_type": "release",
-        "asset_pattern": format!("{slug}-v*.zip"), "category": "UI", "summary": "Short.", "folders": folders,
+        "asset_pattern": format!("{slug}-v*.zip"), "category": "Unit Frames", "summary": "Short.", "folders": folders,
     })
 }
 
@@ -108,18 +108,18 @@ async fn only_owner_changes_owner_fields(pool: PgPool) {
     let other = app.login(2, "bob").await;
     app.post("/v1/addons", Some(&owner), addon("lucky", "alice/lucky", &["Lucky"])).await;
 
-    for change in [json!({ "name": "Mine" }), json!({ "category": "Info" }), json!({ "folders": ["X"] }), json!({ "asset_pattern": "x*.zip" })] {
+    for change in [json!({ "name": "Mine" }), json!({ "category": "Miscellaneous" }), json!({ "folders": ["X"] }), json!({ "asset_pattern": "x*.zip" })] {
         let reply = app.patch("/v1/addons/lucky", Some(&other), change.clone()).await;
         assert_eq!(reply.status, StatusCode::FORBIDDEN, "{change}");
     }
     assert_eq!(app.delete("/v1/addons/lucky", Some(&other)).await.status, StatusCode::FORBIDDEN);
 
-    let change = json!({ "name": "Lucky Odds", "category": "Info", "folders": ["Lucky", "LuckyData"] });
+    let change = json!({ "name": "Lucky Odds", "category": "Miscellaneous", "folders": ["Lucky", "LuckyData"] });
     let reply = app.patch("/v1/addons/lucky", Some(&owner), change).await;
     assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
     let view = reply.json();
     assert_eq!(view["name"], "Lucky Odds");
-    assert_eq!(view["category"], "Info");
+    assert_eq!(view["category"], "Miscellaneous");
     assert_eq!(view["folders"], json!(["Lucky", "LuckyData"]));
 }
 

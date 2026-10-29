@@ -98,9 +98,19 @@ async fn verify_repo(state: &AppState, user: &CurrentUser, full_name: &str) -> A
     Ok((repo, installation))
 }
 
+/// Addons go into a category without subcategories (Warrior, not Classes).
 async fn check_category(pool: &PgPool, category: &str) -> ApiResult<()> {
-    let exists: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM categories WHERE name = $1)").bind(category).fetch_one(pool).await?;
-    if exists { Ok(()) } else { Err(unprocessable("unknown_category", "Unknown category")) }
+    let has_children: Option<bool> = sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM categories c WHERE c.parent = categories.name) FROM categories WHERE name = $1::citext",
+    )
+    .bind(category)
+    .fetch_optional(pool)
+    .await?;
+    match has_children {
+        None => Err(unprocessable("unknown_category", "Unknown category")),
+        Some(true) => Err(unprocessable("category_has_subcategories", "Pick one of its subcategories")),
+        Some(false) => Ok(()),
+    }
 }
 
 /// Names the first folder that already belongs to another addon.

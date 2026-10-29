@@ -19,6 +19,13 @@
       </select>
     </div>
     <div>
+      <label for="category">Category</label>
+      <select id="category" name="category">
+        <option value="" {% if category == "" %}selected{% endif %}>All categories</option>
+        {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
       <label for="sort">Sort</label>
       <select id="sort" name="sort">
         <option value="" {% if sort == "" %}selected{% endif %}>Best match</option>
@@ -28,7 +35,6 @@
       </select>
     </div>
   </div>
-  {% if category != "" %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
   <noscript><button type="submit">Search</button></noscript>
 </form>
 

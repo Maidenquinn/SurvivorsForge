@@ -80,12 +80,24 @@ async fn categories_crud(pool: PgPool) {
     assert_eq!(app.post("/v1/admin/categories", Some(&owner), json!({ "name": "Maps" })).await.status, StatusCode::FORBIDDEN);
     assert_eq!(app.post("/v1/admin/categories", Some(&admin), json!({ "name": "Maps", "sort_key": 0 })).await.status, StatusCode::CREATED);
     assert_eq!(app.post("/v1/admin/categories", Some(&admin), json!({ "name": "maps" })).await.error(), "name_taken");
-    assert_eq!(app.patch("/v1/admin/categories/UI", Some(&admin), json!({ "name": "Interface" })).await.status, StatusCode::NO_CONTENT);
+    assert_eq!(app.patch("/v1/admin/categories/Unit%20Frames", Some(&admin), json!({ "name": "Interface" })).await.status, StatusCode::NO_CONTENT);
     assert_eq!(app.get("/v1/addons/lucky", None).await.json()["category"], "Interface", "addons follow a rename");
     assert_eq!(app.delete("/v1/admin/categories/Interface", Some(&admin)).await.error(), "category_in_use");
     assert_eq!(app.delete("/v1/admin/categories/Maps", Some(&admin)).await.status, StatusCode::NO_CONTENT);
+    assert_eq!(app.delete("/v1/admin/categories/Classes", Some(&admin)).await.error(), "category_has_subcategories");
+
+    // One level of subcategories, and none under a category that holds addons.
+    let sub = |name: &str, parent: &str| json!({ "name": name, "parent": parent });
+    assert_eq!(app.post("/v1/admin/categories", Some(&admin), sub("Death Knight", "Classes")).await.status, StatusCode::CREATED);
+    assert_eq!(app.post("/v1/admin/categories", Some(&admin), sub("Frost", "Death Knight")).await.error(), "invalid_parent");
+    assert_eq!(app.post("/v1/admin/categories", Some(&admin), sub("Bars", "Interface")).await.error(), "category_in_use");
+    assert_eq!(app.post("/v1/admin/categories", Some(&admin), sub("Bars", "Nope")).await.error(), "invalid_parent");
+    assert_eq!(app.patch("/v1/admin/categories/Classes", Some(&admin), json!({ "parent": "Combat" })).await.error(), "invalid_parent");
+    assert_eq!(app.patch("/v1/admin/categories/Death%20Knight", Some(&admin), json!({ "parent": "" })).await.status, StatusCode::NO_CONTENT);
     let list = app.get("/v1/categories", None).await.json();
-    assert_eq!(list[0], "Interface");
+    let dk = list.as_array().unwrap().iter().find(|c| c["name"] == "Death Knight").unwrap();
+    assert_eq!(dk["parent"], serde_json::Value::Null, "moved to the top");
+    assert!(list.as_array().unwrap().iter().any(|c| c["name"] == "Interface"));
 }
 
 #[sqlx::test]

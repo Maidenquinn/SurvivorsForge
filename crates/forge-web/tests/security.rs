@@ -88,6 +88,7 @@ async fn the_api_learns_the_client_ip() {
         .expect(1)
         .mount(&api)
         .await;
+    Mock::given(method("GET")).and(path("/v1/categories")).respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([]))).mount(&api).await;
     let web = web_with(&api, 100, "0.0.0.0");
     let response = web.oneshot(Request::get("/addons").header("x-forwarded-for", "1.2.3.4").header("referer", WEB).body(Body::empty()).unwrap()).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);

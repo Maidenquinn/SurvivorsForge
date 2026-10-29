@@ -14,7 +14,7 @@ async fn mock(web: &TestWeb, route: &str, body: Value) {
 
 fn addon(trust: &str) -> Value {
     json!({
-        "slug": "lucky", "name": "Lucky Odds", "summary": "Odds for rare cards", "category": "Info", "repo": "alice/lucky",
+        "slug": "lucky", "name": "Lucky Odds", "summary": "Odds for rare cards", "category": "Miscellaneous", "repo": "alice/lucky",
         "owner": { "login": "alice" }, "author": "alice", "claimed": true, "blocked": false,
         "description_html": "<h2>Features</h2><p>Shows odds.</p>", "description_md": "## Features",
         "icon_url": null, "images": [{ "id": 1, "url": "https://web.test/img/a.webp", "width": 800, "height": 450, "caption": "Card screen" }],
@@ -52,11 +52,12 @@ async fn with_addon(trust: &str, source: &str) -> TestWeb {
 #[tokio::test]
 async fn list_renders_items_without_js() {
     let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
     Mock::given(method("GET"))
         .and(path("/v1/addons"))
         .and(query_param("q", "lucky"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "total": 1, "page": 1, "per_page": 20, "addons": [
-            { "slug": "lucky", "name": "Lucky Odds", "summary": "Odds", "category": "Info", "trust": "flagged", "icon_url": null,
+            { "slug": "lucky", "name": "Lucky Odds", "summary": "Odds", "category": "Miscellaneous", "trust": "flagged", "icon_url": null,
               "owner": { "login": "alice" }, "author": "alice", "verified_author": false, "downloads": 42, "updated_at": "2026-05-01" }
         ] })))
         .mount(&web.api)
@@ -71,12 +72,38 @@ async fn list_renders_items_without_js() {
     assert!(web.get("/addons?q=nothing").await.body.contains("No addon matches"));
 }
 
+fn categories() -> Value {
+    json!([
+        { "name": "Classes", "parent": null, "selectable": false, "sort_key": 10 },
+        { "name": "Warrior", "parent": "Classes", "selectable": true, "sort_key": 1 },
+        { "name": "Combat", "parent": null, "selectable": true, "sort_key": 20 },
+    ])
+}
+
+#[tokio::test]
+async fn category_filter_lists_subcategories_and_reaches_the_api() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
+    Mock::given(method("GET"))
+        .and(path("/v1/addons"))
+        .and(query_param("category", "Classes"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "total": 0, "addons": [] })))
+        .expect(1)
+        .mount(&web.api)
+        .await;
+    let page = web.get("/addons?category=Classes").await;
+    assert_eq!(page.status, StatusCode::OK, "{}", page.body);
+    assert!(page.body.contains(r#"<option value="Classes" selected>Classes</option>"#), "{}", page.body);
+    assert!(page.body.contains(r#"<option value="Warrior" >Classes: Warrior</option>"#));
+    assert!(page.body.contains("All categories"));
+}
+
 #[tokio::test]
 async fn addon_page_sections() {
     let mut web = with_addon("scanned", "available").await;
     let page = web.get("/addons/lucky").await;
     assert_eq!(page.status, StatusCode::OK, "{}", page.body);
-    for text in ["<h2>Features</h2>", "Card screen", "bob", "Lib", "(required)", "0.69.0 and later", "Version v1", "Info"] {
+    for text in ["<h2>Features</h2>", "Card screen", "bob", "Lib", "(required)", "0.69.0 and later", "Version v1", "Miscellaneous"] {
         assert!(page.body.contains(text), "missing {text}");
     }
 }

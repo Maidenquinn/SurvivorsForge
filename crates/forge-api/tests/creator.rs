@@ -29,5 +29,28 @@ async fn permissions_and_categories(pool: PgPool) {
     assert_eq!(app.get("/v1/addons/lucky/permissions", Some(&alice)).await.json()["owner"], true);
     let p = app.get("/v1/addons/lucky/permissions", Some(&bob)).await.json();
     assert_eq!((p["owner"].as_bool(), p["edit_images"].as_bool()), (Some(false), Some(false)));
-    assert_eq!(app.get("/v1/categories", None).await.json(), json!(["UI", "Info", "Build", "Loot", "Meter"]));
+    let list = app.get("/v1/categories", None).await.json();
+    let names: Vec<String> = list
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| match c["parent"].as_str() {
+            Some(parent) => format!("{parent}/{}", c["name"].as_str().unwrap()),
+            None => c["name"].as_str().unwrap().to_string(),
+        })
+        .collect();
+    assert_eq!(names, [
+        "Classes", "Classes/Warrior", "Classes/Paladin", "Classes/Hunter", "Classes/Rogue", "Classes/Priest", "Classes/Shaman",
+        "Classes/Mage", "Classes/Warlock", "Classes/Druid", "Combat", "Libraries", "Unit Frames", "Action Bars", "Miscellaneous",
+    ]);
+    assert_eq!((list[0]["selectable"].as_bool(), list[1]["selectable"].as_bool(), list[10]["selectable"].as_bool()), (Some(false), Some(true), Some(true)));
+}
+
+#[sqlx::test]
+async fn addons_go_into_categories_without_subcategories(pool: PgPool) {
+    let app = TestApp::new(pool);
+    let alice = app.publish(1, "alice", "lucky").await;
+    assert_eq!(app.patch("/v1/addons/lucky", Some(&alice), json!({ "category": "Classes" })).await.error(), "category_has_subcategories");
+    assert_eq!(app.patch("/v1/addons/lucky", Some(&alice), json!({ "category": "Nope" })).await.error(), "unknown_category");
+    assert_eq!(app.patch("/v1/addons/lucky", Some(&alice), json!({ "category": "warlock" })).await.status, StatusCode::OK);
 }

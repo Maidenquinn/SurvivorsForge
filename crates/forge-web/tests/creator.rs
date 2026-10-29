@@ -14,10 +14,10 @@ async fn get_json(web: &TestWeb, route: &str, body: Value) {
 async fn logged_in(perms: Value) -> TestWeb {
     let mut web = TestWeb::new().await;
     web.login_as("tok", me("alice", "user")).await;
-    get_json(&web, "/v1/categories", json!(["UI", "Info"])).await;
+    get_json(&web, "/v1/categories", json!([{ "name": "Unit Frames", "parent": null, "selectable": true, "sort_key": 40 }, { "name": "Classes", "parent": null, "selectable": false, "sort_key": 10 }, { "name": "Miscellaneous", "parent": null, "selectable": true, "sort_key": 60 }])).await;
     get_json(&web, "/v1/addons/lucky/permissions", perms).await;
     get_json(&web, "/v1/addons/lucky", json!({
-        "slug": "lucky", "name": "Lucky", "category": "Info", "source_type": "release", "asset_pattern": "Lucky-v*.zip",
+        "slug": "lucky", "name": "Lucky", "category": "Miscellaneous", "source_type": "release", "asset_pattern": "Lucky-v*.zip",
         "folders": ["Lucky"], "summary": "Odds", "description_md": "# Hi", "images": [{ "id": 7, "url": "https://web.test/img/a.webp", "caption": "x" }],
         "icon_url": null, "dependencies": [{ "slug": "lib", "name": "Lib", "required": true }]
     }))
@@ -33,6 +33,7 @@ fn owner() -> Value {
 async fn wizard_happy_path_and_field_errors() {
     let mut web = logged_in(owner()).await;
     let page = web.get("/addons/new").await;
+    assert!(page.body.contains(">Unit Frames</option>") && !page.body.contains(">Classes</option>"), "only categories without subcategories");
     assert!(page.body.contains("https://github.com/apps/survivorsforge-test/installations/new"), "install link");
 
     Mock::given(method("POST"))
@@ -41,7 +42,7 @@ async fn wizard_happy_path_and_field_errors() {
         .respond_with(ResponseTemplate::new(409).set_body_json(json!({ "error": "folder_taken", "message": "The folder Lucky belongs to the addon Other" })))
         .mount(&web.api)
         .await;
-    let fields = [("repo", "alice/taken"), ("slug", "lucky"), ("name", "Lucky"), ("category", "Info"), ("source_type", "release"), ("asset_pattern", "L-*.zip"), ("folders", "Lucky")];
+    let fields = [("repo", "alice/taken"), ("slug", "lucky"), ("name", "Lucky"), ("category", "Miscellaneous"), ("source_type", "release"), ("asset_pattern", "L-*.zip"), ("folders", "Lucky")];
     let page = web.post_form("/addons/new", &fields).await;
     assert_eq!(page.status, StatusCode::UNPROCESSABLE_ENTITY);
     assert!(page.body.contains("The folder Lucky belongs to the addon Other"));
@@ -54,7 +55,7 @@ async fn wizard_happy_path_and_field_errors() {
         .respond_with(ResponseTemplate::new(201).set_body_json(json!({ "slug": "lucky" })))
         .mount(&web.api)
         .await;
-    let fields = [("repo", "alice/lucky"), ("slug", "lucky"), ("name", "Lucky"), ("category", "Info"), ("source_type", "release"), ("asset_pattern", "L-*.zip"), ("folders", "Lucky\nLuckyData")];
+    let fields = [("repo", "alice/lucky"), ("slug", "lucky"), ("name", "Lucky"), ("category", "Miscellaneous"), ("source_type", "release"), ("asset_pattern", "L-*.zip"), ("folders", "Lucky\nLuckyData")];
     let page = web.post_form("/addons/new", &fields).await;
     assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/lucky/edit"));
 }

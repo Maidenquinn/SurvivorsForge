@@ -51,9 +51,9 @@ async fn version(app: &TestApp, slug: &str, downloads: i64, scanned: bool) {
 
 async fn catalog(pool: PgPool) -> TestApp {
     let app = TestApp::new(pool);
-    addon(&app, 1, "luckyodds", "LuckyOdds", "Odds for rare cards", "Shows your luck.", "Info").await;
-    addon(&app, 2, "builder", "ASBuilder", "Build planner", "Plans builds. Mentions luckyodds in passing.", "Build").await;
-    addon(&app, 3, "plates", "Survivor Plates", "Nameplates", "Flat nameplates.", "UI").await;
+    addon(&app, 1, "luckyodds", "LuckyOdds", "Odds for rare cards", "Shows your luck.", "Miscellaneous").await;
+    addon(&app, 2, "builder", "ASBuilder", "Build planner", "Plans builds. Mentions luckyodds in passing.", "Warrior").await;
+    addon(&app, 3, "plates", "Survivor Plates", "Nameplates", "Flat nameplates.", "Unit Frames").await;
     version(&app, "luckyodds", 50, true).await;
     version(&app, "builder", 500, false).await;
     version(&app, "plates", 5, true).await;
@@ -78,9 +78,11 @@ async fn name_ranks_first(pool: PgPool) {
 #[sqlx::test]
 async fn filters_combine(pool: PgPool) {
     let app = catalog(pool).await;
-    assert_eq!(slugs(&app, "category=UI").await, ["plates"]);
+    assert_eq!(slugs(&app, "category=Unit%20Frames").await, ["plates"]);
+    assert_eq!(slugs(&app, "category=Classes").await, ["builder"], "a category finds its subcategories");
+    assert_eq!(slugs(&app, "category=warrior").await, ["builder"]);
     assert_eq!(slugs(&app, "trust=scanned&sort=name").await, ["luckyodds", "plates"]);
-    assert_eq!(slugs(&app, "trust=scanned&category=Info").await, ["luckyodds"]);
+    assert_eq!(slugs(&app, "trust=scanned&category=Miscellaneous").await, ["luckyodds"]);
     assert_eq!(slugs(&app, "trust=unscanned").await, ["builder"]);
 
     sqlx::query("INSERT INTO game_versions (name, sort_key) VALUES ('0.69', 1), ('0.70', 2)").execute(&app.pool).await.unwrap();

@@ -67,6 +67,9 @@ pub struct NoteForm {
     name: String,
     #[serde(default)]
     sort_key: String,
+    /// Categories only: the top-level category, empty for none.
+    #[serde(default)]
+    parent: String,
 }
 
 pub async fn index(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>) -> WebResult<Html<String>> {
@@ -239,7 +242,7 @@ pub struct AdminAddonForm {
 
 pub async fn add_addon_page(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>) -> WebResult<Html<String>> {
     let (user, _) = admin(&state, &jar).await?;
-    let categories = state.api.get("/v1/categories", None).await?.as_array().into_iter().flatten().map(s).collect();
+    let categories = crate::app::selectable_categories(&state).await?;
     let mut form = AdminAddonForm::default();
     form.base.source_type = "release".into();
     Ok(render(&AdminAddAddonPage { user: Some(user), csrf: csrf.0, categories, form, error: None }))
@@ -256,7 +259,7 @@ pub async fn add_addon(State(state): State<AppState>, jar: PrivateCookieJar, Ext
     match state.api.post("/v1/admin/addons", Some(&token), &body).await {
         Ok(created) => Ok(Redirect::to(&format!("/addons/{}", s(&created["slug"]))).into_response()),
         Err(ApiError::Api { message, status, .. }) if status < 500 && status != 403 => {
-            let categories = state.api.get("/v1/categories", None).await?.as_array().into_iter().flatten().map(s).collect();
+            let categories = crate::app::selectable_categories(&state).await?;
             Ok(render(&AdminAddAddonPage { user: Some(user), csrf: csrf.0, categories, form, error: Some(message) }).into_response())
         }
         Err(e) => Err(e.into()),
@@ -272,20 +275,20 @@ pub async fn list_page(
     Query(flash): Query<Flash>,
 ) -> WebResult<Html<String>> {
     let (user, _) = admin(&state, &jar).await?;
-    let (title, rows) = match kind.as_str() {
+    let (title, rows, parents) = match kind.as_str() {
         "game-versions" => {
             let list = state.api.get("/v1/game-versions", None).await?;
-            ("Game versions", list.as_array().into_iter().flatten().map(|g| (s(&g["id"]), s(&g["name"]), s(&g["sort_key"]))).collect())
+            let rows = list.as_array().into_iter().flatten().map(|g| (s(&g["id"]), s(&g["name"]), s(&g["sort_key"]), String::new())).collect();
+            ("Game versions", rows, Vec::new())
         }
         "categories" => {
-            let list = state.api.get("/v1/categories", None).await?;
-            let rows: Vec<(String, String, String)> =
-                list.as_array().into_iter().flatten().enumerate().map(|(i, c)| (s(c), s(c), (i + 1).to_string())).collect();
-            ("Categories", rows)
+            let list = crate::app::categories(&state).await?;
+            let parents = list.iter().filter(|c| c.parent.is_empty()).map(|c| c.name.clone()).collect();
+            ("Categories", list.into_iter().map(|c| (c.name.clone(), c.name, c.sort_key, c.parent)).collect(), parents)
         }
         _ => return Err(WebError::NotFound),
     };
-    Ok(render(&AdminListPage { user: Some(user), csrf: csrf.0, kind, title: title.into(), rows, msg: flash.msg, error: flash.error }))
+    Ok(render(&AdminListPage { user: Some(user), csrf: csrf.0, kind, title: title.into(), rows, parents, msg: flash.msg, error: flash.error }))
 }
 
 pub async fn list_create(State(state): State<AppState>, jar: PrivateCookieJar, Path(kind): Path<String>, Form(form): Form<NoteForm>) -> WebResult<Response> {
@@ -296,7 +299,11 @@ pub async fn list_create(State(state): State<AppState>, jar: PrivateCookieJar, P
         "categories" => "/v1/admin/categories",
         _ => return Err(WebError::NotFound),
     };
-    let result = state.api.post(route, Some(&token), &json!({ "name": form.name.trim(), "sort_key": sort_key })).await;
+    let mut body = json!({ "name": form.name.trim(), "sort_key": sort_key });
+    if kind == "categories" {
+        body["parent"] = json!(form.parent.trim());
+    }
+    let result = state.api.post(route, Some(&token), &body).await;
     back(&format!("/admin/list/{kind}"), result, "Added.")
 }
 
@@ -317,7 +324,10 @@ pub async fn list_update(
         state.api.call(Method::DELETE, &route, Some(&token), None).await
     } else {
         let name = Some(form.name.trim()).filter(|n| !n.is_empty());
-        let body = json!({ "name": name, "sort_key": form.sort_key.trim().parse::<i32>().ok() });
+        let mut body = json!({ "name": name, "sort_key": form.sort_key.trim().parse::<i32>().ok() });
+        if kind == "categories" {
+            body["parent"] = json!(form.parent.trim());
+        }
         state.api.call(Method::PATCH, &route, Some(&token), Some(&body)).await
     };
     back(&format!("/admin/list/{kind}"), result, if action == "delete" { "Deleted." } else { "Saved." })

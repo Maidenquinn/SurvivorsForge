@@ -7,7 +7,7 @@
       "author": "morderous",
       "repo": "morderous/survivor-ui",
       "description": "Flat, dark interface in the style of EllesmereUI and Plater: Survivor UI plus Survivor Plates (nameplates).",
-      "category": "UI",
+      "category": "Unit Frames",
       "folders": [
         "SurvivorUI",
         "SurvivorPlates"
@@ -23,7 +23,7 @@
       "author": "cadoky",
       "repo": "cadoky/LuckyOdds",
       "description": "Your odds for Rare, Epic and Legendary cards from luck, plus caches and guardian lairs on the minimap.",
-      "category": "Info",
+      "category": "Miscellaneous",
       "folders": [
         "LuckyOdds"
       ],
@@ -38,7 +38,7 @@
       "author": "cadoky",
       "repo": "cadoky/ASBuilder",
       "description": "In-game build planner and tracker: shows what to take next and highlights your picks on the card screen.",
-      "category": "Build",
+      "category": "Miscellaneous",
       "folders": [
         "ASBuilder"
       ],
@@ -53,7 +53,7 @@
       "author": "Kindagrey",
       "repo": "Kindagrey/Azerloot",
       "description": "Loot book of every boss drop, ring, trinket, amulet and spell, with wishlist, build planner, run chronicle and boss warnings.",
-      "category": "Loot",
+      "category": "Miscellaneous",
       "folders": [
         "Azerloot"
       ],
@@ -68,7 +68,7 @@
       "author": "KeijinDE",
       "repo": "KeijinDE/KeijinUI_modern-as-ui",
       "description": "Customizable full UI: run overview, minimap guidance, meters, combat and party frames, run tracking, free layout.",
-      "category": "UI",
+      "category": "Unit Frames",
       "folders": [
         "KeijinUI"
       ],
@@ -83,7 +83,7 @@
       "author": "threenox",
       "repo": "threenox/BordoUI",
       "description": "UI suite: centered combat HUD, minimap cache radar, boss timeline, guardian tracker, clean nameplates, stats panel.",
-      "category": "UI",
+      "category": "Combat",
       "folders": [
         "BordoUI"
       ],
@@ -97,7 +97,7 @@
       "author": "NORehabRocket",
       "repo": "NORehabRocket/AetherHUD",
       "description": "Aion-style replacement of the whole UI: run HUD, boss timeline, frames, bags, chat, minimap and combat meter.",
-      "category": "UI",
+      "category": "Unit Frames",
       "folders": [
         "AetherHUD"
       ],
@@ -112,7 +112,7 @@
       "author": "Blackwellcode",
       "repo": "Blackwellcode/BlackwellUI",
       "description": "Lightweight cyberpunk HUD: cooldown and DoT hub, 5-mode meter, cache and lair radar, debuffs and nameplates.",
-      "category": "UI",
+      "category": "Combat",
       "folders": [
         "BlackwellUI"
       ],
@@ -127,7 +127,7 @@
       "author": "migwynkriid13",
       "repo": "migwynkriid13/SurvivorsDragonUi",
       "description": "Dragonflight-style UI: jewelry above the action bar, unit frames, run timers, guardian tracking, loot alerts. Only the addon zip is installed, not its own updater.",
-      "category": "UI",
+      "category": "Action Bars",
       "folders": [
         "SurvivorsDragonUi"
       ],
@@ -142,7 +142,7 @@
       "author": "kex0",
       "repo": "kex0/AZSSpellMeter",
       "description": "Per-spell damage meter: several views at once, kills per spell, proc damage credited to the spell behind it.",
-      "category": "Meter",
+      "category": "Combat",
       "folders": [
         "AZSSpellMeter"
       ],
@@ -157,7 +157,7 @@
       "author": "Maidenquinn",
       "repo": "Maidenquinn/AzerothStats",
       "description": "Run history, records and build stats per class, damage and healing breakdowns, run comparison, custom stats bar.",
-      "category": "Info",
+      "category": "Miscellaneous",
       "folders": [
         "AzerothStats"
       ],
@@ -171,7 +171,7 @@
       "author": "Maidenquinn",
       "repo": "Maidenquinn/azeroth-fieldkit",
       "description": "Combat text, health and boss frames, damage meter, next-chest price, chests and lairs on the minimap. Fork of MASH by Malk.",
-      "category": "UI",
+      "category": "Combat",
       "folders": [
         "AzerothFieldKit"
       ],

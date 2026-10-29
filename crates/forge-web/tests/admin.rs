@@ -91,16 +91,21 @@ async fn actions_ask_for_note() {
 async fn game_versions_and_categories_crud() {
     let mut web = as_admin().await;
     get_json(&web, "/v1/game-versions", json!([{ "id": 4, "name": "0.69.0", "sort_key": 10 }])).await;
-    get_json(&web, "/v1/categories", json!(["UI", "Info"])).await;
+    get_json(&web, "/v1/categories", json!([{ "name": "Unit Frames", "parent": null, "selectable": true, "sort_key": 40 }, { "name": "Classes", "parent": null, "selectable": false, "sort_key": 10 }, { "name": "Miscellaneous", "parent": null, "selectable": true, "sort_key": 60 }])).await;
     assert!(web.get("/admin/list/game-versions").await.body.contains("value=\"0.69.0\""));
-    assert!(web.get("/admin/list/categories").await.body.contains("value=\"Info\""));
+    let page = web.get("/admin/list/categories").await;
+    assert!(page.body.contains("value=\"Miscellaneous\""), "{}", page.body);
+    assert!(page.body.contains("<option value=\"Classes\">Classes</option>"), "top-level categories offered as parents");
+
+    expect(&web, "POST", "/v1/admin/categories", json!({ "name": "Death Knight", "sort_key": 10, "parent": "Classes" })).await;
+    web.post_form("/admin/list/categories", &[("name", "Death Knight"), ("sort_key", "10"), ("parent", "Classes")]).await;
 
     expect(&web, "POST", "/v1/admin/game-versions", json!({ "name": "0.70.0", "sort_key": 20 })).await;
     web.post_form("/admin/list/game-versions", &[("name", "0.70.0"), ("sort_key", "20")]).await;
     expect(&web, "PATCH", "/v1/admin/game-versions/4", json!({ "name": "0.69", "sort_key": 11 })).await;
     web.post_form("/admin/list/game-versions/4/save", &[("name", "0.69"), ("sort_key", "11")]).await;
-    Mock::given(method("DELETE")).and(path("/v1/admin/categories/Info")).respond_with(ResponseTemplate::new(204)).expect(1).mount(&web.api).await;
-    let page = web.post_form("/admin/list/categories/Info/delete", &[]).await;
+    Mock::given(method("DELETE")).and(path("/v1/admin/categories/Miscellaneous")).respond_with(ResponseTemplate::new(204)).expect(1).mount(&web.api).await;
+    let page = web.post_form("/admin/list/categories/Miscellaneous/delete", &[]).await;
     assert!(page.location().starts_with("/admin/list/categories?msg="));
 }
 
@@ -118,7 +123,7 @@ async fn owner_transfer_form() {
 #[tokio::test]
 async fn admin_adds_addon_without_app() {
     let mut web = as_admin().await;
-    get_json(&web, "/v1/categories", json!(["UI", "Info"])).await;
+    get_json(&web, "/v1/categories", json!([{ "name": "Unit Frames", "parent": null, "selectable": true, "sort_key": 40 }, { "name": "Classes", "parent": null, "selectable": false, "sort_key": 10 }, { "name": "Miscellaneous", "parent": null, "selectable": true, "sort_key": 60 }])).await;
     Mock::given(method("POST"))
         .and(path("/v1/admin/addons"))
         .and(body_partial_json(json!({ "repo": "cadoky/LuckyOdds", "author_name": "cadoky", "folders": ["LuckyOdds"] })))
@@ -128,7 +133,7 @@ async fn admin_adds_addon_without_app() {
         .await;
     let fields = [
         ("repo", "cadoky/LuckyOdds"), ("author_name", "cadoky"), ("name", "LuckyOdds"), ("slug", "luckyodds"), ("summary", "Odds"),
-        ("category", "Info"), ("source_type", "release"), ("asset_pattern", "LuckyOdds-v*.zip"), ("folders", "LuckyOdds"),
+        ("category", "Miscellaneous"), ("source_type", "release"), ("asset_pattern", "LuckyOdds-v*.zip"), ("folders", "LuckyOdds"),
     ];
     let page = web.post_form("/admin/addons/new", &fields).await;
     assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/addons/luckyodds"), "{}", page.body);

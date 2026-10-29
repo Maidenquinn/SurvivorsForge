@@ -129,6 +129,7 @@ pub async fn addons(State(state): State<AppState>, jar: PrivateCookieJar, Extens
         trust: param("trust").unwrap_or_default(),
         sort: param("sort").unwrap_or_default(),
         total,
+        categories: crate::app::categories(&state).await?,
         cards,
         prev: (page > 1).then(|| link(page - 1)),
         next: (page * per_page < total).then(|| link(page + 1)),
