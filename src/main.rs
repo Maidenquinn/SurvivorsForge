@@ -330,6 +330,10 @@ fn refresh(ui: &AppWindow, shared: &Shared) {
         labels.extend(choices.iter().map(|c| SharedString::from(c.label())));
         let index = core.category.as_ref().and_then(|w| choices.iter().position(|c| c.name.eq_ignore_ascii_case(w))).map_or(0, |i| i + 1);
         ui.set_category_labels(slint::ModelRc::new(slint::VecModel::from(labels)));
+        let (list, levels): (Vec<SharedString>, Vec<i32>) =
+            std::iter::once(("All categories".to_string(), 0)).chain(controller::list_entries(&choices)).map(|(l, n)| (SharedString::from(l), n)).unzip();
+        ui.set_category_list_labels(slint::ModelRc::new(slint::VecModel::from(list)));
+        ui.set_category_levels(slint::ModelRc::new(slint::VecModel::from(levels)));
         ui.set_category_index(index as i32);
     }
     ui.set_picked_count(core.picked.len() as i32);

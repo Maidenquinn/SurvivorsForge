@@ -1,8 +1,7 @@
 import { Theme } from "theme.slint";
-import { ComboBox } from "std-widgets.slint";
 import {
     AddonRow, ActionButton, TabButton, SectionHeading, Field, ScrollPanel, AddonRowView,
-    Overlay, Panel, DialogCard, TitleBar, ResizeEdges, LinkButton, AddonDetail, DetailView
+    Overlay, Panel, DialogCard, TitleBar, ResizeEdges, LinkButton, Dropdown, AddonDetail, DetailView
 } from "components.slint";
 
 export { AddonRow, AddonDetail, Theme }
@@ -192,7 +191,7 @@ component SettingsView inherits VerticalLayout {
     }
     if root.game-versions.length > 1 : SettingRow {
         label: "Game version";
-        ComboBox {
+        Dropdown {
             model: root.game-versions;
             current-index <=> root.game-index;
         }
@@ -286,6 +285,8 @@ export component AppWindow inherits Window {
     in property <[AddonRow]> browse-rows;
     // Browse filter: "All categories" first, subcategories read "Classes: Warrior".
     in property <[string]> category-labels;
+    in property <[string]> category-list-labels;
+    in property <[int]> category-levels;
     in-out property <int> category-index;
     callback category-changed(int);
     // Addons picked in Browse for an addon pack.
@@ -465,9 +466,11 @@ export component AppWindow inherits Window {
                         text <=> root.search;
                         edited(text) => { root.search-changed(text); }
                     }
-                    if root.page == 1 : ComboBox {
+                    if root.page == 1 : Dropdown {
                         width: 220px;
                         model: root.category-labels;
+                        list-labels: root.category-list-labels;
+                        levels: root.category-levels;
                         current-index <=> root.category-index;
                         selected => { root.category-changed(self.current-index); }
                     }

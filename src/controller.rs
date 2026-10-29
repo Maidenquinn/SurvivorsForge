@@ -356,6 +356,20 @@ pub fn category_choices(platform: &[Category], registry: &Registry) -> Vec<Categ
     names.into_iter().map(|name| Category { name, parent: None }).collect()
 }
 
+/// How each choice reads in the open category list, as on the website: a category with
+/// subcategories heads its group (1), the subcategories go below it by their own name (2), the rest
+/// stay plain (0).
+pub fn list_entries(choices: &[Category]) -> Vec<(String, i32)> {
+    choices
+        .iter()
+        .map(|c| match &c.parent {
+            Some(_) => (c.name.clone(), 2),
+            None if choices.iter().any(|o| o.parent.as_deref().is_some_and(|p| p.eq_ignore_ascii_case(&c.name))) => (c.name.clone(), 1),
+            None => (c.name.clone(), 0),
+        })
+        .collect()
+}
+
 /// An addon of `category` passes the filter `wanted` when it is that category or one of its
 /// subcategories.
 pub fn in_category(category: &str, wanted: &str, categories: &[Category]) -> bool {
@@ -888,5 +902,9 @@ mod tests {
         assert_eq!(category_choices(&categories, &registry), categories);
         let offline: Vec<String> = category_choices(&[], &registry).into_iter().map(|c| c.name).collect();
         assert_eq!(offline, ["Action Bars", "Combat", "Miscellaneous", "Unit Frames"], "from the built-in list");
+
+        // In the open list a parent heads its group and the subcategories sit below it.
+        let list = list_entries(&categories);
+        assert_eq!(list, [("Classes".to_string(), 1), ("Warrior".to_string(), 2), ("Combat".to_string(), 0)]);
     }
 }
