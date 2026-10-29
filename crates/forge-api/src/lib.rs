@@ -1,5 +1,6 @@
 //! Backend API and worker of the SurvivorsForge platform.
 
+pub mod addons;
 pub mod app;
 pub mod auth;
 pub mod config;

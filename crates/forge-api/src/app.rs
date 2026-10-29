@@ -33,6 +33,11 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/auth/exchange", post(oauth::exchange))
         .route("/v1/auth/logout", post(routes::me::logout))
         .route("/v1/me", get(routes::me::me))
+        .route("/v1/addons", post(routes::addons::create))
+        .route(
+            "/v1/addons/{slug}",
+            get(routes::addons::show).patch(routes::addons::update).delete(routes::addons::delete),
+        )
         .fallback(|| async { ApiError::not_found() })
         .with_state(state);
     with_layers(routes, &config)
