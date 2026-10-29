@@ -2,16 +2,16 @@
 {% block title %}Addons - Admin - SurvivorsForge{% endblock %}
 {% block content %}
 <p><a href="/admin" data-i18n="admin">Admin</a></p>
-<h1>Addons</h1>
+<h1 data-i18n="addons">AddOns</h1>
 <form class="panel" method="get" action="/admin/addons" role="search">
   <label for="q" data-i18n="name">Name</label>
   <input id="q" type="search" name="q" value="{{ q }}">
   <p><button type="submit" data-i18n="search">Search</button></p>
 </form>
 <section class="panel list">
-  {% if found.is_empty() %}<p class="muted">No addon matches.</p>{% endif %}
+  {% if found.is_empty() %}<p class="muted" data-i18n="no_matches">No AddOn matches.</p>{% endif %}
   {% for (slug, name, trust) in found %}
-  <div class="member"><a href="/admin/addons/{{ slug }}">{{ name }}</a> <span class="badge">{{ trust }}</span></div>
+  <div class="member"><a href="/admin/addons/{{ slug }}">{{ name }}</a> <span class="badge" data-i18n-enum="trust" data-i18n-value="{{ trust }}">{{ trust }}</span></div>
   {% endfor %}
 </section>
 {% endblock %}
