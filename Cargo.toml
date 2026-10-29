@@ -4,6 +4,7 @@ version = "0.3.2"
 edition = "2024"
 description = "Mod manager for Azeroth Survivors addons"
 repository = "https://github.com/Rezondes/SurvivorsForge"
+homepage = "https://rezondes.github.io/SurvivorsForge/"
 license = "AGPL-3.0-or-later"
 
 [workspace]

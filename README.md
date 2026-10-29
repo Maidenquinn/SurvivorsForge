@@ -10,6 +10,8 @@ Addon sources:
 
 Built with Rust and [Slint](https://slint.dev).
 
+Homepage and download: <https://rezondes.github.io/SurvivorsForge/>. Addon platform: <https://forge.rezondes.net>.
+
 > **Linux and Steam Deck support is experimental.** 
 
 ## Requirements
