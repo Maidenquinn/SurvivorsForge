@@ -1,8 +1,8 @@
 [package]
 name = "survivorsforge"
-version = "0.4.0-rc.3"
+version = "0.4.0-rc.4"
 edition = "2024"
-description = "Mod manager for Azeroth Survivors addons"
+description = "Addon manager for Azeroth Survivors"
 repository = "https://github.com/Rezondes/SurvivorsForge"
 homepage = "https://rezondes.github.io/SurvivorsForge/"
 license = "AGPL-3.0-or-later"
