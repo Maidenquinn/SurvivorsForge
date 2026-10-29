@@ -5,7 +5,7 @@ use rsa::pkcs8::{EncodePrivateKey, LineEnding};
 use serde_json::json;
 use std::sync::{Arc, Mutex, OnceLock};
 use tokio::io::AsyncWriteExt;
-use wiremock::matchers::{header, method, path};
+use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// Generated per test run, never stored in the repo.
@@ -127,6 +127,26 @@ async fn installation_lookup_uses_app_jwt_and_404_is_none() {
     assert_eq!(gh.installation_for_repo("o/none").await.unwrap(), None);
     let auth = server.received_requests().await.unwrap()[0].headers["authorization"].to_str().unwrap().to_string();
     assert_eq!(auth.split('.').count(), 3, "a JWT: {auth}");
+}
+
+#[tokio::test]
+async fn releases_beyond_the_first_page_are_read() {
+    // GitHub sends at most 100 per page; a sync must not take older releases for deleted.
+    let server = MockServer::start().await;
+    let page = |from: i64, n: i64| -> Vec<serde_json::Value> {
+        (from..from + n).map(|i| json!({ "id": i, "tag_name": format!("v{i}"), "draft": false, "prerelease": false, "assets": [] })).collect()
+    };
+    for (number, body) in [("1", page(0, 100)), ("2", page(100, 3))] {
+        Mock::given(method("GET"))
+            .and(path("/repositories/9/releases"))
+            .and(query_param("page", number))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .expect(1)
+            .mount(&server)
+            .await;
+    }
+    let gh = client(&server, Arc::new(Mutex::new(Utc::now())));
+    assert_eq!(gh.releases(None, 9).await.unwrap().len(), 103);
 }
 
 #[tokio::test]

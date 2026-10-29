@@ -326,8 +326,18 @@ impl GitHubApi for GitHubClient {
     }
 
     async fn releases(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Vec<Release>> {
-        // ponytail: newest 100 releases only; paginate if an addon ever keeps more.
-        self.get_json(installation, &format!("/repositories/{repo_id}/releases?per_page=100")).await
+        // Page by page: a release missing from the list counts as deleted on GitHub.
+        const PAGE: usize = 100;
+        let mut all = Vec::new();
+        for page in 1..=20 {
+            let batch: Vec<Release> = self.get_json(installation, &format!("/repositories/{repo_id}/releases?per_page={PAGE}&page={page}")).await?;
+            let full = batch.len() == PAGE;
+            all.extend(batch);
+            if !full {
+                break;
+            }
+        }
+        Ok(all)
     }
 
     async fn release(&self, installation: Option<i64>, repo_id: i64, release_id: i64) -> GitHubResult<Option<Release>> {
