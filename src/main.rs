@@ -35,6 +35,8 @@ struct Core {
     status: String,
     status_error: bool,
     self_update: Option<Available>,
+    /// The platform's game versions, oldest first; empty without the platform.
+    game_versions: Vec<controller::GameVersion>,
 }
 
 type Shared = Arc<Mutex<Core>>;
@@ -60,6 +62,7 @@ impl Core {
             status: String::new(),
             status_error: false,
             self_update: None,
+            game_versions: Vec::new(),
         };
         if let Some(config) = config {
             core.switch_config(config);
@@ -173,6 +176,10 @@ fn installed_row(row: &Row, core: &Core) -> AddonRow {
 
 fn refresh(ui: &AppWindow, shared: &Shared) {
     let core = lock(shared);
+    // The game version list arrives with the update check; fill it once it is there.
+    if slint::Model::row_count(&ui.get_settings_game_versions()) != core.game_versions.len() + 1 {
+        fill_game_versions(ui, &core);
+    }
     let rows = controller::installed_rows(&core.state, &core.reconciled, &core.scan, &core.registry, &core.statuses);
     ui.set_installed_total(rows.len() as i32);
     ui.set_installed_rows(model(
@@ -278,7 +285,7 @@ fn install_remote(
     let zip = downloads.join(format!("{}.zip", unique_name()));
     client.download(&remote.download, &zip)?;
     let mut core = lock(shared);
-    let request = Request { zip: &zip, id, name, source, version: remote.id.clone() };
+    let request = Request { zip: &zip, id, name, source, version: remote.id.clone(), expected_sha256: remote.sha256.clone() };
     let result = install::install_zip(&addons, &mut core.state, request);
     let _ = std::fs::remove_file(&zip);
     result?;
@@ -307,7 +314,35 @@ fn remote_job(core: &Core, id: &str) -> Option<survivorsforge::Result<RemoteJob>
     })
 }
 
+/// Installs right away, or asks first when the platform has a reason to warn.
 fn on_row_action(ui: &AppWindow, shared: &Shared, id: String) {
+    let dialog = {
+        let core = lock(shared);
+        let registry_id = match core.state.get(&id).map(|e| &e.source) {
+            Some(Source::Verified { registry_id }) => registry_id.clone(),
+            Some(_) => String::new(),
+            None => id.clone(),
+        };
+        core.registry.get(&registry_id).and_then(|addon| {
+            let warnings = controller::install_warnings(addon, core.config.game_version.as_deref(), &core.game_versions);
+            (!warnings.is_empty()).then(|| controller::warning_dialog(&addon.name, &warnings))
+        })
+    };
+    match dialog {
+        None => start_install(ui, shared, id),
+        Some((title, text, danger)) => {
+            let weak = ui.as_weak();
+            let shared = shared.clone();
+            ask(ui, &title, &text, "Install anyway", danger, move || {
+                if let Some(ui) = weak.upgrade() {
+                    start_install(&ui, &shared, id);
+                }
+            });
+        }
+    }
+}
+
+fn start_install(ui: &AppWindow, shared: &Shared, id: String) {
     let job = {
         let mut core = lock(shared);
         if id.starts_with(UNMANAGED_PREFIX) || core.busy.contains(&id) {
@@ -334,10 +369,14 @@ fn on_row_action(ui: &AppWindow, shared: &Shared, id: String) {
 }
 
 fn on_update_all(ui: &AppWindow, shared: &Shared) {
-    let jobs: Vec<_> = {
+    let jobs = {
         let mut core = lock(shared);
         let ids: Vec<String> =
             controller::update_all_ids(&core.statuses).into_iter().filter(|id| !core.busy.contains(id)).collect();
+        // Updates that need a confirmation are left for the user to install one by one.
+        let (ids, skipped) =
+            controller::split_confirmations(ids, &core.registry, &core.state, core.config.game_version.as_deref(), &core.game_versions);
+        let skipped_names: Vec<String> = skipped.iter().map(|id| core.state.get(id).map(|e| e.name.clone()).unwrap_or(id.clone())).collect();
         let jobs: Vec<_> = ids
             .into_iter()
             .filter_map(|id| match remote_job(&core, &id) {
@@ -349,8 +388,9 @@ fn on_update_all(ui: &AppWindow, shared: &Shared) {
             core.busy.insert(id.clone());
         }
         core.set_status(format!("Updating {} addons...", jobs.len()), false);
-        jobs
+        (jobs, skipped_names)
     };
+    let (jobs, skipped) = jobs;
     refresh(ui, shared);
     let weak = ui.as_weak();
     run_bg(ui.as_weak(), shared.clone(), None, move |shared| {
@@ -364,8 +404,13 @@ fn on_update_all(ui: &AppWindow, shared: &Shared) {
             let s = shared.clone();
             let _ = weak.upgrade_in_event_loop(move |ui| refresh(&ui, &s));
         }
+        let skipped_note = if skipped.is_empty() {
+            String::new()
+        } else {
+            format!(". Needs your confirmation, update one by one: {}", skipped.join(", "))
+        };
         if failed.is_empty() {
-            Ok(format!("Updated {total} addons"))
+            Ok(format!("Updated {total} addons{skipped_note}"))
         } else {
             Err(Error::Io(format!("{} of {total} updates failed. {}", failed.len(), failed.join(" | "))))
         }
@@ -390,6 +435,7 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
         };
         let fetched = registry::sources(registry::api_url()).into_iter().map(|(origin, url)| (origin, client.get_text(&url))).collect();
         let (registry, origin) = registry::load(fetched, &cache);
+        let game_versions = fetch_game_versions(&client);
         let results = updates::check_all(&client, &mut state, &registry);
         let self_update = match client.latest_release(APP_REPO) {
             Ok(Some(release)) => self_update::available(APP_VERSION, &release),
@@ -398,6 +444,7 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
 
         let mut core = lock(shared);
         core.registry = registry;
+        core.game_versions = game_versions;
         // Keep versions learned from adopted addons, but never undo an install that ran meanwhile.
         let mut changed = false;
         for checked in &state.entries {
@@ -510,6 +557,7 @@ fn on_install_zip(ui: &AppWindow, shared: &Shared) {
                 name: &plan.name,
                 source: Source::Zip { file_name: file_name.clone() },
                 version: format!("zip:{file_name}"),
+                expected_sha256: None,
             };
             install::install_zip(&addons, &mut state, request)?;
             core.state = state;
@@ -592,6 +640,7 @@ fn show_detection(ui: &AppWindow, shared: &Shared, detection: repo_detect::Detec
                 name: &name,
                 source: Source::GitHub { repo: detection.repo.clone(), spec: detection.spec.clone() },
                 version: detection.remote.id.clone(),
+                expected_sha256: None,
             };
             let result = install::install_zip(&addons, &mut core.state, request);
             let _ = std::fs::remove_file(&detection.zip);
@@ -623,7 +672,10 @@ fn on_settings_save(ui: &AppWindow, shared: &Shared) {
     };
     let (saved, dir_changed) = {
         let mut core = lock(shared);
-        let config = Config { addons_dir: path };
+        let game_index = ui.get_settings_game_index();
+        let game_version =
+            if game_index > 0 { core.game_versions.get(game_index as usize - 1).map(|g| g.name.clone()) } else { None };
+        let config = Config { addons_dir: path, game_version };
         let dir_changed = config.addons_dir != core.config.addons_dir;
         let saved = config.save(&core.data_dir);
         if dir_changed {
@@ -667,7 +719,7 @@ fn on_setup_confirm(ui: &AppWindow, shared: &Shared) {
         }
         Ok(_) => {}
     }
-    let config = Config { addons_dir: path };
+    let config = Config { addons_dir: path, game_version: None };
     {
         let mut core = lock(shared);
         if let Err(e) = config.save(&core.data_dir) {
@@ -685,6 +737,25 @@ fn on_setup_confirm(ui: &AppWindow, shared: &Shared) {
 fn fill_settings(ui: &AppWindow, shared: &Shared) {
     let core = lock(shared);
     ui.set_settings_path(core.config.addons_dir.to_string_lossy().into_owned().into());
+    fill_game_versions(ui, &core);
+}
+
+fn fill_game_versions(ui: &AppWindow, core: &Core) {
+    let mut names: Vec<SharedString> = vec!["Not set".into()];
+    names.extend(core.game_versions.iter().map(|g| SharedString::from(g.name.as_str())));
+    let index = core.config.game_version.as_ref().and_then(|v| core.game_versions.iter().position(|g| &g.name == v)).map(|i| i + 1).unwrap_or(0);
+    ui.set_settings_game_versions(slint::ModelRc::new(slint::VecModel::from(names)));
+    ui.set_settings_game_index(index as i32);
+}
+
+/// The platform's game versions, oldest first. Empty when there is no platform or it fails.
+fn fetch_game_versions(client: &Client) -> Vec<controller::GameVersion> {
+    let Some(api) = registry::api_url() else { return Vec::new() };
+    let Ok(text) = client.get_text(&format!("{api}/v1/game-versions")) else { return Vec::new() };
+    let list: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    list.iter()
+        .filter_map(|g| Some(controller::GameVersion { name: g["name"].as_str()?.to_string(), sort_key: g["sort_key"].as_i64()? as i32 }))
+        .collect()
 }
 
 fn on_self_update(ui: &AppWindow, shared: &Shared) {

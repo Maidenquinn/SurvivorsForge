@@ -1,7 +1,7 @@
 //! Pure view logic: turns state, registry and update results into rows for the UI.
 
 use crate::archive::DetectedAddon;
-use crate::registry::Registry;
+use crate::registry::{Registry, VerifiedAddon};
 use crate::scan::InstalledAddon;
 use crate::state::{Reconciled, Source, State, TOC_PREFIX};
 use crate::updates::UpdateStatus;
@@ -150,6 +150,82 @@ pub fn installed_rows(
     }));
     rows.sort_by_key(|r| r.name.to_lowercase());
     rows
+}
+
+/// A game version as the platform lists it; `sort_key` orders them.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GameVersion {
+    pub name: String,
+    pub sort_key: i32,
+}
+
+/// Why installing a platform addon asks the user first.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Warning {
+    /// The platform has no checked file for it.
+    NoHash,
+    Unscanned,
+    Flagged { critical: u32, warn: u32 },
+    Incompatible { game: String },
+}
+
+/// The warnings for installing `addon`'s newest version. The plain verified list (no platform
+/// data) has none, so a launcher without the platform behaves as before.
+pub fn install_warnings(addon: &VerifiedAddon, game: Option<&str>, games: &[GameVersion]) -> Vec<Warning> {
+    if addon.verified_author.is_none() {
+        return Vec::new();
+    }
+    let Some(latest) = &addon.latest else { return vec![Warning::NoHash] };
+    let mut warnings = Vec::new();
+    if latest.sha256.is_none() {
+        warnings.push(Warning::NoHash);
+    }
+    match latest.trust {
+        Trust::Unscanned => warnings.push(Warning::Unscanned),
+        Trust::Flagged => warnings.push(Warning::Flagged { critical: latest.findings.critical, warn: latest.findings.warn }),
+        _ => {}
+    }
+    let key = |name: &Option<String>| name.as_ref().and_then(|n| games.iter().find(|g| &g.name == n)).map(|g| g.sort_key);
+    if let Some(game) = game.and_then(|g| games.iter().find(|v| v.name == g))
+        && forge_core::compat::compatible(key(&latest.game_min), key(&latest.game_max), game.sort_key) == Some(false)
+    {
+        warnings.push(Warning::Incompatible { game: game.name.clone() });
+    }
+    warnings
+}
+
+/// Title, text and whether the dialog is red, for the confirmation before an install.
+pub fn warning_dialog(name: &str, warnings: &[Warning]) -> (String, String, bool) {
+    let danger = warnings.iter().any(|w| matches!(w, Warning::Flagged { .. }));
+    let lines: Vec<String> = warnings
+        .iter()
+        .map(|w| match w {
+            Warning::NoHash => "The platform has no checked file for this version.".to_string(),
+            Warning::Unscanned => "This version was not checked automatically yet.".to_string(),
+            Warning::Flagged { critical, warn } => {
+                format!("The automatic check found {} serious and {} other suspicious things. Read them on the addon's page first.", critical, warn)
+            }
+            Warning::Incompatible { game } => format!("This version does not state support for your game version {game}."),
+        })
+        .collect();
+    (format!("Install {name}?"), lines.join("\n\n") + "\n\nOnly continue if you trust the author.", danger)
+}
+
+/// Splits update ids into the ones "Update all" may install and the ones that need a confirmation.
+pub fn split_confirmations(
+    ids: Vec<String>,
+    registry: &Registry,
+    state: &State,
+    game: Option<&str>,
+    games: &[GameVersion],
+) -> (Vec<String>, Vec<String>) {
+    ids.into_iter().partition(|id| {
+        let registry_id = match state.get(id).map(|e| &e.source) {
+            Some(Source::Verified { registry_id }) => registry_id.as_str(),
+            _ => id.as_str(),
+        };
+        registry.get(registry_id).is_none_or(|a| install_warnings(a, game, games).is_empty())
+    })
 }
 
 /// The label of a platform trust level, the same words the website uses.
@@ -327,7 +403,7 @@ mod tests {
         let scan = [scanned("LuckyOdds"), scanned("R"), scanned("Z"), scanned("Tickfire")];
         let reconciled = state.reconcile(&scan);
         let mut statuses = HashMap::new();
-        statuses.insert("luckyodds".to_string(), UpdateStatus::UpdateAvailable(RemoteVersion {
+        statuses.insert("luckyodds".to_string(), UpdateStatus::UpdateAvailable(RemoteVersion { sha256: None,
             id: "v0.6.0".into(),
             label: "v0.6.0".into(),
             download: String::new(),
@@ -355,7 +431,7 @@ mod tests {
 
     #[test]
     fn update_all_selects_only_update_available() {
-        let remote = RemoteVersion { id: "v2".into(), label: "v2".into(), download: String::new() };
+        let remote = RemoteVersion { id: "v2".into(), label: "v2".into(), download: String::new(), sha256: None };
         let statuses = HashMap::from([
             ("b".to_string(), UpdateStatus::UpdateAvailable(remote.clone())),
             ("a".to_string(), UpdateStatus::UpdateAvailable(remote)),
@@ -453,5 +529,58 @@ mod tests {
             assert!(rows.iter().all(|r| !r.installable));
         }
         assert!(browse_rows(&platform_registry(Trust::Flagged), &State::default()).iter().all(|r| r.installable));
+    }
+
+    fn latest(trust: Trust, sha: bool, min: Option<&str>, max: Option<&str>) -> VerifiedAddon {
+        let mut addon = crate::registry::embedded().addons.remove(0);
+        addon.verified_author = Some(false);
+        addon.latest = Some(crate::registry::LatestVersion {
+            tag: "v1".into(),
+            asset_url: "https://github.com/a.zip".into(),
+            sha256: sha.then(|| "ab".repeat(32)),
+            size: None,
+            trust,
+            findings: forge_core::registry::FindingCounts { critical: 1, warn: 2 },
+            game_min: min.map(str::to_string),
+            game_max: max.map(str::to_string),
+        });
+        addon
+    }
+
+    fn games() -> Vec<GameVersion> {
+        vec![GameVersion { name: "0.68".into(), sort_key: 1 }, GameVersion { name: "0.69".into(), sort_key: 2 }]
+    }
+
+    #[test]
+    fn warnings_per_trust_and_compat() {
+        assert!(install_warnings(&latest(Trust::Scanned, true, None, None), None, &games()).is_empty());
+        assert!(install_warnings(&latest(Trust::Verified, true, None, None), Some("0.69"), &games()).is_empty());
+        assert_eq!(install_warnings(&latest(Trust::Unscanned, true, None, None), None, &games()), [Warning::Unscanned]);
+        assert_eq!(install_warnings(&latest(Trust::Flagged, true, None, None), None, &games()), [Warning::Flagged { critical: 1, warn: 2 }]);
+        assert_eq!(install_warnings(&latest(Trust::Scanned, false, None, None), None, &games()), [Warning::NoHash]);
+        assert_eq!(
+            install_warnings(&latest(Trust::Scanned, true, Some("0.69"), None), Some("0.68"), &games()),
+            [Warning::Incompatible { game: "0.68".into() }]
+        );
+        assert!(install_warnings(&latest(Trust::Scanned, true, Some("0.68"), None), None, &games()).is_empty(), "no game chosen, no warning");
+        let plain = crate::registry::embedded().addons.remove(0);
+        assert!(install_warnings(&plain, Some("0.68"), &games()).is_empty(), "plain verified list: as before");
+
+        let (_, text, danger) = warning_dialog("Lucky", &[Warning::Flagged { critical: 1, warn: 2 }]);
+        assert!(danger && text.contains("1 serious"));
+        assert!(!warning_dialog("Lucky", &[Warning::Unscanned]).2);
+    }
+
+    #[test]
+    fn update_all_skips_confirmations() {
+        let mut registry = crate::registry::embedded();
+        let flagged = latest(Trust::Flagged, true, None, None);
+        let mut clean = latest(Trust::Scanned, true, None, None);
+        clean.id = "clean".into();
+        registry.addons = vec![flagged.clone(), clean];
+        let ids = vec![flagged.id.clone(), "clean".to_string(), "gh:o/r".to_string()];
+        let (go, skipped) = split_confirmations(ids, &registry, &State::default(), None, &games());
+        assert_eq!(go, ["clean", "gh:o/r"]);
+        assert_eq!(skipped, [flagged.id]);
     }
 }

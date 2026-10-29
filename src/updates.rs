@@ -15,6 +15,8 @@ pub struct RemoteVersion {
     /// Short form for display.
     pub label: String,
     pub download: String,
+    /// Hex SHA-256 the platform scanned, for addons that come from the platform.
+    pub sha256: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -34,16 +36,16 @@ pub fn resolve_remote(gh: &dyn GitHub, repo: &str, spec: &SourceSpec) -> Result<
                 None => newest_pre_release(gh, repo, asset)?,
             };
             let asset = release.assets.iter().find(|a| glob_match(asset, &a.name)).ok_or(Error::NoMatchingAsset)?;
-            Ok(RemoteVersion { id: release.tag.clone(), label: release.tag.clone(), download: asset.url.clone() })
+            Ok(RemoteVersion { id: release.tag.clone(), label: release.tag.clone(), download: asset.url.clone(), sha256: None })
         }
         SourceSpec::Tag => {
             let tag = gh.tags(repo)?.into_iter().next().ok_or(Error::NoTags)?;
-            Ok(RemoteVersion { download: source_zip_url(repo, &tag.name), label: tag.name.clone(), id: tag.name })
+            Ok(RemoteVersion { sha256: None, download: source_zip_url(repo, &tag.name), label: tag.name.clone(), id: tag.name })
         }
         SourceSpec::Branch => {
             let branch = gh.default_branch(repo)?;
             let sha = gh.commit_sha(repo, &branch)?;
-            Ok(RemoteVersion { download: source_zip_url(repo, &sha), label: sha.chars().take(7).collect(), id: sha })
+            Ok(RemoteVersion { sha256: None, download: source_zip_url(repo, &sha), label: sha.chars().take(7).collect(), id: sha })
         }
     }
 }
@@ -91,7 +93,12 @@ pub fn platform_remote(addon: &VerifiedAddon) -> Option<Result<RemoteVersion>> {
         };
         return Some(Err(Error::NotInstallable(why)));
     }
-    Some(Ok(RemoteVersion { id: latest.tag.clone(), label: latest.tag.clone(), download: latest.asset_url.clone() }))
+    Some(Ok(RemoteVersion {
+        id: latest.tag.clone(),
+        label: latest.tag.clone(),
+        download: latest.asset_url.clone(),
+        sha256: latest.sha256.clone(),
+    }))
 }
 
 /// The repo and source spec of an entry; `None` for zip installs.
@@ -245,7 +252,7 @@ mod tests {
     use crate::state::Entry;
 
     fn remote(id: &str) -> RemoteVersion {
-        RemoteVersion { id: id.into(), label: id.into(), download: "url".into() }
+        RemoteVersion { id: id.into(), label: id.into(), download: "url".into(), sha256: None }
     }
 
     fn entry(id: &str, version: &str) -> Entry {

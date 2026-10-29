@@ -22,7 +22,7 @@ fn env() -> Env {
 }
 
 fn request<'a>(zip: &'a Path, id: &'a str) -> Request<'a> {
-    Request { zip, id, name: id, source: Source::Zip { file_name: "x.zip".into() }, version: "v1".into() }
+    Request { zip, id, name: id, source: Source::Zip { file_name: "x.zip".into() }, expected_sha256: None, version: "v1".into() }
 }
 
 fn staging_is_empty(addons: &Path) -> bool {
@@ -74,7 +74,7 @@ fn update_removes_stale_files() {
     let v1 = make_zip(&e.zips, "v1.zip", &[("A/A.toc", "1"), ("A/old.lua", "x")]);
     install_zip(&e.addons, &mut state, request(&v1, "a")).unwrap();
     let v2 = make_zip(&e.zips, "v2.zip", &[("A/A.toc", "2"), ("A/new.lua", "x")]);
-    install_zip(&e.addons, &mut state, Request { version: "v2".into(), ..request(&v2, "a") }).unwrap();
+    install_zip(&e.addons, &mut state, Request { expected_sha256: None, version: "v2".into(), ..request(&v2, "a") }).unwrap();
     assert!(!e.addons.join("A/old.lua").exists());
     assert!(e.addons.join("A/new.lua").is_file());
     assert_eq!(state.entries.len(), 1);
@@ -133,4 +133,46 @@ fn uninstall_removes_folders_and_entry() {
     assert_eq!(deleted, ["X", "Y"]);
     assert!(!e.addons.join("X").exists());
     assert!(state.get("ui").is_none());
+}
+
+#[test]
+fn hash_mismatch_installs_nothing() {
+    let dir = tempfile::tempdir().unwrap();
+    let addons = dir.path().join("AddOns");
+    std::fs::create_dir_all(&addons).unwrap();
+    let zip = make_zip(dir.path(), "a.zip", &[("Lucky/", ""), ("Lucky/Lucky.toc", "## Interface: 11200")]);
+    let mut state = State::default();
+    let request = Request {
+        zip: &zip,
+        id: "lucky",
+        name: "Lucky",
+        source: Source::Verified { registry_id: "lucky".into() },
+        version: "v1".into(),
+        expected_sha256: Some("00".repeat(32)),
+    };
+    let result = install_zip(&addons, &mut state, request);
+    assert!(matches!(result, Err(Error::HashMismatch { .. })), "{result:?}");
+    assert!(!addons.join("Lucky").exists());
+    assert!(state.entries.is_empty());
+    assert!(!zip.exists(), "the wrong file is deleted");
+}
+
+#[test]
+fn matching_hash_installs() {
+    let dir = tempfile::tempdir().unwrap();
+    let addons = dir.path().join("AddOns");
+    std::fs::create_dir_all(&addons).unwrap();
+    let zip = make_zip(dir.path(), "a.zip", &[("Lucky/", ""), ("Lucky/Lucky.toc", "## Interface: 11200")]);
+    let sha = survivorsforge::install::sha256_of(&zip).unwrap();
+    let mut state = State::default();
+    let request = Request {
+        zip: &zip,
+        id: "lucky",
+        name: "Lucky",
+        source: Source::Verified { registry_id: "lucky".into() },
+        version: "v1".into(),
+        expected_sha256: Some(sha.to_uppercase()),
+    };
+    install_zip(&addons, &mut state, request).unwrap();
+    assert!(addons.join("Lucky/Lucky.toc").exists());
 }

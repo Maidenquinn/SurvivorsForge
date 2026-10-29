@@ -1,4 +1,5 @@
 import { Theme } from "theme.slint";
+import { ComboBox } from "std-widgets.slint";
 import {
     AddonRow, ActionButton, TabButton, SectionHeading, Field, ScrollPanel, AddonRowView,
     Overlay, Panel, DialogCard, TitleBar, ResizeEdges
@@ -153,6 +154,9 @@ component SettingRow inherits HorizontalLayout {
 
 component SettingsView inherits VerticalLayout {
     in-out property <string> path;
+    // "Not set" first, then the platform's game versions; empty without the platform.
+    in property <[string]> game-versions;
+    in-out property <int> game-index;
     in property <string> message;
     in property <bool> message-error;
     in property <string> version;
@@ -179,6 +183,13 @@ component SettingsView inherits VerticalLayout {
         padding-left: 180px + Theme.gap-loose;
         TypePathHint {
             game-mode: root.game-mode;
+        }
+    }
+    if root.game-versions.length > 1 : SettingRow {
+        label: "Game version";
+        ComboBox {
+            model: root.game-versions;
+            current-index <=> root.game-index;
         }
     }
     SettingRow {
@@ -271,6 +282,8 @@ export component AppWindow inherits Window {
 
     // Settings
     in-out property <string> settings-path;
+    in property <[string]> settings-game-versions;
+    in-out property <int> settings-game-index;
     in property <string> settings-message;
     in property <bool> settings-message-error;
     callback settings-browse();
@@ -467,6 +480,8 @@ export component AppWindow inherits Window {
                 if root.page == 2 : SettingsView {
                     vertical-stretch: 1;
                     path <=> root.settings-path;
+                    game-versions: root.settings-game-versions;
+                    game-index <=> root.settings-game-index;
                     message: root.settings-message;
                     message-error: root.settings-message-error;
                     version: root.app-version;

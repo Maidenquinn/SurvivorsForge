@@ -61,7 +61,7 @@ pub fn detect(gh: &dyn GitHub, registry: &Registry, repo: &str, fetch: FetchFn) 
                 return Ok(Detection {
                     repo: repo.to_string(),
                     spec: SourceSpec::Release { asset: asset_pattern(&asset.name, &release.tag) },
-                    remote: RemoteVersion { id: release.tag.clone(), label: release.tag.clone(), download: asset.url.clone() },
+                    remote: RemoteVersion { id: release.tag.clone(), label: release.tag.clone(), download: asset.url.clone(), sha256: None },
                     zip,
                     addons,
                 });
@@ -74,7 +74,7 @@ pub fn detect(gh: &dyn GitHub, registry: &Registry, repo: &str, fetch: FetchFn) 
             return Ok(Detection {
                 repo: repo.to_string(),
                 spec: SourceSpec::Tag,
-                remote: RemoteVersion { id: tag.name.clone(), label: tag.name, download: url },
+                remote: RemoteVersion { id: tag.name.clone(), label: tag.name, download: url, sha256: None },
                 zip,
                 addons,
             });
@@ -87,7 +87,7 @@ pub fn detect(gh: &dyn GitHub, registry: &Registry, repo: &str, fetch: FetchFn) 
         return Ok(Detection {
             repo: repo.to_string(),
             spec: SourceSpec::Branch,
-            remote: RemoteVersion { label: sha.chars().take(7).collect(), id: sha, download: url },
+            remote: RemoteVersion { sha256: None, label: sha.chars().take(7).collect(), id: sha, download: url },
             zip,
             addons,
         });

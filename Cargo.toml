@@ -26,6 +26,7 @@ trash = "5"
 semver = "1"
 self-replace = "1.5"
 open = "5"
+sha2 = "0.11"
 
 [build-dependencies]
 slint-build = "1.18"

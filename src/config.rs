@@ -7,6 +7,9 @@ const FILE: &str = "config.json";
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     pub addons_dir: PathBuf,
+    /// The game version the user plays, for compatibility warnings; chosen in the settings.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub game_version: Option<String>,
 }
 
 /// `%APPDATA%\SurvivorsForge` on Windows, `~/.config/SurvivorsForge` on Linux.
@@ -233,8 +236,18 @@ mod tests {
     #[test]
     fn save_then_load_roundtrip() {
         let dir = tempfile::tempdir().unwrap();
-        let config = Config { addons_dir: PathBuf::from(r"P:\AddOns") };
+        let config = Config { addons_dir: PathBuf::from(r"P:\AddOns"), game_version: None };
         config.save(dir.path()).unwrap();
         assert_eq!(Config::load(dir.path()), Some(config));
+    }
+
+    #[test]
+    fn game_version_roundtrip() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = Config { addons_dir: dir.path().join("AddOns"), game_version: Some("0.69.1".into()) };
+        config.save(dir.path()).unwrap();
+        assert_eq!(Config::load(dir.path()).unwrap().game_version.as_deref(), Some("0.69.1"));
+        std::fs::write(dir.path().join("config.json"), r#"{"addons_dir":"C:/x"}"#).unwrap();
+        assert_eq!(Config::load(dir.path()).unwrap().game_version, None, "old config files still load");
     }
 }

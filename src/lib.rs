@@ -38,6 +38,8 @@ pub enum Error {
     InvalidRepo(String),
     /// The platform does not let this version be installed (blocked, or changed on GitHub).
     NotInstallable(String),
+    /// The downloaded file is not the one the platform scanned.
+    HashMismatch { expected: String, actual: String },
 }
 
 impl fmt::Display for Error {
@@ -58,6 +60,12 @@ impl fmt::Display for Error {
             Error::FolderOwnedBy(name) => write!(f, "The folder already belongs to the addon \"{name}\""),
             Error::AlreadyVerified(name) => write!(f, "\"{name}\" is a verified addon, install it from Browse"),
             Error::NotInstallable(why) => write!(f, "{why}"),
+            Error::HashMismatch { expected, actual } => write!(
+                f,
+                "The download is not the file that was checked (expected {}..., got {}...), nothing was installed",
+                &expected[..expected.len().min(12)],
+                &actual[..actual.len().min(12)]
+            ),
             Error::InvalidRepo(input) => write!(f, "\"{input}\" is not a GitHub repo (expected owner/repo or a GitHub URL)"),
         }
     }

@@ -17,6 +17,8 @@ pub struct Request<'a> {
     pub name: &'a str,
     pub source: Source,
     pub version: String,
+    /// Hex SHA-256 the platform scanned; a zip that differs is deleted and nothing is installed.
+    pub expected_sha256: Option<String>,
 }
 
 pub fn work_dir(addons_dir: &Path) -> PathBuf {
@@ -27,7 +29,24 @@ pub fn install_zip(addons_dir: &Path, state: &mut State, request: Request) -> Re
     install_zip_with(addons_dir, state, request, &mut |from, to| std::fs::rename(from, to))
 }
 
+/// Hex SHA-256 of a file.
+pub fn sha256_of(path: &Path) -> Result<String> {
+    use sha2::{Digest, Sha256};
+    Ok(hex(&Sha256::digest(std::fs::read(path)?)))
+}
+
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
 pub fn install_zip_with(addons_dir: &Path, state: &mut State, request: Request, mv: MoveFn) -> Result<Entry> {
+    if let Some(expected) = &request.expected_sha256 {
+        let actual = sha256_of(request.zip)?;
+        if !actual.eq_ignore_ascii_case(expected) {
+            let _ = std::fs::remove_file(request.zip);
+            return Err(Error::HashMismatch { expected: expected.clone(), actual });
+        }
+    }
     let detected = archive::analyze(request.zip)?;
     for addon in &detected {
         if let Some(owner) = state.owner_of(&addon.name).filter(|o| o.id != request.id) {
