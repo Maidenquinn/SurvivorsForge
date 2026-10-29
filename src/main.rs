@@ -316,33 +316,66 @@ fn remote_job(core: &Core, id: &str) -> Option<survivorsforge::Result<RemoteJob>
 
 /// Installs right away, or asks first when the platform has a reason to warn.
 fn on_row_action(ui: &AppWindow, shared: &Shared, id: String) {
-    let dialog = {
-        let core = lock(shared);
+    let decision = {
+        let mut core = lock(shared);
         let registry_id = match core.state.get(&id).map(|e| &e.source) {
             Some(Source::Verified { registry_id }) => registry_id.clone(),
             Some(_) => String::new(),
             None => id.clone(),
         };
-        core.registry.get(&registry_id).and_then(|addon| {
-            let warnings = controller::install_warnings(addon, core.config.game_version.as_deref(), &core.game_versions);
-            (!warnings.is_empty()).then(|| controller::warning_dialog(&addon.name, &warnings))
-        })
+        let game = core.config.game_version.clone();
+        match core.registry.get(&registry_id).cloned() {
+            None => Ok(None),
+            Some(addon) => {
+                let plan = controller::dependency_plan(&registry_id, &core.registry, &core.state);
+                if !plan.unavailable.is_empty() {
+                    let msg = format!("{} needs {}, which cannot be installed right now", addon.name, plan.unavailable.join(", "));
+                    core.set_status(msg, true);
+                    Err(())
+                } else {
+                    let mut lines = Vec::new();
+                    let mut danger = false;
+                    let mut warned = false;
+                    if !plan.install.is_empty() {
+                        let names: Vec<String> = plan.install.iter().map(|d| core.registry.get(d).map(|a| a.name.clone()).unwrap_or(d.clone())).collect();
+                        lines.push(format!("It needs these addons, which are installed first: {}.", names.join(", ")));
+                    }
+                    for target in plan.install.iter().map(String::as_str).chain(std::iter::once(registry_id.as_str())) {
+                        let Some(a) = core.registry.get(target) else { continue };
+                        let warnings = controller::install_warnings(a, game.as_deref(), &core.game_versions);
+                        if !warnings.is_empty() {
+                            let (_, text, red) = controller::warning_dialog(&a.name, &warnings);
+                            danger |= red;
+                            warned = true;
+                            lines.push(format!("{}: {text}", a.name));
+                        }
+                    }
+                    if !plan.optional.is_empty() {
+                        lines.push(format!("Works with, not installed: {}.", plan.optional.join(", ")));
+                    }
+                    let asks = !plan.install.is_empty() || warned;
+                    Ok(asks.then(|| (format!("Install {}?", addon.name), lines.join("\n\n"), danger, plan.install)))
+                }
+            }
+        }
     };
-    match dialog {
-        None => start_install(ui, shared, id),
-        Some((title, text, danger)) => {
+    match decision {
+        Err(()) => refresh(ui, shared),
+        Ok(None) => start_install(ui, shared, id, Vec::new()),
+        Ok(Some((title, text, danger, deps))) => {
             let weak = ui.as_weak();
             let shared = shared.clone();
-            ask(ui, &title, &text, "Install anyway", danger, move || {
+            ask(ui, &title, &text, if danger { "Install anyway" } else { "Install" }, danger, move || {
                 if let Some(ui) = weak.upgrade() {
-                    start_install(&ui, &shared, id);
+                    start_install(&ui, &shared, id, deps);
                 }
             });
         }
     }
 }
 
-fn start_install(ui: &AppWindow, shared: &Shared, id: String) {
+/// Installs the dependencies `deps` in order, then `id`. A failing dependency stops before `id`.
+fn start_install(ui: &AppWindow, shared: &Shared, id: String, deps: Vec<String>) {
     let job = {
         let mut core = lock(shared);
         if id.starts_with(UNMANAGED_PREFIX) || core.busy.contains(&id) {
@@ -364,6 +397,14 @@ fn start_install(ui: &AppWindow, shared: &Shared, id: String) {
     refresh(ui, shared);
     let Some((name, repo, spec, source, remote)) = job else { return };
     run_bg(ui.as_weak(), shared.clone(), Some(id.clone()), move |shared| {
+        for dep in &deps {
+            let job = remote_job(&lock(shared), dep);
+            let Some(Ok((dep_name, dep_repo, dep_spec, dep_source, dep_remote))) = job else {
+                return Err(Error::NotInstallable(format!("{dep} cannot be installed, so {name} was not installed")));
+            };
+            install_remote(shared, dep, &dep_name, &dep_repo, &dep_spec, dep_source, dep_remote)
+                .map_err(|e| Error::NotInstallable(format!("{dep_name} failed ({e}), so {name} was not installed")))?;
+        }
         install_remote(shared, &id, &name, &repo, &spec, source, remote)
     });
 }

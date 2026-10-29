@@ -228,6 +228,51 @@ pub fn split_confirmations(
     })
 }
 
+/// What installing a platform addon brings along.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct DependencyPlan {
+    /// Required addons that are not installed yet, dependencies first.
+    pub install: Vec<String>,
+    /// Required addons the platform cannot deliver: unknown, blocked or changed.
+    pub unavailable: Vec<String>,
+    /// Names of addons that work with it but are not needed.
+    pub optional: Vec<String>,
+}
+
+fn is_installed(registry_id: &str, registry: &Registry, state: &State) -> bool {
+    state.get(registry_id).is_some()
+        || state.entries.iter().any(|e| matches!(&e.source, Source::Verified { registry_id: r } if r == registry_id))
+        || registry.get(registry_id).is_some_and(|a| a.folders.iter().any(|f| state.owner_of(f).is_some()))
+}
+
+pub fn dependency_plan(id: &str, registry: &Registry, state: &State) -> DependencyPlan {
+    let mut edges: HashMap<String, Vec<String>> = HashMap::new();
+    for addon in &registry.addons {
+        let required = addon.dependencies.iter().filter(|d| d.required).map(|d| d.id.clone()).collect();
+        edges.insert(addon.id.clone(), required);
+    }
+    let mut plan = DependencyPlan::default();
+    for dep in forge_core::deps::install_order(&id.to_string(), &edges) {
+        match registry.get(&dep) {
+            Some(addon) if addon.latest.as_ref().is_none_or(|l| l.trust.installable()) => {
+                if !is_installed(&dep, registry, state) {
+                    plan.install.push(dep);
+                }
+            }
+            _ => plan.unavailable.push(dep),
+        }
+    }
+    if let Some(addon) = registry.get(id) {
+        plan.optional = addon
+            .dependencies
+            .iter()
+            .filter(|d| !d.required)
+            .map(|d| registry.get(&d.id).map(|a| a.name.clone()).unwrap_or(d.id.clone()))
+            .collect();
+    }
+    plan
+}
+
 /// The label of a platform trust level, the same words the website uses.
 pub fn trust_label(trust: Trust, verified_author: bool) -> &'static str {
     match trust {
@@ -582,5 +627,67 @@ mod tests {
         let (go, skipped) = split_confirmations(ids, &registry, &State::default(), None, &games());
         assert_eq!(go, ["clean", "gh:o/r"]);
         assert_eq!(skipped, [flagged.id]);
+    }
+
+    fn dep_registry() -> Registry {
+        let mut registry = crate::registry::embedded();
+        let template = latest(Trust::Scanned, true, None, None);
+        let make = |id: &str, deps: &[(&str, bool)]| {
+            let mut a = template.clone();
+            a.id = id.into();
+            a.name = id.to_uppercase();
+            a.folders = vec![id.to_uppercase()];
+            a.dependencies = deps.iter().map(|(d, r)| forge_core::registry::DependencyRef { id: d.to_string(), required: *r }).collect();
+            a
+        };
+        registry.addons = vec![
+            make("ui", &[("media", true), ("lib", true), ("extras", false)]),
+            make("media", &[("lib", true)]),
+            make("lib", &[("core", true)]),
+            make("core", &[]),
+            make("extras", &[]),
+        ];
+        registry
+    }
+
+    #[test]
+    fn plan_only_missing_required_in_order() {
+        let registry = dep_registry();
+        let plan = dependency_plan("ui", &registry, &State::default());
+        assert_eq!(plan.install, ["core", "lib", "media"]);
+        let mut state = State::default();
+        state.upsert(crate::state::Entry {
+            id: "lib".into(),
+            name: "LIB".into(),
+            source: Source::Verified { registry_id: "lib".into() },
+            folders: vec!["LIB".into()],
+            version: "v1".into(),
+            installed_at: 0,
+        });
+        assert_eq!(dependency_plan("ui", &registry, &state).install, ["core", "media"], "installed ones are skipped");
+    }
+
+    #[test]
+    fn plan_collects_warnings() {
+        let mut registry = dep_registry();
+        registry.addons.iter_mut().find(|a| a.id == "lib").unwrap().latest.as_mut().unwrap().trust = Trust::Flagged;
+        let plan = dependency_plan("ui", &registry, &State::default());
+        let flagged: Vec<&String> = plan.install.iter().filter(|d| !install_warnings(registry.get(d).unwrap(), None, &[]).is_empty()).collect();
+        assert_eq!(flagged, ["lib"]);
+    }
+
+    #[test]
+    fn unavailable_dependency_blocks() {
+        let mut registry = dep_registry();
+        registry.addons.iter_mut().find(|a| a.id == "core").unwrap().latest.as_mut().unwrap().trust = Trust::Blocked;
+        registry.addons.retain(|a| a.id != "media");
+        let mut unavailable = dependency_plan("ui", &registry, &State::default()).unavailable;
+        unavailable.sort();
+        assert_eq!(unavailable, ["core", "media"]);
+    }
+
+    #[test]
+    fn optional_dependencies_listed() {
+        assert_eq!(dependency_plan("ui", &dep_registry(), &State::default()).optional, ["EXTRAS"]);
     }
 }
