@@ -549,3 +549,31 @@ button.suggestion:hover { border-color: var(--outline-hover); background: var(--
 .gallery-lightbox:fullscreen .gallery-lightbox-actions { flex: 0 0 auto; }
 .gallery-lightbox.gallery-expanded [data-gallery-caption],
 .gallery-lightbox:fullscreen [data-gallery-caption] { flex: 0 0 auto; }
+
+/* Language selector: visible in the header on desktop and narrow screens. */
+.top .forge-locale-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gold);
+  font-size: 14px;
+}
+.top #forge-locale {
+  display: inline-block;
+  width: auto;
+  max-width: 185px;
+  min-height: 36px;
+  padding: 6px 10px;
+  color: var(--gold);
+  background: var(--bg);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+}
+.top #forge-locale:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+@media (max-width: 640px) {
+  .top .forge-locale-label { width: 100%; justify-content: center; }
+  .top #forge-locale { max-width: min(100%, 220px); }
+}
