@@ -208,6 +208,12 @@ code { word-break: break-all; color: var(--gold-bright); }
   text-decoration: none; background: var(--gold-heading); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .card h2 a:hover { text-decoration: underline; text-decoration-color: var(--gold); }
+/* The title link covers the whole card, so a click anywhere opens it; other links stay on top */
+.card { position: relative; cursor: pointer; }
+.card h2 a::after { content: ""; position: absolute; inset: 0; }
+.card:has(h2 a:focus-visible) { outline: 2px solid var(--outline-active); outline-offset: 2px; }
+.card h2 a:focus-visible { outline: none; }
+.card p a { position: relative; z-index: 1; }
 .card-head { display: flex; gap: 12px; align-items: center; }
 .card p { margin: 8px 0 0; }
 .icon { border-radius: var(--radius); border: 1px solid var(--outline); background: var(--field); flex: none; }

@@ -321,3 +321,11 @@ async fn the_result_count_is_announced() {
         assert!(body.contains(r##"hx-select-oob="#result-status""##), "{page}");
     }
 }
+
+#[tokio::test]
+async fn the_whole_card_opens_the_addon() {
+    // The title link stretches over the card; links inside it (the category) stay on top.
+    let mut web = TestWeb::new().await;
+    let css = web.get("/static/app.css").await.body;
+    assert!(css.contains(".card h2 a::after") && css.contains(".card p a { position: relative; z-index: 1; }"), "no card-wide link");
+}
