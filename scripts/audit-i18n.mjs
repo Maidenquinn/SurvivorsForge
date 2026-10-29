@@ -69,7 +69,7 @@ for (const filename of files) {
 }
 const byFile = new Map();
 for (const issue of issues) byFile.set(issue.file,(byFile.get(issue.file)||0)+1);
-const report={templates:files.length,total:issues.length,byFile:[...byFile].sort((a,b)=>b[1]-a[1]).map(([file,count])=>({file,count})),issues};
+const report={templates:files.length,total:issues.length,coverageComplete:issues.length === 0,byFile:[...byFile].sort((a,b)=>b[1]-a[1]).map(([file,count])=>({file,count})),issues};
 if (process.argv.includes("--json")) console.log(JSON.stringify(report,null,2));
 else {
   console.log("I18N AUDIT:",files.length,"templates;",issues.length,"potential untranslated strings");
