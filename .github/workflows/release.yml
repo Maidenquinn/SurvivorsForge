@@ -111,10 +111,16 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      # Only the launcher builds: the image jobs leave build records (*.dockerbuild) as artifacts too,
+      # and those cannot be downloaded this way.
       - uses: actions/download-artifact@v4
         with:
+          name: windows
           path: assets
-          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux
+          path: assets
       # What a server needs besides the images (docs/self-hosting.md).
       - name: Add the server files
         run: cp compose.yaml assets/ && cp .env.example assets/env.example
