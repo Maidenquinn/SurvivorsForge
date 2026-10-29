@@ -57,7 +57,7 @@
 </section>
 
 
-<nav class="addon-tabs" aria-label="Addon sections">
+<nav class="addon-tabs" aria-label="Addon sections" data-i18n-aria-label="addon_sections">
   <a href="/addons/{{ slug }}" {% if tab == "overview" %}aria-current="page"{% endif %} data-i18n="overview">Overview</a>
   <a href="/addons/{{ slug }}?tab=issues" {% if tab == "issues" %}aria-current="page"{% endif %} data-i18n="issues">Issues</a>
   <a href="/addons/{{ slug }}?tab=gallery" {% if tab == "gallery" %}aria-current="page"{% endif %} data-i18n="gallery">Gallery</a>
@@ -72,7 +72,7 @@
   </div>
   <div class="issues-board">
     <div class="issues-toolbar">
-      <div class="issues-tabs" role="group" aria-label="Filter issues">
+      <div class="issues-tabs" role="group" aria-label="Filter issues" data-i18n-aria-label="filter_issues">
         <button type="button" class="secondary active" data-inline-filter="open" aria-pressed="true" data-i18n="open">Open</button>
         <button type="button" class="secondary" data-inline-filter="closed" aria-pressed="false" data-i18n="closed">Closed</button>
         <button type="button" class="secondary" data-inline-filter="all" aria-pressed="false">All ({{ issues.len() }})</button>
@@ -106,7 +106,7 @@
       <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ issue.author|truncate(1) }}</span><strong>{{ issue.author }}</strong> <span class="muted">opened this issue</span>
         <span class="issue-action-spacer"></span>
         {% if issue.can_edit %}<button class="issue-action" type="button" data-edit-toggle aria-label="Edit issue" data-i18n="edit">Edit</button>{% endif %}
-        {% if issue.can_delete %}<form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/delete" data-confirm-delete="Delete this issue? This cannot be undone."><input type="hidden" name="csrf" value="{{ csrf }}"><button class="issue-action issue-danger" type="submit" data-i18n="delete">Delete</button></form>{% endif %}
+        {% if issue.can_delete %}<form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/delete" data-confirm-delete="Delete this issue? This cannot be undone." data-i18n-confirm="confirm_delete_issue"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="issue-action issue-danger" type="submit" data-i18n="delete">Delete</button></form>{% endif %}
       </header>
       <div data-edit-view class="issue-message-body">{{ issue.body }}</div>
       {% if issue.can_edit %}
@@ -137,7 +137,7 @@
     <article class="issue-message issue-editable" data-inline-editor>
       <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ comment.author|truncate(1) }}</span><strong>{{ comment.author }}</strong><span class="muted">commented</span><span class="issue-action-spacer"></span>
       {% if comment.can_edit %}<button type="button" class="issue-action" data-edit-toggle data-i18n="edit">Edit</button>
-      <form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="issue-action issue-danger" data-i18n="delete">Delete</button></form>{% endif %}
+      <form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?" data-i18n-confirm="confirm_delete"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="issue-action issue-danger" data-i18n="delete">Delete</button></form>{% endif %}
       </header>
       <div class="issue-message-body" data-edit-view>{{ comment.body }}</div>
       {% if comment.can_edit %}<form class="issue-inline-form" data-edit-form hidden method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/edit"><input type="hidden" name="csrf" value="{{ csrf }}"><textarea name="body" required maxlength="10000" rows="4">{{ comment.body }}</textarea><div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel data-i18n="cancel">Cancel</button><button type="submit" data-i18n="save_comment">Save comment</button></div></form>{% endif %}
