@@ -6,8 +6,8 @@
 <p class="muted"><span data-i18n="admin_add_other_intro">Like an entry of the old verified list: no GitHub App needed. Nobody owns it until its author logs in and claims it.</span></p>
 {% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
 {% match filled %}
-{% when Some with (Ok(from)) %}<div class="notice ok" role="status">Filled in from {{ from }}. Check every field and pick a category.</div>
-{% when Some with (Err(why)) %}<div class="notice warn" role="alert">{{ form.base.repo }} could not be read ({{ why }}). Fill in the form by hand.</div>
+{% when Some with (Ok(from)) %}<div class="notice ok" role="status"><span data-i18n="repo_prefill_success">Filled in from repository</span> {{ from }}. <span data-i18n="repo_prefill_check">Check every field and choose a category before publishing.</span></div>
+{% when Some with (Err(why)) %}<div class="notice warn" role="alert"><span data-i18n="repo_prefill_error">Could not read repository</span> {{ form.base.repo }} ({{ why }}). <span data-i18n="repo_prefill_manual">Fill in the form manually.</span></div>
 {% when None %}
 {% endmatch %}
 <form class="panel" method="post" action="/admin/addons/new">
