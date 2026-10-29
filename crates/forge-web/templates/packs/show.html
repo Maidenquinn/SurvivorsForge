@@ -13,7 +13,11 @@
     <div class="notice bad" role="alert">An addon of this pack is no longer available, so the pack cannot be downloaded. Build a new one.</div>
   {% endif %}
   <label for="link">Link to share</label>
-  <input id="link" value="{{ link }}" readonly>
+  <div class="copy-row">
+    <input id="link" value="{{ link }}" readonly>
+    <button type="button" class="secondary" data-copy="link" hidden>Copy</button>
+  </div>
+  <p class="muted" role="status" data-copied="link"></p>
 </section>
 
 <section class="panel">

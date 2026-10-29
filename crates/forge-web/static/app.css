@@ -291,6 +291,9 @@ label.pick { flex-wrap: wrap; margin: 0; padding: 10px 0; border-bottom: 1px sol
 label.pick:last-child { border-bottom: none; }
 .pick-name { color: var(--gold); }
 input[readonly] { color: var(--gold-bright); }
+.copy-row { display: flex; gap: 8px; }
+.copy-row input { flex: 1; min-width: 0; }
+.copy-row button { flex: none; }
 .member { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .member form { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0; }
 .inline-action input { width: 12em; min-height: 34px; }

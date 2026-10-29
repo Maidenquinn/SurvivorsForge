@@ -32,6 +32,31 @@
     } catch (e) {}
   });
 
+  // Copy buttons next to read-only fields (the pack link). Hidden until this script runs.
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-copy]").forEach(function (button) {
+      button.hidden = false;
+    });
+  });
+  document.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-copy]");
+    if (!button) return;
+    var id = button.getAttribute("data-copy");
+    var field = document.getElementById(id);
+    var status = document.querySelector('[data-copied="' + id + '"]');
+    function say(text) {
+      if (status) status.textContent = text;
+    }
+    function manual() {
+      field.select();
+      say("Press Ctrl+C to copy the selected link.");
+    }
+    if (!navigator.clipboard) return manual();
+    navigator.clipboard.writeText(field.value).then(function () {
+      say("Link copied.");
+    }, manual);
+  });
+
   // htmx keeps the old results when a reload fails; say so above them.
   function failed(event) {
     var target = event.detail && event.detail.target;

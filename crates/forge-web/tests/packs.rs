@@ -74,7 +74,7 @@ async fn the_pack_page_is_public_and_shows_the_content_and_the_link() {
     Mock::given(method("GET")).and(path("/v1/packs/AbCdE12345")).respond_with(ResponseTemplate::new(200).set_body_json(pack(true))).mount(&web.api).await;
     let page = web.get("/packs/AbCdE12345").await;
     assert_eq!(page.status, StatusCode::OK, "{}", page.body);
-    for text in ["My UI", "by alice", "Lucky", "v1", "Lucky, LuckyLib", "https://web.test/packs/AbCdE12345", "Download the pack (3.1 MB)"] {
+    for text in ["My UI", "by alice", "Lucky", "v1", "Lucky, LuckyLib", "https://web.test/packs/AbCdE12345", "Download the pack (3.1 MB)", r#"data-copy="link""#] {
         assert!(page.body.contains(text), "{text}");
     }
     assert_eq!(web.get("/packs/not-an-id").await.status, StatusCode::NOT_FOUND);
