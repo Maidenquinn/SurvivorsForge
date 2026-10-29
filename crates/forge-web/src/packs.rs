@@ -25,6 +25,19 @@ fn megabytes(bytes: i64) -> String {
     format!("{:.1} MB", bytes as f64 / 1_000_000.0)
 }
 
+/// `2026-10-29T10:00:00Z` as `29 October 2026`; anything else as it came.
+fn long_date(iso: &str) -> String {
+    const MONTHS: [&str; 12] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    let parts: Vec<&str> = iso.get(..10).unwrap_or(iso).split('-').collect();
+    match parts[..] {
+        [y, m, d] => match (m.parse::<usize>(), d.parse::<u32>()) {
+            (Ok(m @ 1..=12), Ok(d)) => format!("{d} {} {y}", MONTHS[m - 1]),
+            _ => iso.into(),
+        },
+        _ => iso.into(),
+    }
+}
+
 /// Every addon whose current version can go into a pack, ticked when in `picked`.
 async fn choices(state: &AppState, picked: &[String]) -> WebResult<Vec<PackChoice>> {
     let registry = state.api.get("/v1/registry", None).await?;
@@ -152,7 +165,7 @@ pub async fn pack(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
         link: format!("{}/packs/{id}", state.config.public_web_url),
         name: s(&p["name"]),
         created_by: s(&p["created_by"]),
-        created: s(&p["created_at"]).chars().take(10).collect(),
+        created: long_date(&s(&p["created_at"])),
         available: p["available"] == true,
         size: p["file"]["size"].as_i64().map(megabytes),
         entries,
@@ -183,4 +196,17 @@ pub async fn download(
     let user = visitor(&state, &jar).await?.map(|(v, _)| v);
     let next_try = (failed.is_none() && tries < MAX_TRIES).then_some(tries + 1);
     Ok((status, render(&PackBuildingPage { user, csrf: csrf.0, id, failed, next_try })).into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::long_date;
+
+    #[test]
+    fn dates_in_words() {
+        assert_eq!(long_date("2026-10-29T10:00:00Z"), "29 October 2026");
+        assert_eq!(long_date("2026-01-05"), "5 January 2026");
+        assert_eq!(long_date("2026-13-05"), "2026-13-05", "no such month");
+        assert_eq!(long_date(""), "");
+    }
 }
