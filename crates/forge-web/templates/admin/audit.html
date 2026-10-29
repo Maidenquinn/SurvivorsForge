@@ -15,7 +15,7 @@
   <thead><tr><th><span data-i18n="admin_when">When</span></th><th><span data-i18n="admin">Admin</span></th><th><span data-i18n="admin_action">Action</span></th><th><span data-i18n="admin_target">Target</span></th><th><span data-i18n="admin_note">Note</span></th></tr></thead>
   <tbody>
   {% for e in entries %}
-    <tr><td>{{ e.when }}</td><td>{{ e.admin }}</td><td>{{ e.action }}</td><td>{{ e.target }}</td><td>{{ e.note }}</td></tr>
+    <tr><td>{{ e.when }}</td><td>{{ e.admin }}</td><td><span data-i18n-enum="audit_action" data-i18n-value="{{ e.action }}">{{ e.action }}</span></td><td><span data-i18n-audit-target="{{ e.target }}">{{ e.target }}</span></td><td>{{ e.note }}</td></tr>
   {% endfor %}
   </tbody>
 </table>
