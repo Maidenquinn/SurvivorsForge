@@ -282,7 +282,7 @@
     if (root) root.setAttribute("aria-busy", "true");
     try {
       var response = await fetch(url, Object.assign({credentials: "same-origin", headers: {"Accept": "text/html"}}, options || {}));
-      if (!response.ok) throw new Error("Request failed (" + response.status + ")");
+      if (!response.ok) { var failure = new Error("Request failed (" + response.status + ")"); failure.status = response.status; throw failure; }
       if (options && options.method === "POST" && !response.redirected) throw new Error("The update was not confirmed by the server");
       var doc = new DOMParser().parseFromString(await response.text(), "text/html");
       var next = doc.querySelector("[data-dynamic-issues]");
@@ -306,9 +306,11 @@
           message.className = "notice bad";
           message.setAttribute("role", "alert");
           message.dataset.issueError = "";
-          root.prepend(message);
+          (root.querySelector("#new-issue") || root).append(message);
         }
-        message.textContent = error.message + ". Please retry.";
+        var duplicate = error.status === 409;
+        message.textContent = duplicate ? (window.ForgeI18n ? window.ForgeI18n.t("duplicate_issue") : "This issue has already been submitted.") : (window.ForgeI18n ? window.ForgeI18n.t("issue_submit_error") : "Could not submit the issue. Please retry.");
+        message.scrollIntoView({block: "center", behavior: "smooth"});
       }
     } finally { busy = false; }
   }
