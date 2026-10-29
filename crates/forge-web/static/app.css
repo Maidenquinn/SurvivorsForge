@@ -333,6 +333,12 @@ input.narrow { width: 6em; flex: none; }
   html[data-view="list"] .grid .card > :first-child { flex: 1 1 100%; }
   html[data-view="list"] .grid .card > p:not(:last-child) { display: none; }
   main:has(> .list) > .bottom { display: none; }
+  /* Pack content: one block per addon, name and check on top, version and folders below */
+  .pack-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .pack-table tr { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .pack-table td { padding: 0; border: none; }
+  .pack-table td.check { grid-row: 1; grid-column: 2; }
+  .pack-table td:nth-child(2), .pack-table td:nth-child(4) { grid-column: 1 / -1; font-size: var(--meta); color: var(--muted); }
 }
 
 /* Touch screens: controls of at least 44px, like the launcher in Game Mode */

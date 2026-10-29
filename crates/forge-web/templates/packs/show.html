@@ -23,14 +23,14 @@
 <section class="panel">
   <h2>In this pack</h2>
   <div class="table-wrap">
-    <table>
+    <table class="pack-table">
       <thead><tr><th>Addon</th><th>Version</th><th>Safety check</th><th>Folders</th></tr></thead>
       <tbody>
         {% for e in entries %}
         <tr>
           <td><a href="/addons/{{ e.slug }}">{{ e.name }}</a></td>
           <td>{{ e.tag }}</td>
-          <td>{% if e.available %}<span class="badge {{ e.notice.class }}">{{ e.notice.badge }}</span>{% else %}<span class="badge bad">Unavailable</span>{% endif %}</td>
+          <td class="check">{% if e.available %}<span class="badge {{ e.notice.class }}">{{ e.notice.badge }}</span>{% else %}<span class="badge bad">Unavailable</span>{% endif %}</td>
           <td class="muted">{{ e.folders }}</td>
         </tr>
         {% endfor %}
