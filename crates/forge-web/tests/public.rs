@@ -349,3 +349,14 @@ async fn large_download_counts_are_grouped() {
     .await;
     assert!(web.get("/addons").await.body.contains("1,234,567 downloads"));
 }
+
+#[tokio::test]
+async fn new_results_start_at_the_top() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
+    mock(&web, "/v1/addons", json!({ "total": 0, "addons": [] })).await;
+    mock(&web, "/v1/packs", json!({ "total": 0, "packs": [] })).await;
+    for page in ["/addons", "/packs"] {
+        assert!(web.get(page).await.body.contains(r#"hx-swap="innerHTML scroll:top""#), "{page}");
+    }
+}
