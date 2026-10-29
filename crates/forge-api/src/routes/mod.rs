@@ -5,6 +5,7 @@ pub mod admin_moderation;
 pub mod admin_queue;
 pub mod admin_verify;
 pub mod creator;
+pub mod comments;
 pub mod dependencies;
 pub mod game_versions;
 pub mod github_meta;
