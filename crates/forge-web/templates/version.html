@@ -4,7 +4,7 @@
 <p><a href="/addons/{{ slug }}/versions"><span data-i18n="pub_all_versions_of">All versions of</span> {{ name }}</a></p>
 <h1>{{ name }} {{ row.tag }}</h1>
 <section class="panel download">
-  <div class="notice {{ row.notice.class }}" role="status"><strong data-i18n-enum="trust" data-i18n-value="{{ row.notice.badge }}">{{ row.notice.badge }}</strong>. {{ row.notice.text }}</div>
+  <div class="notice {{ row.notice.class }}" role="status"><strong data-i18n-enum="trust" data-i18n-value="{{ row.notice.badge }}">{{ row.notice.badge }}</strong>. <span data-i18n-enum="notice" data-i18n-value="{{ row.notice.badge }}">{{ row.notice.text }}</span></div>
   <p><span data-i18n="pub_published">Published</span> {{ row.published }}{% if row.prerelease %}, pre-release{% endif %}{% if row.deleted %}, removed on GitHub{% endif %}</p>
   <p><span data-i18n="pub_game_version">Game version</span>: {{ row.game }}{% if user.is_some() %} · <a href="/addons/{{ slug }}/versions/{{ row.tag }}/edit" data-i18n="pub_set_game_versions" data-i18n="pub_set_game_versions">Set game versions</a> <span data-i18n="pub_owners">(owners)</span>{% endif %}</p>
   <p><span data-i18n="pub_sha256">SHA-256</span>: <code>{{ row.sha256 }}</code></p>
