@@ -5,10 +5,14 @@
 <h1>Add an addon of someone else</h1>
 <p class="muted">Like an entry of the old verified list: no GitHub App needed. Nobody owns it until its author logs in and claims it.</p>
 {% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
+{% match filled %}
+{% when Some with (Ok(from)) %}<div class="notice ok" role="status">Filled in from {{ from }}. Check every field and pick a category.</div>
+{% when Some with (Err(why)) %}<div class="notice warn" role="alert">{{ form.base.repo }} could not be read ({{ why }}). Fill in the form by hand.</div>
+{% when None %}
+{% endmatch %}
 <form class="panel" method="post" action="/admin/addons/new">
   <input type="hidden" name="csrf" value="{{ csrf }}">
-  <label for="repo">GitHub repo</label>
-  <input id="repo" name="repo" value="{{ form.base.repo }}" placeholder="owner/name" required>
+  {% include "creator/repo_field.html" %}
   <label for="author_name">Author name</label>
   <input id="author_name" name="author_name" value="{{ form.author_name }}" required>
   <label for="name">Name</label>

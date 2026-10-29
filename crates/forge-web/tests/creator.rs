@@ -46,7 +46,7 @@ async fn wizard_happy_path_and_field_errors() {
     let page = web.post_multipart("/addons/new", &fields, &[]).await;
     assert_eq!(page.status, StatusCode::UNPROCESSABLE_ENTITY);
     assert!(page.body.contains("The folder Lucky belongs to the addon Other"));
-    assert!(page.body.contains("value=\"alice/taken\""), "input kept");
+    assert!(page.body.contains("value=\"taken\""), "input kept behind the fixed account");
 
     Mock::given(method("POST"))
         .and(path("/v1/addons"))
@@ -250,26 +250,47 @@ async fn the_install_step_goes_away_once_the_app_is_installed() {
 #[tokio::test]
 async fn my_repos_fill_in_the_form() {
     let mut web = logged_in(owner()).await;
-    get_json(&web, "/v1/me/installation", json!({ "installed": true, "manage_url": "https://github.com/settings/installations/77" })).await;
-    get_json(&web, "/v1/me/repos", json!({ "installed": true, "repos": [
-        { "full_name": "alice/LuckyOdds", "description": "Odds" }, { "full_name": "alice/Other", "description": null }
-    ] }))
-    .await;
+    Mock::given(method("GET"))
+        .and(path("/v1/me/repos"))
+        .and(wiremock::matchers::query_param("owner", "alice"))
+        .and(wiremock::matchers::query_param("q", "luck"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "owner": "alice", "repos": [{ "full_name": "alice/LuckyOdds", "description": "Odds" }] })))
+        .mount(&web.api)
+        .await;
     get_json(&web, "/v1/me/repos/alice/LuckyOdds/suggestion", json!({
         "repo": "alice/LuckyOdds", "name": "Lucky Odds", "slug": "luckyodds", "summary": "Odds for rare cards", "source_type": "release",
         "asset_pattern": "LuckyOdds-v*.zip", "folders": ["LuckyOdds", "LuckyLib"], "read_from": "release v0.7.0, LuckyOdds-v0.7.0.zip"
     }))
     .await;
 
+    // The owner is the visitor's account and cannot be changed; only the repo name is typed.
     let page = web.get("/addons/new").await;
-    assert!(page.body.contains(r#"<option value="alice/LuckyOdds""#) && page.body.contains("Fill in from this repo"), "{}", page.body);
+    assert!(page.body.contains(r#"<span class="repo-owner">alice</span>"#) && page.body.contains(r#"name="repo_name""#), "{}", page.body);
+    assert!(!page.body.contains(r#"<input name="repo_owner""#), "no owner field for creators");
+
+    // Typing asks for matching public repos; even a forged owner searches the visitor's own.
+    let found = web.get("/addons/new/repos?repo_owner=bob&repo_name=luck").await;
+    assert!(found.body.contains("alice/LuckyOdds") && found.body.contains("Odds"), "{}", found.body);
+    let picked = web.get("/addons/new/repo?repo=alice/LuckyOdds").await;
+    assert!(picked.body.contains(r#"value="LuckyOdds""#) && picked.body.contains(r#"href="/addons/new?repo=alice/LuckyOdds""#), "{}", picked.body);
+    assert!(picked.body.contains("Fill in from this repo"));
 
     let filled = web.get("/addons/new?repo=alice/LuckyOdds").await;
-    for text in [r#"value="alice/LuckyOdds""#, r#"value="Lucky Odds""#, r#"value="luckyodds""#, r#"value="Odds for rare cards""#,
+    for text in [r#"value="LuckyOdds""#, r#"value="Lucky Odds""#, r#"value="luckyodds""#, r#"value="Odds for rare cards""#,
                  r#"value="LuckyOdds-v*.zip""#, "LuckyOdds\nLuckyLib</textarea>", "release v0.7.0, LuckyOdds-v0.7.0.zip"] {
         assert!(filled.body.contains(text), "missing {text}");
     }
-    assert!(filled.body.contains(r#"<option value="alice/LuckyOdds" selected"#));
+
+    // The repo the API gets is always the visitor's account plus the typed name.
+    Mock::given(method("POST"))
+        .and(path("/v1/addons"))
+        .and(body_partial_json(json!({ "repo": "alice/LuckyOdds" })))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({ "slug": "luckyodds" })))
+        .expect(1)
+        .mount(&web.api)
+        .await;
+    let fields = [("repo_owner", "bob"), ("repo_name", "LuckyOdds"), ("slug", "luckyodds"), ("name", "Lucky"), ("category", "Miscellaneous"), ("source_type", "release"), ("folders", "LuckyOdds")];
+    web.post_multipart("/addons/new", &fields, &[]).await;
 
     let broken = web.get("/addons/new?repo=alice/Other").await;
     assert_eq!(broken.status, StatusCode::OK);

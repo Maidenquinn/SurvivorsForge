@@ -19,15 +19,6 @@
 </section>
 {% endmatch %}
 
-{% if !repos.is_empty() %}
-<form class="panel admin-actions" method="get" action="/addons/new">
-  <label for="pick-repo">Your repositories: pick one and the form below is filled in from its newest release</label>
-  <select id="pick-repo" name="repo">
-    {% for (name, about) in repos %}<option value="{{ name }}" {% if name.eq_ignore_ascii_case(form.repo) %}selected{% endif %}>{{ name }}{% if about != "" %} ({{ about }}){% endif %}</option>{% endfor %}
-  </select>
-  <button type="submit" class="secondary">Fill in from this repo</button>
-</form>
-{% endif %}
 {% match filled %}
 {% when Some with (Ok(from)) %}<div class="notice ok" role="status">Filled in from {{ from }}. Check every field and pick a category before publishing.</div>
 {% when Some with (Err(why)) %}<div class="notice warn" role="alert">{{ form.repo }} could not be read ({{ why }}). Fill in the form by hand.</div>
@@ -37,8 +28,8 @@
 <form class="panel" method="post" action="/addons/new" enctype="multipart/form-data">
   <input type="hidden" name="csrf" value="{{ csrf }}">
   <h2>2. Your repo</h2>
-  <label for="repo">GitHub repo</label>
-  <input id="repo" name="repo" value="{{ form.repo }}" placeholder="owner/name" required>
+  {% include "creator/repo_field.html" %}
+  <p class="muted">Type the repo name and pick it from the list to fill in the form from its newest release.</p>
   {% if errors.get("repo") != "" %}<p class="field-error">{{ errors.get("repo") }}</p>{% endif %}
 
   <h2>3. About the addon</h2>

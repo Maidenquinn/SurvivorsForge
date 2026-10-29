@@ -276,13 +276,41 @@ pub struct NewAddonPage {
     pub install_url: String,
     /// Where the visitor picks the repos of their App installation; `None` when it is not installed.
     pub manage_url: Option<String>,
-    /// (full name, description) of the visitor's repos that can still become an addon.
-    pub repos: Vec<(String, String)>,
+    pub repo: RepoField,
     /// What the form was filled in from, or why it could not be.
     pub filled: Option<Result<String, String>>,
     pub categories: Vec<CategoryOption>,
     pub form: crate::creator::NewAddonForm,
     pub errors: Errors,
+}
+
+/// The repo input of the publish forms: the account (fixed for creators, editable for admins)
+/// and the repo name, which suggests matching public repos while typing. `page` is `admin` on
+/// the admin form, so a pick leads back there.
+pub struct RepoField {
+    pub owner: String,
+    pub name: String,
+    pub editable: bool,
+    pub page: String,
+    /// Picked from the suggestions: offer to fill in the form from it.
+    pub picked: bool,
+    /// (full name, description).
+    pub suggestions: Vec<(String, String)>,
+    pub error: String,
+}
+
+/// The repo field alone, for htmx when a suggestion is picked.
+#[derive(Template)]
+#[template(path = "creator/repo_field_fragment.html")]
+pub struct RepoFieldFragment {
+    pub repo: RepoField,
+}
+
+/// The suggestions alone, for htmx while the name is typed.
+#[derive(Template)]
+#[template(path = "creator/repo_suggestions_fragment.html")]
+pub struct RepoSuggestionsFragment {
+    pub repo: RepoField,
 }
 
 #[derive(Template)]
@@ -513,6 +541,9 @@ pub struct AdminAddonsPage {
 pub struct AdminAddAddonPage {
     pub user: Option<Visitor>,
     pub csrf: String,
+    pub repo: RepoField,
+    /// What the form was filled in from, or why it could not be.
+    pub filled: Option<Result<String, String>>,
     pub categories: Vec<CategoryOption>,
     pub form: crate::admin::AdminAddonForm,
     pub error: Option<String>,

@@ -69,14 +69,8 @@ impl GitHubApi for FakeGitHub {
         Ok(self.call().installations.iter().find(|(repo, _)| repo.starts_with(&prefix)).map(|(_, id)| *id))
     }
 
-    async fn installation_repos(&self, installation: i64) -> GitHubResult<Vec<Repo>> {
-        let data = self.call();
-        let mut repos: Vec<Repo> = data
-            .repos
-            .values()
-            .filter(|r| data.installations.get(&r.full_name.to_lowercase()) == Some(&installation))
-            .cloned()
-            .collect();
+    async fn user_repos(&self, login: &str) -> GitHubResult<Vec<Repo>> {
+        let mut repos: Vec<Repo> = self.call().repos.values().filter(|r| r.owner.login.eq_ignore_ascii_case(login)).cloned().collect();
         repos.sort_by(|a, b| a.full_name.cmp(&b.full_name));
         Ok(repos)
     }

@@ -264,3 +264,15 @@ input.narrow { width: 6em; flex: none; }
   .button, button:not(.link), .top nav > a:not(.button) { min-height: 44px; }
   input:not([type="checkbox"]), select { min-height: 44px; }
 }
+
+/* Repo field of the publish forms: the account, a slash, the name; suggestions below it */
+.repo-input { display: flex; align-items: center; gap: 8px; }
+.repo-input input { flex: 1; width: auto; min-width: 0; }
+.repo-owner { color: var(--gold-bright); }
+.repo-slash { color: var(--muted); }
+.suggestions { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+button.suggestion {
+  justify-content: flex-start; gap: 8px; text-align: left; flex-wrap: wrap;
+  border-color: var(--line); background: var(--row); color: var(--text);
+}
+button.suggestion:hover { border-color: var(--outline-hover); background: var(--row-hover); color: var(--gold-bright); }

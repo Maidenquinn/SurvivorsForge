@@ -69,8 +69,8 @@ pub trait GitHubApi: Send + Sync {
     async fn installation_for_repo(&self, full_name: &str) -> GitHubResult<Option<i64>>;
     /// The installation of the App on the personal account `login`; `None` when there is none.
     async fn installation_for_user(&self, login: &str) -> GitHubResult<Option<i64>>;
-    /// The repos the owner gave `installation` access to.
-    async fn installation_repos(&self, installation: i64) -> GitHubResult<Vec<Repo>>;
+    /// The public repos of an account, newest push first; no App installation needed.
+    async fn user_repos(&self, login: &str) -> GitHubResult<Vec<Repo>>;
     async fn repo(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo>;
     async fn repo_by_name(&self, installation: Option<i64>, full_name: &str) -> GitHubResult<Repo>;
     /// `admin`, `maintain`, `write`, `triage`, `read` or `none`.
@@ -290,10 +290,10 @@ impl GitHubApi for GitHubClient {
         Ok(optional(installation)?.map(|i| i.id))
     }
 
-    async fn installation_repos(&self, installation: i64) -> GitHubResult<Vec<Repo>> {
-        // ponytail: first 100 repos only; paginate if someone gives the App more.
-        let list: types::InstallationRepos = self.get_json(Some(installation), "/installation/repositories?per_page=100").await?;
-        Ok(list.repositories)
+    async fn user_repos(&self, login: &str) -> GitHubResult<Vec<Repo>> {
+        // ponytail: without a token GitHub allows 60 requests per hour (an ETag answer is free) and
+        // this reads the 100 newest repos; cache per account or use a token if that runs short.
+        self.get_json(None, &format!("/users/{login}/repos?per_page=100&sort=pushed")).await
     }
 
     async fn repo(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo> {

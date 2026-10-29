@@ -130,18 +130,17 @@ async fn installation_lookup_uses_app_jwt_and_404_is_none() {
 }
 
 #[tokio::test]
-async fn installation_repos_use_the_installation_token() {
+async fn user_repos_need_no_installation() {
     let server = MockServer::start().await;
-    mount_token(&server, Utc::now() + chrono::Duration::hours(1)).await;
     Mock::given(method("GET"))
-        .and(path("/installation/repositories"))
-        .and(header("authorization", "Bearer inst-token"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "total_count": 1, "repositories": [repo_json()] })))
+        .and(path("/users/o/repos"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([repo_json()])))
         .mount(&server)
         .await;
     let gh = client(&server, Arc::new(Mutex::new(Utc::now())));
-    let repos = gh.installation_repos(1).await.unwrap();
+    let repos = gh.user_repos("o").await.unwrap();
     assert_eq!(repos.iter().map(|r| r.full_name.as_str()).collect::<Vec<_>>(), ["o/r"]);
+    assert!(!server.received_requests().await.unwrap()[0].headers.contains_key("authorization"), "public data, no token");
 }
 
 #[tokio::test]

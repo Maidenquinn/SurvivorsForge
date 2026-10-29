@@ -18,12 +18,6 @@ pub struct Repo {
     pub description: Option<String>,
 }
 
-/// `GET /installation/repositories`.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct InstallationRepos {
-    pub repositories: Vec<Repo>,
-}
-
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Asset {
     pub id: i64,

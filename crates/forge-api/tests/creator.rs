@@ -103,16 +103,20 @@ fn gh_release(tag: &str, asset: &str) -> forge_api::github::types::Release {
 
 #[sqlx::test]
 async fn my_repos_and_what_the_form_can_fill_in(pool: PgPool) {
-    let app = TestApp::new(pool);
+    let app = TestApp::with_config(pool, |c| c.admin_github_ids = vec![99]);
     let alice = app.publish(1, "alice", "taken").await;
     app.github.add_repo(101, "alice/LuckyOdds", "alice");
     app.github.add_repo(102, "alice/TagAddon", "alice");
     app.github.add_repo(103, "bob/Other", "bob");
-    app.github.data().installations.insert("bob/other".into(), 2);
+    // GitHub's public list: the App need not be installed on a repo to find it.
+    app.github.data().installations.clear();
 
-    let repos = app.get("/v1/me/repos", Some(&alice)).await.json();
-    let names: Vec<&str> = repos["repos"].as_array().unwrap().iter().map(|r| r["full_name"].as_str().unwrap()).collect();
-    assert_eq!(names, ["alice/LuckyOdds", "alice/TagAddon"], "own installation, without repos that already have an addon");
+    let names = |reply: serde_json::Value| -> Vec<String> { reply["repos"].as_array().unwrap().iter().map(|r| r["full_name"].as_str().unwrap().to_string()).collect() };
+    assert_eq!(names(app.get("/v1/me/repos", Some(&alice)).await.json()), ["alice/LuckyOdds", "alice/TagAddon"], "own account, without repos that already have an addon");
+    assert_eq!(names(app.get("/v1/me/repos?q=tag", Some(&alice)).await.json()), ["alice/TagAddon"], "by part of the name");
+    assert_eq!(app.get("/v1/me/repos?owner=bob", Some(&alice)).await.status, StatusCode::FORBIDDEN, "only admins search other accounts");
+    let root = app.login(99, "root").await;
+    assert_eq!(names(app.get("/v1/me/repos?owner=bob", Some(&root)).await.json()), ["bob/Other"], "admins add addons of any account");
 
     {
         let mut data = app.github.data();
@@ -138,7 +142,7 @@ async fn my_repos_and_what_the_form_can_fill_in(pool: PgPool) {
     let t = app.get("/v1/me/repos/alice/TagAddon/suggestion", Some(&alice)).await.json();
     assert_eq!((t["source_type"].as_str(), t["folders"].clone()), (Some("tag"), json!(["TagAddon"])));
 
-    assert_eq!(app.get("/v1/me/repos/bob/Other/suggestion", Some(&alice)).await.status, StatusCode::NOT_FOUND, "not in my installation");
+    assert_eq!(app.get("/v1/me/repos/bob/Other/suggestion", Some(&alice)).await.status, StatusCode::FORBIDDEN, "not her account");
     let carol = app.login(3, "carol").await;
-    assert_eq!(app.get("/v1/me/repos", Some(&carol)).await.json(), json!({ "installed": false, "repos": [] }));
+    assert_eq!(app.get("/v1/me/repos", Some(&carol)).await.json()["repos"], json!([]));
 }
