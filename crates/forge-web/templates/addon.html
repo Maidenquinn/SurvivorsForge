@@ -237,7 +237,7 @@
     </article>
     {% else %}<p class="panel muted" data-i18n="empty_comments">No comments yet. Start the discussion!</p>{% endfor %}
   </section>
-  {% if let Some(id) = comments_next %}<p><a class="button secondary" href="/addons/{{ slug }}/comments?before={{ id }}" data-i18n="older_comments">Older comments →</a></p>{% endif %}
+  {% if let Some(id) = comments_next %}<p><a class="button secondary" href="/addons/{{ slug }}?tab=comments&amp;before={{ id }}" data-i18n="older_comments">Older comments →</a></p>{% endif %}
 </section>
 {% else if tab == "versions" %}
 <section class="addon-tab-section">
