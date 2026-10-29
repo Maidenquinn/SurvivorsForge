@@ -393,3 +393,14 @@ async fn the_download_says_how_to_install() {
     assert!(page.contains("Unzip it into the game's <code>AddOns</code> folder"), "{page}");
     assert!(page.contains(r#"<a href="https://rezondes.github.io/SurvivorsForge/">SurvivorsForge launcher</a>"#));
 }
+
+#[tokio::test]
+async fn screenshots_without_caption_still_have_a_text() {
+    let mut web = TestWeb::new().await;
+    let mut a = addon("scanned");
+    a["images"] = json!([{ "id": 1, "url": "https://web.test/img/a.webp", "width": 800, "height": 450, "caption": "" }]);
+    mock(&web, "/v1/addons/lucky", a).await;
+    mock(&web, "/v1/addons/lucky/versions", versions("scanned", "available")).await;
+    let page = web.get("/addons/lucky").await.body;
+    assert!(page.contains(r#"alt="Screenshot 1 of Lucky Odds""#), "{page}");
+}

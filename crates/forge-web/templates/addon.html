@@ -52,7 +52,7 @@
 <section class="shots" aria-label="Screenshots">
   {% for shot in shots %}
   <figure>
-    <a href="{{ shot.url }}"><img src="{{ shot.url }}" alt="{{ shot.caption }}" width="{{ shot.width }}" height="{{ shot.height }}" loading="lazy"></a>
+    <a href="{{ shot.url }}"><img src="{{ shot.url }}" alt="{% if shot.caption != "" %}{{ shot.caption }}{% else %}Screenshot {{ loop.index }} of {{ name }}{% endif %}" width="{{ shot.width }}" height="{{ shot.height }}" loading="lazy"></a>
     {% if shot.caption != "" %}<figcaption>{{ shot.caption }}</figcaption>{% endif %}
   </figure>
   {% endfor %}
