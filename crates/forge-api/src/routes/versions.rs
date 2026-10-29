@@ -15,12 +15,13 @@ pub async fn list(
     let addon = load_addon(&state.pool, &slug).await?;
     let versions: Value = sqlx::query_scalar(
         "SELECT coalesce(json_agg(json_build_object(
-                    'tag', tag, 'name', name, 'prerelease', prerelease, 'published_at', published_at,
+                    'id', v.id, 'tag', tag, 'name', name, 'prerelease', prerelease, 'published_at', published_at,
                     'asset_name', asset_name, 'asset_url', asset_url, 'size', asset_size, 'sha256', sha256,
                     'downloads', download_count, 'scan_status', scan_status, 'source', source_status,
-                    'deleted_on_github', deleted_on_github_at IS NOT NULL)
-                ORDER BY published_at DESC, id DESC), '[]')
-         FROM versions WHERE addon_id = $1",
+                    'deleted_on_github', deleted_on_github_at IS NOT NULL,
+                    'trust', t.trust, 'findings', json_build_object('critical', t.critical, 'warn', t.warn, 'info', t.info))
+                ORDER BY published_at DESC, v.id DESC), '[]')
+         FROM versions v JOIN version_trust t ON t.version_id = v.id WHERE v.addon_id = $1",
     )
     .bind(addon.id)
     .fetch_one(&state.pool)

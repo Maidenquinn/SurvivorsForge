@@ -140,8 +140,15 @@ pub async fn addon_view(state: &AppState, id: i64) -> ApiResult<Value> {
              'contributors', (SELECT coalesce(json_agg(json_build_object('login', mu.login, 'avatar_url', mu.avatar_url) ORDER BY mu.login), '[]')
                               FROM addon_members m JOIN users mu ON mu.id = m.user_id WHERE m.addon_id = a.id),
              'blocked', a.blocked_at IS NOT NULL,
+             'trust', t.trust,
+             'latest_tag', (SELECT tag FROM versions WHERE id = t.version_id),
+             'findings', CASE WHEN t.version_id IS NULL THEN NULL
+                              ELSE json_build_object('critical', t.critical, 'warn', t.warn, 'info', t.info) END,
+             'verified_author', EXISTS (SELECT 1 FROM verifications w JOIN versions wv ON wv.id = w.version_id WHERE wv.addon_id = a.id),
              'created_at', a.created_at, 'updated_at', a.updated_at)
-         FROM addons a JOIN users u ON u.id = a.owner_id WHERE a.id = $1",
+         FROM addons a JOIN users u ON u.id = a.owner_id
+         LEFT JOIN version_trust t ON t.version_id = relevant_version(a.id)
+         WHERE a.id = $1",
     )
     .bind(id)
     .fetch_one(&state.pool)

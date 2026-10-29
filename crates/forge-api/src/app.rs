@@ -41,6 +41,10 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/addons/{slug}/versions", get(routes::versions::list))
         .route("/v1/addons/{slug}/versions/{tag}/findings", get(routes::versions::findings))
         .route("/v1/github/webhook", post(routes::webhooks::webhook))
+        .route(
+            "/v1/admin/versions/{id}/verification",
+            post(routes::admin_verify::verify).delete(routes::admin_verify::unverify),
+        )
         .route("/v1/addons/{slug}/members", get(routes::members::list).post(routes::members::add))
         .route(
             "/v1/addons/{slug}/members/{github_id}",
