@@ -444,3 +444,15 @@ async fn a_missing_game_version_reads_as_the_author_s_choice() {
     let page = web.get("/addons/lucky").await.body;
     assert!(page.contains("Game version: not stated by the author"), "{page}");
 }
+
+#[tokio::test]
+async fn only_logged_in_visitors_hear_about_claiming() {
+    let mut web = TestWeb::new().await;
+    let mut a = addon("scanned");
+    a["claimed"] = json!(false);
+    mock(&web, "/v1/addons/lucky", a).await;
+    mock(&web, "/v1/addons/lucky/versions", versions("scanned", "available")).await;
+    assert!(!web.get("/addons/lucky").await.body.contains("not claimed on this site yet"), "players do not care");
+    web.login_as("tok", common::me("bob", "user")).await;
+    assert!(web.get("/addons/lucky").await.body.contains("not claimed on this site yet"));
+}
