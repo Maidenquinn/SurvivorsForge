@@ -87,7 +87,16 @@
     "install_launcher": "Install with the launcher",
     "issue_title_placeholder": "A short, descriptive title",
     "issue_body_placeholder": "What happened? What did you expect? How can it be reproduced?",
-    "privacy_note": "Don't share private data."
+    "privacy_note": "Don't share private data.",
+    "choose_language": "Choose language",
+    "footer_intro": "SurvivorsForge is a community project and",
+    "open_source": "open source",
+    "footer_releases": "Releases and downloads come from GitHub.",
+    "get_launcher": "Get the launcher",
+    "confirm_delete_issue": "Delete this issue? This cannot be undone.",
+    "filter_issues": "Filter issues",
+    "addon_sections": "Addon sections",
+    "comment_update_error": "Could not update comments. Check your connection and try again."
   },
   "fr": {
     "addons": "Extensions",
@@ -174,7 +183,16 @@
     "install_launcher": "Installer avec le lanceur",
     "issue_title_placeholder": "Un titre court et descriptif",
     "issue_body_placeholder": "Que s'est-il passé ? Quel résultat attendiez-vous ? Comment reproduire le problème ?",
-    "privacy_note": "Ne partagez pas de données personnelles."
+    "privacy_note": "Ne partagez pas de données personnelles.",
+    "choose_language": "Choisir la langue",
+    "footer_intro": "SurvivorsForge est un projet communautaire et",
+    "open_source": "open source",
+    "footer_releases": "Les versions et téléchargements proviennent de GitHub.",
+    "get_launcher": "Télécharger le lanceur",
+    "confirm_delete_issue": "Supprimer ce signalement ? Cette action est irréversible.",
+    "filter_issues": "Filtrer les signalements",
+    "addon_sections": "Sections de l'addon",
+    "comment_update_error": "Impossible de mettre à jour les commentaires. Vérifiez votre connexion et réessayez."
   },
   "pl": {
     "addons": "Dodatki",
@@ -261,7 +279,16 @@
     "install_launcher": "Zainstaluj przez launcher",
     "issue_title_placeholder": "Krótki, opisowy tytuł",
     "issue_body_placeholder": "Co się stało? Czego oczekiwano? Jak to odtworzyć?",
-    "privacy_note": "Nie udostępniaj prywatnych danych."
+    "privacy_note": "Nie udostępniaj prywatnych danych.",
+    "choose_language": "Wybierz język",
+    "footer_intro": "SurvivorsForge to projekt społecznościowy i",
+    "open_source": "open source",
+    "footer_releases": "Wydania i pliki do pobrania pochodzą z GitHub.",
+    "get_launcher": "Pobierz launcher",
+    "confirm_delete_issue": "Usunąć zgłoszenie? Tej operacji nie można cofnąć.",
+    "filter_issues": "Filtruj zgłoszenia",
+    "addon_sections": "Sekcje dodatku",
+    "comment_update_error": "Nie udało się zaktualizować komentarzy. Sprawdź połączenie i spróbuj ponownie."
   },
   "cs": {
     "addons": "Doplňky",
@@ -348,7 +375,16 @@
     "install_launcher": "Nainstalovat pomocí launcheru",
     "issue_title_placeholder": "Krátký výstižný název",
     "issue_body_placeholder": "Co se stalo? Co jste očekávali? Jak chybu zopakovat?",
-    "privacy_note": "Nesdílejte soukromé údaje."
+    "privacy_note": "Nesdílejte soukromé údaje.",
+    "choose_language": "Vybrat jazyk",
+    "footer_intro": "SurvivorsForge je komunitní projekt a",
+    "open_source": "open source",
+    "footer_releases": "Vydání a soubory ke stažení pocházejí z GitHubu.",
+    "get_launcher": "Stáhnout launcher",
+    "confirm_delete_issue": "Smazat hlášení? Tuto akci nelze vrátit.",
+    "filter_issues": "Filtrovat hlášení",
+    "addon_sections": "Sekce doplňku",
+    "comment_update_error": "Komentáře se nepodařilo aktualizovat. Zkontrolujte připojení."
   },
   "de": {
     "addons": "Addons",
@@ -435,7 +471,16 @@
     "install_launcher": "Mit dem Launcher installieren",
     "issue_title_placeholder": "Kurzer, aussagekräftiger Titel",
     "issue_body_placeholder": "Was ist passiert? Was wurde erwartet? Wie lässt sich das reproduzieren?",
-    "privacy_note": "Keine privaten Daten teilen."
+    "privacy_note": "Keine privaten Daten teilen.",
+    "choose_language": "Sprache wählen",
+    "footer_intro": "SurvivorsForge ist ein Community-Projekt und",
+    "open_source": "Open Source",
+    "footer_releases": "Versionen und Downloads stammen von GitHub.",
+    "get_launcher": "Launcher herunterladen",
+    "confirm_delete_issue": "Dieses Problem löschen? Dies kann nicht rückgängig gemacht werden.",
+    "filter_issues": "Probleme filtern",
+    "addon_sections": "Addon-Bereiche",
+    "comment_update_error": "Kommentare konnten nicht aktualisiert werden. Verbindung prüfen und erneut versuchen."
   },
   "pt-BR": {
     "addons": "Complementos",
@@ -522,7 +567,16 @@
     "install_launcher": "Instalar pelo launcher",
     "issue_title_placeholder": "Um título curto e descritivo",
     "issue_body_placeholder": "O que aconteceu? O que esperava? Como reproduzir?",
-    "privacy_note": "Não compartilhe dados privados."
+    "privacy_note": "Não compartilhe dados privados.",
+    "choose_language": "Escolher idioma",
+    "footer_intro": "SurvivorsForge é um projeto da comunidade e",
+    "open_source": "código aberto",
+    "footer_releases": "Versões e downloads vêm do GitHub.",
+    "get_launcher": "Baixar launcher",
+    "confirm_delete_issue": "Excluir este problema? Não é possível desfazer.",
+    "filter_issues": "Filtrar problemas",
+    "addon_sections": "Seções do complemento",
+    "comment_update_error": "Não foi possível atualizar os comentários. Verifique sua conexão e tente novamente."
   },
   "es": {
     "addons": "Complementos",
@@ -609,7 +663,16 @@
     "install_launcher": "Instalar con el lanzador",
     "issue_title_placeholder": "Un título breve y descriptivo",
     "issue_body_placeholder": "¿Qué ocurrió? ¿Qué esperabas? ¿Cómo se reproduce?",
-    "privacy_note": "No compartas datos privados."
+    "privacy_note": "No compartas datos privados.",
+    "choose_language": "Elegir idioma",
+    "footer_intro": "SurvivorsForge es un proyecto comunitario y de",
+    "open_source": "código abierto",
+    "footer_releases": "Las versiones y descargas provienen de GitHub.",
+    "get_launcher": "Descargar lanzador",
+    "confirm_delete_issue": "¿Eliminar esta incidencia? No se puede deshacer.",
+    "filter_issues": "Filtrar incidencias",
+    "addon_sections": "Secciones del complemento",
+    "comment_update_error": "No se pudieron actualizar los comentarios. Comprueba la conexión e inténtalo de nuevo."
   },
   "ro": {
     "addons": "Suplimente",
@@ -696,7 +759,16 @@
     "install_launcher": "Instalează cu launcherul",
     "issue_title_placeholder": "Un titlu scurt și descriptiv",
     "issue_body_placeholder": "Ce s-a întâmplat? Ce așteptai? Cum poate fi reprodus?",
-    "privacy_note": "Nu distribui date private."
+    "privacy_note": "Nu distribui date private.",
+    "choose_language": "Alege limba",
+    "footer_intro": "SurvivorsForge este un proiect comunitar și",
+    "open_source": "open source",
+    "footer_releases": "Versiunile și descărcările provin de pe GitHub.",
+    "get_launcher": "Descarcă launcherul",
+    "confirm_delete_issue": "Ștergi această problemă? Acțiunea nu poate fi anulată.",
+    "filter_issues": "Filtrează problemele",
+    "addon_sections": "Secțiunile suplimentului",
+    "comment_update_error": "Comentariile nu au putut fi actualizate. Verifică conexiunea și încearcă din nou."
   },
   "tr": {
     "addons": "Eklentiler",
@@ -783,7 +855,16 @@
     "install_launcher": "Başlatıcıyla yükle",
     "issue_title_placeholder": "Kısa ve açıklayıcı bir başlık",
     "issue_body_placeholder": "Ne oldu? Ne bekliyordunuz? Nasıl tekrarlanabilir?",
-    "privacy_note": "Özel bilgileri paylaşmayın."
+    "privacy_note": "Özel bilgileri paylaşmayın.",
+    "choose_language": "Dil seç",
+    "footer_intro": "SurvivorsForge bir topluluk projesidir ve",
+    "open_source": "açık kaynaklıdır",
+    "footer_releases": "Sürümler ve indirmeler GitHub'dan sağlanır.",
+    "get_launcher": "Başlatıcıyı indir",
+    "confirm_delete_issue": "Bu sorun silinsin mi? İşlem geri alınamaz.",
+    "filter_issues": "Sorunları filtrele",
+    "addon_sections": "Eklenti bölümleri",
+    "comment_update_error": "Yorumlar güncellenemedi. Bağlantınızı kontrol edip tekrar deneyin."
   },
   "ru": {
     "addons": "Аддоны",
@@ -870,7 +951,16 @@
     "install_launcher": "Установить через лаунчер",
     "issue_title_placeholder": "Краткий понятный заголовок",
     "issue_body_placeholder": "Что произошло? Что ожидалось? Как воспроизвести?",
-    "privacy_note": "Не публикуйте личные данные."
+    "privacy_note": "Не публикуйте личные данные.",
+    "choose_language": "Выбрать язык",
+    "footer_intro": "SurvivorsForge — проект сообщества с",
+    "open_source": "открытым исходным кодом",
+    "footer_releases": "Релизы и загрузки доступны на GitHub.",
+    "get_launcher": "Скачать лаунчер",
+    "confirm_delete_issue": "Удалить обращение? Это действие нельзя отменить.",
+    "filter_issues": "Фильтр обращений",
+    "addon_sections": "Разделы аддона",
+    "comment_update_error": "Не удалось обновить комментарии. Проверьте подключение и повторите попытку."
   },
   "uk": {
     "addons": "Аддони",
@@ -957,7 +1047,16 @@
     "install_launcher": "Встановити через лаунчер",
     "issue_title_placeholder": "Короткий зрозумілий заголовок",
     "issue_body_placeholder": "Що сталося? Що очікували? Як відтворити?",
-    "privacy_note": "Не публікуйте особисті дані."
+    "privacy_note": "Не публікуйте особисті дані.",
+    "choose_language": "Вибрати мову",
+    "footer_intro": "SurvivorsForge — проєкт спільноти з",
+    "open_source": "відкритим кодом",
+    "footer_releases": "Релізи та завантаження доступні на GitHub.",
+    "get_launcher": "Завантажити лаунчер",
+    "confirm_delete_issue": "Видалити звернення? Цю дію неможливо скасувати.",
+    "filter_issues": "Фільтр звернень",
+    "addon_sections": "Розділи аддона",
+    "comment_update_error": "Не вдалося оновити коментарі. Перевірте з'єднання та повторіть спробу."
   },
   "zh-Hans": {
     "addons": "插件",
@@ -1044,7 +1143,16 @@
     "install_launcher": "使用启动器安装",
     "issue_title_placeholder": "简短明确的标题",
     "issue_body_placeholder": "发生了什么？预期是什么？如何重现？",
-    "privacy_note": "请勿分享私人信息。"
+    "privacy_note": "请勿分享私人信息。",
+    "choose_language": "选择语言",
+    "footer_intro": "SurvivorsForge 是社区项目，并且",
+    "open_source": "开源",
+    "footer_releases": "版本和下载文件均来自 GitHub。",
+    "get_launcher": "获取启动器",
+    "confirm_delete_issue": "删除此问题？此操作无法撤销。",
+    "filter_issues": "筛选问题",
+    "addon_sections": "插件页面分区",
+    "comment_update_error": "无法更新评论。请检查网络连接并重试。"
   },
   "ja": {
     "addons": "アドオン",
@@ -1131,7 +1239,16 @@
     "install_launcher": "ランチャーでインストール",
     "issue_title_placeholder": "短く分かりやすいタイトル",
     "issue_body_placeholder": "何が起きましたか？期待した動作は？再現手順は？",
-    "privacy_note": "個人情報を共有しないでください。"
+    "privacy_note": "個人情報を共有しないでください。",
+    "choose_language": "言語を選択",
+    "footer_intro": "SurvivorsForge はコミュニティプロジェクトで、",
+    "open_source": "オープンソース",
+    "footer_releases": "リリースとダウンロードは GitHub から提供されます。",
+    "get_launcher": "ランチャーを入手",
+    "confirm_delete_issue": "この問題を削除しますか？元に戻せません。",
+    "filter_issues": "問題を絞り込む",
+    "addon_sections": "アドオンのセクション",
+    "comment_update_error": "コメントを更新できませんでした。接続を確認して再試行してください。"
   },
   "ko": {
     "addons": "애드온",
@@ -1218,7 +1335,16 @@
     "install_launcher": "런처로 설치",
     "issue_title_placeholder": "짧고 명확한 제목",
     "issue_body_placeholder": "무슨 일이 있었나요? 예상한 결과와 재현 방법은 무엇인가요?",
-    "privacy_note": "개인 정보를 공유하지 마세요."
+    "privacy_note": "개인 정보를 공유하지 마세요.",
+    "choose_language": "언어 선택",
+    "footer_intro": "SurvivorsForge는 커뮤니티 프로젝트이며",
+    "open_source": "오픈 소스입니다",
+    "footer_releases": "릴리스 및 다운로드는 GitHub에서 제공됩니다.",
+    "get_launcher": "런처 받기",
+    "confirm_delete_issue": "이 문제를 삭제할까요? 되돌릴 수 없습니다.",
+    "filter_issues": "문제 필터",
+    "addon_sections": "애드온 섹션",
+    "comment_update_error": "댓글을 업데이트하지 못했습니다. 연결을 확인하고 다시 시도하세요."
   }
 };
   var supported = Object.keys(translations);
@@ -1246,6 +1372,10 @@
       var key = el.getAttribute("data-i18n-confirm");
       el.setAttribute("data-confirm-delete", translations[locale][key] || translations.en[key] || "");
     });
+    document.querySelectorAll("[data-i18n-aria-label]").forEach(function (el) {
+      var key = el.getAttribute("data-i18n-aria-label");
+      el.setAttribute("aria-label", translations[locale][key] || translations.en[key] || "");
+    });
     var select = document.getElementById("forge-locale");
     if (select) select.value = locale;
   }
@@ -1259,4 +1389,5 @@
     });
   });
   document.addEventListener("htmx:afterSwap", apply);
+  window.ForgeI18n = Object.freeze({t: function (key) { return translations[locale][key] || translations.en[key] || key; }, locale: function () { return locale; }});
 })();
