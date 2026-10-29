@@ -63,7 +63,7 @@
   <span class="addon-tabs-future" title="Community comments coming in a future update">Comments · Soon</span>
 </nav>
 {% if tab == "issues" %}
-<section class="addon-tab-section">
+<section class="addon-tab-section" data-dynamic-issues>
   <div class="issues-heading">
     <div><h2>Community issues</h2><p class="muted">Report a bug, request a feature or follow a discussion.</p></div>
     {% if user.is_some() %}<a class="button" href="#new-issue" data-open-new-issue>+ New issue</a>{% else %}<a class="button secondary" href="/login">Log in to report</a>{% endif %}
