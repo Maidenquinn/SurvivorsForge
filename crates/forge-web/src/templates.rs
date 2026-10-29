@@ -179,6 +179,7 @@ pub struct LatestBlock {
 pub struct AddonPage {
     pub tab: String,
     pub issues: Vec<IssueItem>,
+    pub version_rows: Vec<(String, VersionRow)>,
     pub user: Option<Visitor>,
     pub csrf: String,
     pub canonical: String,
