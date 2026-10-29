@@ -44,6 +44,8 @@ pub struct ErrorPage {
 pub struct IndexPage {
     pub user: Option<Visitor>,
     pub csrf: String,
+    /// The most downloaded addons; empty when the API cannot tell.
+    pub popular: Vec<Card>,
 }
 
 pub use crate::trust::Notice;

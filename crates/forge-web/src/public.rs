@@ -88,6 +88,24 @@ async fn findings(state: &AppState, slug: &str, tag: &str) -> WebResult<Vec<Find
         .collect())
 }
 
+/// One addon of the API's list as a card (the addon list and the home page).
+pub(crate) fn card(a: &Value) -> Card {
+    Card {
+        slug: s(&a["slug"]),
+        name: s(&a["name"]),
+        summary: s(&a["summary"]),
+        author: if a["owner"].is_object() { s(&a["owner"]["login"]) } else { s(&a["author"]) },
+        icon_url: a["icon_url"].as_str().map(str::to_string),
+        category: s(&a["category"]),
+        notice: match a["trust"].as_str() {
+            Some(trust) => notice(trust, a["verified_author"] == true, false),
+            None => Notice { class: "", badge: "No release", text: "", downloadable: false, confirm: false },
+        },
+        downloads: a["downloads"].as_i64().map(grouped),
+        updated: s(&a["updated_at"]).chars().take(10).collect(),
+    }
+}
+
 pub async fn addons(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, RawQuery(raw): RawQuery) -> WebResult<Html<String>> {
     let user = visitor(&state, &jar).await?.map(|(v, _)| v);
     let raw = raw.unwrap_or_default();
@@ -99,25 +117,7 @@ pub async fn addons(State(state): State<AppState>, jar: PrivateCookieJar, Extens
     let api_query = reqwest::Url::parse_with_params("http://x/v1/addons", &query).map(|u| u.query().unwrap_or_default().to_string()).unwrap_or_default();
     let list = state.api.get(&format!("/v1/addons?{api_query}"), None).await?;
 
-    let cards: Vec<Card> = list["addons"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .map(|a| Card {
-            slug: s(&a["slug"]),
-            name: s(&a["name"]),
-            summary: s(&a["summary"]),
-            author: if a["owner"].is_object() { s(&a["owner"]["login"]) } else { s(&a["author"]) },
-            icon_url: a["icon_url"].as_str().map(str::to_string),
-            category: s(&a["category"]),
-            notice: match a["trust"].as_str() {
-                Some(trust) => notice(trust, a["verified_author"] == true, false),
-                None => Notice { class: "", badge: "No release", text: "", downloadable: false, confirm: false },
-            },
-            downloads: a["downloads"].as_i64().map(grouped),
-            updated: s(&a["updated_at"]).chars().take(10).collect(),
-        })
-        .collect();
+    let cards: Vec<Card> = list["addons"].as_array().into_iter().flatten().map(card).collect();
     let page = param("page").and_then(|p| p.parse().ok()).unwrap_or(1i64).max(1);
     let total = list["total"].as_i64().unwrap_or(0);
     let per_page = list["per_page"].as_i64().unwrap_or(20).max(1);

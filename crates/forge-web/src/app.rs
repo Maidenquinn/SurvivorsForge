@@ -178,7 +178,12 @@ async fn healthz(State(state): State<AppState>) -> Response {
 
 async fn index(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>) -> WebResult<Html<String>> {
     let user = visitor(&state, &jar).await?.map(|(v, _)| v);
-    Ok(render(&IndexPage { user, csrf: csrf.0 }))
+    // A teaser only: without the API the page still loads, without it.
+    let popular = match state.api.get("/v1/addons?sort=downloads&per_page=6", None).await {
+        Ok(list) => list["addons"].as_array().into_iter().flatten().map(crate::public::card).collect(),
+        Err(_) => Vec::new(),
+    };
+    Ok(render(&IndexPage { user, csrf: csrf.0, popular }))
 }
 
 async fn login(State(state): State<AppState>, jar: PrivateCookieJar) -> Response {

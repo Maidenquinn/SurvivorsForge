@@ -55,17 +55,7 @@
   {% else %}
   <div class="grid">
     {% for c in cards %}
-    <article class="panel card">
-      <div class="card-head">
-        {% if let Some(icon) = c.icon_url %}<img class="icon" src="{{ icon }}" alt="" width="48" height="48">{% endif %}
-        <div>
-          <h2><a href="/addons/{{ c.slug }}">{{ c.name }}</a></h2>
-          <p class="muted">by {{ c.author }} · <a href="/addons?category={{ c.category|urlencode }}">{{ c.category }}</a></p>
-        </div>
-      </div>
-      <p>{{ c.summary }}</p>
-      <p><span class="badge {{ c.notice.class }}">{{ c.notice.badge }}</span> <span class="muted">{% match c.downloads %}{% when Some with (n) %}{{ n }} downloads{% when None %}Updated {{ c.updated }}{% endmatch %}</span></p>
-    </article>
+    {% include "card.html" %}
     {% endfor %}
   </div>
   {% endif %}

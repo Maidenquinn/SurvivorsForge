@@ -510,3 +510,28 @@ async fn browser_players_find_the_packs() {
         assert!(page.contains(text), "missing {text}: {page}");
     }
 }
+
+#[tokio::test]
+async fn the_home_page_shows_popular_addons() {
+    let mut web = TestWeb::new().await;
+    Mock::given(method("GET"))
+        .and(path("/v1/addons"))
+        .and(query_param("sort", "downloads"))
+        .and(query_param("per_page", "6"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "total": 1, "addons": [
+            { "slug": "lucky", "name": "Lucky Odds", "summary": "Odds", "category": "Combat", "trust": "verified", "icon_url": null, "owner": null,
+              "author": "alice", "verified_author": false, "downloads": 4200, "updated_at": "2026-05-01" }
+        ] })))
+        .mount(&web.api)
+        .await;
+    let page = web.get("/").await.body;
+    for text in ["Popular addons", r#"<a href="/addons/lucky">Lucky Odds</a>"#, "4,200 downloads", r#"href="/addons">All addons</a>"#] {
+        assert!(page.contains(text), "missing {text}: {page}");
+    }
+
+    // Without an answer from the API the home page still works, without the section.
+    let mut down = TestWeb::new().await;
+    let page = down.get("/").await;
+    assert_eq!(page.status, StatusCode::OK);
+    assert!(!page.body.contains("Popular addons"));
+}
