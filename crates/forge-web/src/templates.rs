@@ -381,6 +381,26 @@ pub struct ReviewItem {
 pub struct AdminReviewPage {
     pub user: Option<Visitor>,
     pub csrf: String,
+    pub addons: Vec<ReviewAddon>,
+    pub msg: Option<String>,
+    pub error: Option<String>,
+}
+
+/// An addon on the review overview: how many versions wait and their trust levels.
+pub struct ReviewAddon {
+    pub slug: String,
+    pub name: String,
+    pub versions: usize,
+    pub trusts: Vec<String>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/review_addon.html")]
+pub struct AdminReviewAddonPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub name: String,
     pub items: Vec<ReviewItem>,
     pub msg: Option<String>,
     pub error: Option<String>,

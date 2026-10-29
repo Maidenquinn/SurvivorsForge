@@ -59,10 +59,77 @@ async fn queue_renders_findings_and_diff() {
     let mut web = as_admin().await;
     let index = web.get("/admin").await;
     assert!(index.body.contains("<strong>1</strong> version to review") && index.body.contains("<strong>1</strong> open report"));
-    let page = web.get("/admin/review").await;
+    let page = web.get("/admin/review/lucky").await;
     for text in ["Lucky", "v2", "a.lua:3", "Contains a web address", "https://github.com/a/lucky/compare/v1...v2", "required: why the findings are fine"] {
         assert!(page.body.contains(text), "missing {text}");
     }
+}
+
+/// Queue entries for the review tests: two versions of Lucky (flagged, changed file), one of Other.
+async fn grouped_queue(web: &TestWeb) {
+    Mock::given(method("GET"))
+        .and(path("/v1/admin/review-queue"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([
+            { "version_id": 9, "tag": "v2", "trust": "flagged", "slug": "lucky", "name": "Lucky", "compare_url": null,
+              "findings": [{ "rule": "lua.url", "severity": "warn", "file": "a.lua", "line": 3, "message": "Contains a web address", "snippet": "x" }] },
+            { "version_id": 10, "tag": "v1", "trust": "scanned", "slug": "other", "name": "Other", "compare_url": null, "findings": [] },
+            { "version_id": 11, "tag": "v3", "trust": "source_changed", "slug": "lucky", "name": "Lucky", "compare_url": null, "findings": [] }
+        ])))
+        .with_priority(1)
+        .mount(&web.api)
+        .await;
+}
+
+#[tokio::test]
+async fn review_lists_addons_first_then_their_versions() {
+    let mut web = as_admin().await;
+    grouped_queue(&web).await;
+    let page = web.get("/admin/review").await;
+    for text in ["href=\"/admin/review/lucky\"", "2 versions", "href=\"/admin/review/other\"", "1 version", "action=\"/admin/review/lucky/skip\""] {
+        assert!(page.body.contains(text), "missing {text}: {}", page.body);
+    }
+    assert!(!page.body.contains("a.lua:3"), "versions only on the addon's page");
+    assert!(page.body.find("Lucky") < page.body.find("Other"), "addons in queue order");
+
+    let lucky = web.get("/admin/review/lucky").await;
+    for text in ["v2", "v3", "a.lua:3", "action=\"/admin/versions/9/skip\"", "action=\"/admin/versions/11/accept-source\"", "action=\"/admin/review/lucky/block\""] {
+        assert!(lucky.body.contains(text), "missing {text}");
+    }
+    assert!(!lucky.body.contains("Other"));
+    assert!(web.get("/admin/review/nothing").await.body.contains("Nothing left to review"));
+}
+
+#[tokio::test]
+async fn skip_returns_to_the_addon() {
+    let mut web = as_admin().await;
+    expect(&web, "POST", "/v1/admin/versions/9/skip", json!({ "note": "" })).await;
+    let done = web.post_form("/admin/versions/9/skip", &[("note", ""), ("back", "/admin/review/lucky")]).await;
+    assert!(done.location().starts_with("/admin/review/lucky?msg="), "{}", done.location());
+}
+
+#[tokio::test]
+async fn bulk_actions_cover_every_queued_version_of_the_addon() {
+    let mut web = as_admin().await;
+    grouped_queue(&web).await;
+    expect(&web, "POST", "/v1/admin/versions/9/verification", json!({ "note": "all fine" })).await;
+    expect(&web, "POST", "/v1/admin/versions/11/accept-source", json!({ "note": "all fine" })).await;
+    let done = web.post_form("/admin/review/lucky/verify", &[("note", "all fine")]).await;
+    assert!(done.location().starts_with("/admin/review?msg="), "{}", done.location());
+    assert!(web.get(done.location()).await.body.contains("2 versions of Lucky verified."));
+
+    expect(&web, "POST", "/v1/admin/versions/9/skip", json!({})).await;
+    expect(&web, "POST", "/v1/admin/versions/11/skip", json!({})).await;
+    web.post_form("/admin/review/lucky/skip", &[("note", "")]).await;
+
+    expect(&web, "POST", "/v1/admin/versions/9/block", json!({ "note": "malware" })).await;
+    Mock::given(method("POST"))
+        .and(path("/v1/admin/versions/11/block"))
+        .respond_with(ResponseTemplate::new(404).set_body_json(json!({ "error": "not_found", "message": "Not found" })))
+        .mount(&web.api)
+        .await;
+    let done = web.post_form("/admin/review/lucky/block", &[("note", "malware")]).await;
+    let page = web.get(done.location()).await;
+    assert!(page.body.contains("1 of 2 versions of Lucky blocked. v3: Not found"), "{}", page.body);
 }
 
 #[tokio::test]

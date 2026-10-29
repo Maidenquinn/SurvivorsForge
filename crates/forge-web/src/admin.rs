@@ -87,10 +87,10 @@ pub async fn index(State(state): State<AppState>, jar: PrivateCookieJar, Extensi
     }))
 }
 
-pub async fn review(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Query(flash): Query<Flash>) -> WebResult<Html<String>> {
-    let (user, token) = admin(&state, &jar).await?;
-    let queue = state.api.get("/v1/admin/review-queue", Some(&token)).await?;
-    let items = queue
+/// The review queue, oldest version first.
+async fn review_queue(state: &AppState, token: &str) -> WebResult<Vec<crate::templates::ReviewItem>> {
+    let queue = state.api.get("/v1/admin/review-queue", Some(token)).await?;
+    Ok(queue
         .as_array()
         .into_iter()
         .flatten()
@@ -117,8 +117,81 @@ pub async fn review(State(state): State<AppState>, jar: PrivateCookieJar, Extens
                 })
                 .collect(),
         })
-        .collect();
-    Ok(render(&AdminReviewPage { user: Some(user), csrf: csrf.0, items, msg: flash.msg, error: flash.error }))
+        .collect())
+}
+
+/// `GET /admin/review`: the addons with versions to review, in queue order.
+pub async fn review(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Query(flash): Query<Flash>) -> WebResult<Html<String>> {
+    let (user, token) = admin(&state, &jar).await?;
+    let mut addons: Vec<crate::templates::ReviewAddon> = Vec::new();
+    for item in review_queue(&state, &token).await? {
+        match addons.iter_mut().find(|a| a.slug == item.slug) {
+            Some(a) => {
+                a.versions += 1;
+                if !a.trusts.contains(&item.trust) {
+                    a.trusts.push(item.trust);
+                }
+            }
+            None => addons.push(crate::templates::ReviewAddon { slug: item.slug, name: item.name, versions: 1, trusts: vec![item.trust] }),
+        }
+    }
+    Ok(render(&AdminReviewPage { user: Some(user), csrf: csrf.0, addons, msg: flash.msg, error: flash.error }))
+}
+
+/// `GET /admin/review/{slug}`: the versions of one addon to review.
+pub async fn review_addon(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Extension(csrf): Extension<CsrfToken>,
+    Path(slug): Path<String>,
+    Query(flash): Query<Flash>,
+) -> WebResult<Html<String>> {
+    let (user, token) = admin(&state, &jar).await?;
+    let items: Vec<_> = review_queue(&state, &token).await?.into_iter().filter(|i| i.slug == slug).collect();
+    let name = items.first().map_or_else(|| slug.clone(), |i| i.name.clone());
+    Ok(render(&crate::templates::AdminReviewAddonPage { user: Some(user), csrf: csrf.0, slug, name, items, msg: flash.msg, error: flash.error }))
+}
+
+/// `POST /admin/review/{slug}/{verify|skip|block}`: one action for every queued version of an
+/// addon. Verifying a changed file accepts the new one.
+pub async fn review_bulk(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Path((slug, action)): Path<(String, String)>,
+    Form(form): Form<NoteForm>,
+) -> WebResult<Response> {
+    let (_, token) = admin(&state, &jar).await?;
+    let done = match action.as_str() {
+        "verify" => "verified",
+        "skip" => "skipped",
+        "block" => "blocked",
+        _ => return Err(WebError::NotFound),
+    };
+    let items: Vec<_> = review_queue(&state, &token).await?.into_iter().filter(|i| i.slug == slug).collect();
+    let body = json!({ "note": form.note });
+    let mut failed = Vec::new();
+    for item in &items {
+        let id = item.version_id;
+        let route = match action.as_str() {
+            "verify" if item.trust == "source_changed" => format!("/v1/admin/versions/{id}/accept-source"),
+            "verify" => format!("/v1/admin/versions/{id}/verification"),
+            _ => format!("/v1/admin/versions/{id}/{action}"),
+        };
+        match state.api.post(&route, Some(&token), &body).await {
+            Ok(_) => {}
+            Err(e @ (ApiError::Unauthorized | ApiError::Down(_))) => return Err(e.into()),
+            Err(e) => failed.push(format!("{}: {}", item.tag, e.message())),
+        }
+    }
+    let name = items.first().map_or(slug.as_str(), |i| i.name.as_str());
+    let versions = if items.len() == 1 { "version" } else { "versions" };
+    let result = if failed.is_empty() {
+        Ok(Value::Null)
+    } else {
+        let message = format!("{} of {} {versions} of {name} {done}. {}", items.len() - failed.len(), items.len(), failed.join(" "));
+        Err(ApiError::Api { status: 422, code: "partly_done".into(), message })
+    };
+    back("/admin/review", result, &format!("{} {versions} of {name} {done}.", items.len()))
 }
 
 pub async fn version_action(
@@ -131,6 +204,7 @@ pub async fn version_action(
     let body = json!({ "note": form.note });
     let (method, route, done) = match action.as_str() {
         "verify" => (Method::POST, format!("/v1/admin/versions/{id}/verification"), "Version verified."),
+        "skip" => (Method::POST, format!("/v1/admin/versions/{id}/skip"), "Version skipped: it stays as checked, without verification."),
         "unverify" => (Method::DELETE, format!("/v1/admin/versions/{id}/verification"), "Verification removed."),
         "block" => (Method::POST, format!("/v1/admin/versions/{id}/block"), "Version blocked."),
         "unblock" => (Method::DELETE, format!("/v1/admin/versions/{id}/block"), "Version unblocked."),
@@ -138,7 +212,8 @@ pub async fn version_action(
         _ => return Err(WebError::NotFound),
     };
     // Only our own admin pages, never a URL from the form.
-    let page = if form.back.starts_with("/admin/addons/") && !form.back.contains("//") { form.back.as_str() } else { "/admin/review" };
+    let own = form.back.starts_with("/admin/addons/") || form.back.starts_with("/admin/review/");
+    let page = if own && !form.back.contains("//") { form.back.as_str() } else { "/admin/review" };
     back(page, state.api.call(method, &route, Some(&token), Some(&body)).await, done)
 }
 

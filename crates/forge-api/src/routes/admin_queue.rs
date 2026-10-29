@@ -11,7 +11,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 /// Versions an admin should look at, oldest first: flagged ones, changed files, and new versions
-/// of addons whose author already had a verified version.
+/// of addons whose author already had a verified version. Skipped ones stay off while their trust holds.
 pub async fn review_queue(State(state): State<AppState>, AdminUser(_): AdminUser) -> ApiResult<Json<Value>> {
     let list: Value = sqlx::query_scalar(
         "WITH queue AS (
@@ -22,6 +22,7 @@ pub async fn review_queue(State(state): State<AppState>, AdminUser(_): AdminUser
              JOIN version_trust t ON t.version_id = v.id
              JOIN addons a ON a.id = v.addon_id
              WHERE a.deleted_at IS NULL AND v.deleted_on_github_at IS NULL
+               AND NOT EXISTS (SELECT 1 FROM review_skips k WHERE k.version_id = v.id AND k.trust = t.trust)
                AND (t.trust IN ('flagged', 'source_changed')
                     OR (t.trust = 'scanned' AND EXISTS (
                             SELECT 1 FROM verifications w JOIN versions wv ON wv.id = w.version_id WHERE wv.addon_id = a.id))))

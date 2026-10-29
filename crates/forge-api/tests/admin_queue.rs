@@ -59,6 +59,32 @@ async fn queue_contents_and_order(pool: PgPool) {
 }
 
 #[sqlx::test]
+async fn skip_takes_a_version_off_the_queue_until_its_trust_changes(pool: PgPool) {
+    let (app, owner, admin) = setup(pool).await;
+    let v1 = version(&app, "v1", 3, false).await;
+    app.post(&format!("/v1/admin/versions/{v1}/verification"), Some(&admin), json!({})).await;
+    let v2 = version(&app, "v2", 2, false).await;
+    assert_eq!(app.post(&format!("/v1/admin/versions/{v2}/skip"), Some(&owner), json!({})).await.status, StatusCode::FORBIDDEN);
+    assert_eq!(app.post("/v1/admin/versions/9999/skip", Some(&admin), json!({})).await.status, StatusCode::NOT_FOUND);
+
+    assert_eq!(app.post(&format!("/v1/admin/versions/{v2}/skip"), Some(&admin), json!({ "note": "looked fine" })).await.status, StatusCode::NO_CONTENT);
+    assert_eq!(app.get("/v1/admin/review-queue", Some(&admin)).await.json(), json!([]));
+    let trust: String = sqlx::query_scalar("SELECT trust FROM version_trust WHERE version_id = $1").bind(v2).fetch_one(&app.pool).await.unwrap();
+    assert_eq!(trust, "scanned", "a skip does not verify");
+    let audit = app.get("/v1/admin/audit?action=skip_version", Some(&admin)).await.json();
+    assert_eq!((audit["total"].as_i64(), audit["entries"][0]["note"].as_str()), (Some(1), Some("looked fine")));
+
+    // A new finding makes it flagged: the skip no longer holds.
+    sqlx::query("INSERT INTO findings (scan_id, rule, severity, file, line, message, snippet) SELECT id, 'lua.url', 'warn', 'a.lua', 1, 'URL', 'x' FROM scans WHERE version_id = $1")
+        .bind(v2)
+        .execute(&app.pool)
+        .await
+        .unwrap();
+    let queue = app.get("/v1/admin/review-queue", Some(&admin)).await.json();
+    assert_eq!(queue[0]["version_id"].as_i64(), Some(v2));
+}
+
+#[sqlx::test]
 async fn audit_filters_and_paging(pool: PgPool) {
     let (app, _, admin) = setup(pool).await;
     for i in 0..55 {

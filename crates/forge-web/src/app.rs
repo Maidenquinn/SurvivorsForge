@@ -106,6 +106,8 @@ pub fn router(state: AppState) -> Router {
         .route("/addons/{slug}/delete", get(crate::creator::delete_page).post(crate::creator::delete_addon))
         .route("/admin", get(crate::admin::index))
         .route("/admin/review", get(crate::admin::review))
+        .route("/admin/review/{slug}", get(crate::admin::review_addon))
+        .route("/admin/review/{slug}/{action}", post(crate::admin::review_bulk))
         .route("/admin/versions/{id}/{action}", post(crate::admin::version_action))
         .route("/admin/reports", get(crate::admin::reports))
         .route("/admin/reports/{id}/resolve", post(crate::admin::resolve_report))

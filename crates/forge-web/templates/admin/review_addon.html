@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Review {{ name }} - Admin - SurvivorsForge{% endblock %}
+{% block content %}
+<p><a href="/admin/review">Addons to review</a></p>
+<h1>Review {{ name }}</h1>
+{% include "admin/flash.html" %}
+{% if items.is_empty() %}
+<section class="panel"><p>Nothing left to review for this addon.</p></section>
+{% else %}
+<p class="muted">Skip takes a version off this list without verifying it: it keeps its check result. <a href="/admin/addons/{{ slug }}">Addon actions</a></p>
+{% let bulk_slug = slug.as_str() %}
+{% include "admin/review_bulk.html" %}
+<div class="list">
+{% for item in items %}
+<section class="panel">
+  <h2>{{ item.tag }} <span class="badge {% if item.trust != "scanned" %}bad{% endif %}">{{ item.trust }}</span></h2>
+  <p>
+    <a href="/addons/{{ item.slug }}/versions/{{ item.tag }}">Version page</a>
+    {% if let Some(url) = item.compare_url %} · <a href="{{ url }}" rel="noopener">Changes since the previous version on GitHub</a>{% endif %}
+  </p>
+  {% if !item.findings.is_empty() %}
+  <ul class="findings">
+    {% for f in item.findings %}
+    <li><span class="badge {% if f.severity == "critical" %}bad{% else %}warn{% endif %}">{{ f.severity }}</span> <code>{{ f.place }}</code> {{ f.message }} <span class="muted">({{ f.rule }})</span>{% if f.snippet != "" %}<pre>{{ f.snippet }}</pre>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <form method="post" class="admin-actions" action="/admin/versions/{{ item.version_id }}/skip">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="back" value="/admin/review/{{ slug }}">
+    <label for="note-{{ item.version_id }}">Note{% if item.trust == "flagged" %} (required: why the findings are fine){% endif %}; blocking needs a reason</label>
+    <input id="note-{{ item.version_id }}" name="note">
+    {% if item.trust == "source_changed" %}
+    <button type="submit" formaction="/admin/versions/{{ item.version_id }}/accept-source">Accept the new file</button>
+    {% else %}
+    <button type="submit" formaction="/admin/versions/{{ item.version_id }}/verify">Verify this file</button>
+    {% endif %}
+    <button type="submit" class="secondary">Skip</button>
+    <button type="submit" class="danger" formaction="/admin/versions/{{ item.version_id }}/block">Block this version</button>
+  </form>
+</section>
+{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

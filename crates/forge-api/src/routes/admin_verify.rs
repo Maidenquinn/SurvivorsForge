@@ -90,6 +90,37 @@ pub async fn unverify(
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// Takes a version off the review queue without verifying it; it keeps its trust.
+pub async fn skip(
+    State(state): State<AppState>,
+    AdminUser(admin): AdminUser,
+    Path(version_id): Path<i64>,
+    body: Option<Json<VerifyBody>>,
+) -> ApiResult<StatusCode> {
+    let note = body.map(|b| b.0.note).unwrap_or_default();
+    let note = note.trim();
+    let trust: Option<String> = sqlx::query_scalar("SELECT trust FROM version_trust WHERE version_id = $1").bind(version_id).fetch_optional(&state.pool).await?;
+    let trust = trust.ok_or_else(ApiError::not_found)?;
+    let now = (state.clock)();
+    let mut tx = state.pool.begin().await?;
+    sqlx::query(
+        "INSERT INTO review_skips (version_id, trust, admin_id, note, created_at) VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (version_id) DO UPDATE SET trust = EXCLUDED.trust, admin_id = EXCLUDED.admin_id,
+             note = EXCLUDED.note, created_at = EXCLUDED.created_at",
+    )
+    .bind(version_id)
+    .bind(&trust)
+    .bind(admin.id)
+    .bind(note)
+    .bind(now)
+    .execute(&mut *tx)
+    .await?;
+    let entry = Entry { admin_id: admin.id, action: "skip_version", target_type: "version", target_id: version_id.to_string(), note, details: json!({ "trust": trust }) };
+    audit::record(&mut tx, entry, now).await?;
+    tx.commit().await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 /// The file on GitHub changed after the scan; the admin accepts the new one.
 pub async fn accept_source(
     State(state): State<AppState>,
