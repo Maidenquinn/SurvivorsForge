@@ -1,8 +1,8 @@
 <form method="post" class="admin-actions" action="/admin/review/{{ bulk_slug }}/skip">
   <input type="hidden" name="csrf" value="{{ csrf }}">
-  <label for="bulk-{{ bulk_slug }}"><span data-l10n-en="Note for all its versions (needed to verify flagged ones; the reason to block)" data-l10n-fr="Note pour toutes les versions (nécessaire pour vérifier les versions signalées ou expliquer un blocage)">Note for all its versions (needed to verify flagged ones; the reason to block)</span></label>
+  <label for="bulk-{{ bulk_slug }}"><span data-i18n="admin_bulk_note">Note for all its versions (needed to verify flagged ones; the reason to block)</span></label>
   <input id="bulk-{{ bulk_slug }}" name="note">
-  <button type="submit" formaction="/admin/review/{{ bulk_slug }}/verify"><span data-l10n-en="Verify all" data-l10n-fr="Tout vérifier">Verify all</span></button>
-  <button type="submit" class="secondary"><span data-l10n-en="Skip all" data-l10n-fr="Tout ignorer">Skip all</span></button>
-  <button type="submit" class="danger" formaction="/admin/review/{{ bulk_slug }}/block"><span data-l10n-en="Block all" data-l10n-fr="Tout bloquer">Block all</span></button>
+  <button type="submit" formaction="/admin/review/{{ bulk_slug }}/verify"><span data-i18n="admin_verify_all">Verify all</span></button>
+  <button type="submit" class="secondary"><span data-i18n="admin_skip_all">Skip all</span></button>
+  <button type="submit" class="danger" formaction="/admin/review/{{ bulk_slug }}/block"><span data-i18n="admin_block_all">Block all</span></button>
 </form>

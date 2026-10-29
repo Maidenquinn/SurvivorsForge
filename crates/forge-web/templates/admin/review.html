@@ -2,9 +2,9 @@
 {% block title %}Review - Admin - SurvivorsForge{% endblock %}
 {% block content %}
 <p><a href="/admin"><span data-i18n="admin">Admin</span></a></p>
-<h1><span data-l10n-en="Addons to review" data-l10n-fr="AddOns à vérifier">Addons to review</span></h1>
+<h1><span data-i18n="admin_review_addons">Addons to review</span></h1>
 {% include "admin/flash.html" %}
-{% if addons.is_empty() %}<section class="panel"><p><span data-l10n-en="Nothing to review." data-l10n-fr="Aucun AddOn à vérifier.">Nothing to review.</span></p></section>{% endif %}
+{% if addons.is_empty() %}<section class="panel"><p><span data-i18n="admin_nothing_review">Nothing to review.</span></p></section>{% endif %}
 <div class="list">
 {% for a in addons %}
 <section class="panel">

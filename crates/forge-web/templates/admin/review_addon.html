@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Review {{ name }} - Admin - SurvivorsForge{% endblock %}
 {% block content %}
-<p><a href="/admin/review">Addons to review</a></p>
+<p><a href="/admin/review" data-i18n="admin_review_addons">Addons to review</a></p>
 <h1>Review {{ name }}</h1>
 {% include "admin/flash.html" %}
 {% if items.is_empty() %}
-<section class="panel"><p>Nothing left to review for this addon.</p></section>
+<section class="panel"><p data-i18n="admin_no_review_addon">Nothing left to review for this addon.</p></section>
 {% else %}
-<p class="muted">Skip takes a version off this list without verifying it: it keeps its check result. <a href="/admin/addons/{{ slug }}">Addon actions</a></p>
+<p class="muted">Skip takes a version off this list without verifying it: it keeps its check result. <a href="/admin/addons/{{ slug }}" data-i18n="admin_addon_actions">Addon actions</a></p>
 {% let bulk_slug = slug.as_str() %}
 {% include "admin/review_bulk.html" %}
 <div class="list">
@@ -15,8 +15,8 @@
 <section class="panel">
   <h2>{{ item.tag }} <span class="badge {% if item.trust != "scanned" %}bad{% endif %}">{{ item.trust }}</span></h2>
   <p>
-    <a href="/addons/{{ item.slug }}/versions/{{ item.tag }}">Version page</a>
-    {% if let Some(url) = item.compare_url %} · <a href="{{ url }}" rel="noopener">Changes since the previous version on GitHub</a>{% endif %}
+    <a href="/addons/{{ item.slug }}/versions/{{ item.tag }}" data-i18n="admin_version_page">Version page</a>
+    {% if let Some(url) = item.compare_url %} · <a href="{{ url }}" rel="noopener" data-i18n="admin_compare_previous">Changes since the previous version on GitHub</a>{% endif %}
   </p>
   {% if !item.findings.is_empty() %}
   <ul class="findings">
@@ -31,12 +31,12 @@
     <label for="note-{{ item.version_id }}">Note{% if item.trust == "flagged" %} (required: why the findings are fine){% endif %}; blocking needs a reason</label>
     <input id="note-{{ item.version_id }}" name="note">
     {% if item.trust == "source_changed" %}
-    <button type="submit" formaction="/admin/versions/{{ item.version_id }}/accept-source">Accept the new file</button>
+    <button type="submit" formaction="/admin/versions/{{ item.version_id }}/accept-source" data-i18n="admin_accept_file">Accept the new file</button>
     {% else %}
-    <button type="submit" formaction="/admin/versions/{{ item.version_id }}/verify">Verify this file</button>
+    <button type="submit" formaction="/admin/versions/{{ item.version_id }}/verify" data-i18n="admin_verify_file">Verify this file</button>
     {% endif %}
-    <button type="submit" class="secondary">Skip</button>
-    <button type="submit" class="danger" formaction="/admin/versions/{{ item.version_id }}/block">Block this version</button>
+    <button type="submit" class="secondary" data-i18n="admin_skip">Skip</button>
+    <button type="submit" class="danger" formaction="/admin/versions/{{ item.version_id }}/block" data-i18n="admin_block_version">Block this version</button>
   </form>
 </section>
 {% endfor %}

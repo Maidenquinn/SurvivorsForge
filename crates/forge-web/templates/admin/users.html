@@ -2,32 +2,32 @@
 {% block title %}Users - Admin - SurvivorsForge{% endblock %}
 {% block content %}
 <p><a href="/admin"><span data-i18n="admin">Admin</span></a></p>
-<h1><span data-l10n-en="Users" data-l10n-fr="Utilisateurs">Users</span></h1>
+<h1><span data-i18n="admin_users">Users</span></h1>
 {% include "admin/flash.html" %}
 <section class="panel">
-  <h2><span data-l10n-en="Admins" data-l10n-fr="Administrateurs">Admins</span></h2>
+  <h2><span data-i18n="admin_admins">Admins</span></h2>
   {% for a in admins %}
   <div class="member">
     <strong>{{ a.login }}</strong>
     {% if a.by_config %}
-      <span class="muted"><span data-l10n-en="set in ADMIN_GITHUB_IDS on the server" data-l10n-fr="Défini dans ADMIN_GITHUB_IDS sur le serveur">set in ADMIN_GITHUB_IDS on the server</span></span>
+      <span class="muted"><span data-i18n="admin_config_admin">set in ADMIN_GITHUB_IDS on the server</span></span>
     {% else %}
     <form method="post" action="/admin/users/{{ a.github_id }}/remove-admin">
       <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="login" value="">
-      <label class="sr-only" for="revoke-{{ a.github_id }}"><span data-l10n-en="Note" data-l10n-fr="Note">Note</span></label><input id="revoke-{{ a.github_id }}" name="note" placeholder="Note" required>
-      <button type="submit" class="danger"><span data-l10n-en="Take admin rights" data-l10n-fr="Retirer les droits administrateur">Take admin rights</span></button>
+      <label class="sr-only" for="revoke-{{ a.github_id }}"><span data-i18n="admin_note">Note</span></label><input id="revoke-{{ a.github_id }}" name="note" placeholder="Note" required>
+      <button type="submit" class="danger"><span data-i18n="admin_remove_admin">Take admin rights</span></button>
     </form>
     {% endif %}
   </div>
   {% endfor %}
-  <p class="muted"><span data-l10n-en="To make someone an admin, look them up below. They must have logged in here once." data-l10n-fr="Pour nommer un administrateur, recherchez son compte ci-dessous. Il doit s'être connecté au moins une fois.">To make someone an admin, look them up below. They must have logged in here once.</span></p>
+  <p class="muted"><span data-i18n="admin_admin_intro">To make someone an admin, look them up below. They must have logged in here once.</span></p>
 </section>
 <form class="panel" method="get" action="/admin/users">
-  <label for="login"><span data-l10n-en="GitHub login" data-l10n-fr="Identifiant GitHub">GitHub login</span></label>
+  <label for="login"><span data-i18n="admin_github_login">GitHub login</span></label>
   <input id="login" name="login" value="{{ login }}" required>
-  <p><button type="submit"><span data-l10n-en="Look up" data-l10n-fr="Rechercher">Look up</span></button></p>
+  <p><button type="submit"><span data-i18n="admin_lookup">Look up</span></button></p>
 </form>
-{% if not_found %}<section class="panel"><p><span data-l10n-en="Nobody with that login has used this site." data-l10n-fr="Aucun utilisateur avec cet identifiant ne s'est connecté.">Nobody with that login has used this site.</span></p></section>{% endif %}
+{% if not_found %}<section class="panel"><p><span data-i18n="admin_nobody_login">Nobody with that login has used this site.</span></p></section>{% endif %}
 {% if let Some(u) = found %}
 <section class="panel">
   <h2>{{ u.login }}</h2>
@@ -35,20 +35,20 @@
   {% if u.banned %}
   <form method="post" action="/admin/users/{{ u.github_id }}/unban" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="login" value="{{ u.login }}">
-    <label for="unban-note"><span data-l10n-en="Note" data-l10n-fr="Note">Note</span></label><input id="unban-note" name="note" required>
-    <button type="submit"><span data-l10n-en="Lift the ban" data-l10n-fr="Lever le bannissement">Lift the ban</span></button>
+    <label for="unban-note"><span data-i18n="admin_note">Note</span></label><input id="unban-note" name="note" required>
+    <button type="submit"><span data-i18n="admin_lift_ban">Lift the ban</span></button>
   </form>
   {% else if u.role != "admin" %}
   <form method="post" action="/admin/users/{{ u.github_id }}/make-admin" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="login" value="{{ u.login }}">
-    <label for="grant-note"><span data-l10n-en="Why" data-l10n-fr="Motif">Why</span></label><input id="grant-note" name="note" required>
-    <p class="muted"><span data-l10n-en="Admins review and verify versions, block addons, ban users and manage the lists." data-l10n-fr="Les administrateurs vérifient les versions, bloquent des AddOns, bannissent des utilisateurs et gèrent les listes.">Admins review and verify versions, block addons, ban users and manage the lists.</span></p>
+    <label for="grant-note"><span data-i18n="admin_why">Why</span></label><input id="grant-note" name="note" required>
+    <p class="muted"><span data-i18n="admin_admins_scope">Admins review and verify versions, block addons, ban users and manage the lists.</span></p>
     <button type="submit">Make {{ u.login }} an admin</button>
   </form>
   <form method="post" action="/admin/users/{{ u.github_id }}/ban" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="login" value="{{ u.login }}">
-    <label for="ban-note"><span data-l10n-en="Reason" data-l10n-fr="Motif">Reason</span></label><input id="ban-note" name="note" required>
-    <p class="muted"><span data-l10n-en="Banning ends their sessions and blocks every addon they own until the ban is lifted." data-l10n-fr="Le bannissement met fin aux sessions et bloque leurs AddOns jusqu'à sa levée.">Banning ends their sessions and blocks every addon they own until the ban is lifted.</span></p>
+    <label for="ban-note"><span data-i18n="admin_reason">Reason</span></label><input id="ban-note" name="note" required>
+    <p class="muted"><span data-i18n="admin_ban_effect">Banning ends their sessions and blocks every addon they own until the ban is lifted.</span></p>
     <button type="submit" class="danger">Ban {{ u.login }}</button>
   </form>
   {% endif %}
