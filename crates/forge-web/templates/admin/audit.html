@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Audit log - Admin - SurvivorsForge{% endblock %}
 {% block content %}
-<p><a href="/admin"><span data-l10n-en="Admin" data-l10n-fr="Administration">Admin</span></a></p>
+<p><a href="/admin"><span data-i18n="admin">Admin</span></a></p>
 <h1><span data-l10n-en="Audit log" data-l10n-fr="Journal d'audit">Audit log</span></h1>
 <form class="panel filters" method="get" action="/admin/audit">
-  <div><label for="f-admin"><span data-l10n-en="Admin" data-l10n-fr="Administration">Admin</span></label><input id="f-admin" name="admin" value="{{ filter_admin }}"></div>
+  <div><label for="f-admin"><span data-i18n="admin">Admin</span></label><input id="f-admin" name="admin" value="{{ filter_admin }}"></div>
   <div><label for="f-action"><span data-l10n-en="Action" data-l10n-fr="Action">Action</span></label><input id="f-action" name="action" value="{{ filter_action }}" placeholder="block_addon"></div>
   <div><label for="f-type"><span data-l10n-en="Target type" data-l10n-fr="Type de cible">Target type</span></label><input id="f-type" name="target_type" value="{{ filter_target_type }}" placeholder="addon"></div>
   <div><label for="f-id"><span data-l10n-en="Target id" data-l10n-fr="ID de la cible">Target id</span></label><input id="f-id" name="target_id" value="{{ filter_target_id }}"></div>
@@ -12,7 +12,7 @@
 </form>
 <div class="table-wrap list">
 <table>
-  <thead><tr><th><span data-l10n-en="When" data-l10n-fr="Date">When</span></th><th><span data-l10n-en="Admin" data-l10n-fr="Administration">Admin</span></th><th><span data-l10n-en="Action" data-l10n-fr="Action">Action</span></th><th><span data-l10n-en="Target" data-l10n-fr="Cible">Target</span></th><th><span data-l10n-en="Note" data-l10n-fr="Note">Note</span></th></tr></thead>
+  <thead><tr><th><span data-l10n-en="When" data-l10n-fr="Date">When</span></th><th><span data-i18n="admin">Admin</span></th><th><span data-l10n-en="Action" data-l10n-fr="Action">Action</span></th><th><span data-l10n-en="Target" data-l10n-fr="Cible">Target</span></th><th><span data-l10n-en="Note" data-l10n-fr="Note">Note</span></th></tr></thead>
   <tbody>
   {% for e in entries %}
     <tr><td>{{ e.when }}</td><td>{{ e.admin }}</td><td>{{ e.action }}</td><td>{{ e.target }}</td><td>{{ e.note }}</td></tr>
