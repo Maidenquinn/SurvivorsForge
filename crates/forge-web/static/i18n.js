@@ -435,7 +435,14 @@
     "repo_prefill_error": "Could not read repository",
     "repo_prefill_manual": "Fill in the form manually.",
     "repo_install_app": "Install the SurvivorsForge App",
-    "my_claim_info": "AddOns added by an administrator from your repositories can be claimed after GitHub verifies your repository administrator permissions and the installation of the SurvivorsForge App."
+    "my_claim_info": "AddOns added by an administrator from your repositories can be claimed after GitHub verifies your repository administrator permissions and the installation of the SurvivorsForge App.",
+    "addon_event_status": "changed status from",
+    "addon_event_to": "to",
+    "addon_event_issue_edited": "updated the issue description",
+    "addon_event_comment_edited": "edited a comment",
+    "addon_event_comment_deleted": "removed a comment",
+    "addon_event_issue_deleted": "deleted the issue",
+    "addon_event_updated": "updated the issue"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -870,7 +877,14 @@
     "repo_prefill_error": "Impossible de lire le dépôt",
     "repo_prefill_manual": "Remplissez le formulaire manuellement.",
     "repo_install_app": "Installer l'application SurvivorsForge",
-    "my_claim_info": "Les AddOns ajoutés par un administrateur depuis vos dépôts peuvent être revendiqués après vérification de vos droits GitHub et de l'installation de l'application SurvivorsForge."
+    "my_claim_info": "Les AddOns ajoutés par un administrateur depuis vos dépôts peuvent être revendiqués après vérification de vos droits GitHub et de l'installation de l'application SurvivorsForge.",
+    "addon_event_status": "a changé le statut de",
+    "addon_event_to": "à",
+    "addon_event_issue_edited": "a modifié la description du signalement",
+    "addon_event_comment_edited": "a modifié un commentaire",
+    "addon_event_comment_deleted": "a supprimé un commentaire",
+    "addon_event_issue_deleted": "a supprimé le signalement",
+    "addon_event_updated": "a mis à jour le signalement"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1305,7 +1319,14 @@
     "repo_prefill_error": "Nie można odczytać repozytorium",
     "repo_prefill_manual": "Wypełnij formularz ręcznie.",
     "repo_install_app": "Zainstaluj aplikację SurvivorsForge",
-    "my_claim_info": "AddOns dodane przez administratora z Twoich repozytoriów można przejąć po sprawdzeniu uprawnień administratora GitHub i instalacji aplikacji SurvivorsForge."
+    "my_claim_info": "AddOns dodane przez administratora z Twoich repozytoriów można przejąć po sprawdzeniu uprawnień administratora GitHub i instalacji aplikacji SurvivorsForge.",
+    "addon_event_status": "zmienił status z",
+    "addon_event_to": "na",
+    "addon_event_issue_edited": "zaktualizował opis zgłoszenia",
+    "addon_event_comment_edited": "edytował komentarz",
+    "addon_event_comment_deleted": "usunął komentarz",
+    "addon_event_issue_deleted": "usunął zgłoszenie",
+    "addon_event_updated": "zaktualizował zgłoszenie"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1740,7 +1761,14 @@
     "repo_prefill_error": "Repozitář nelze přečíst",
     "repo_prefill_manual": "Vyplňte formulář ručně.",
     "repo_install_app": "Nainstalovat aplikaci SurvivorsForge",
-    "my_claim_info": "AddOns přidané správcem z vašich repozitářů lze převzít po ověření správcovských práv na GitHubu a instalace aplikace SurvivorsForge."
+    "my_claim_info": "AddOns přidané správcem z vašich repozitářů lze převzít po ověření správcovských práv na GitHubu a instalace aplikace SurvivorsForge.",
+    "addon_event_status": "změnil stav z",
+    "addon_event_to": "na",
+    "addon_event_issue_edited": "upravil popis hlášení",
+    "addon_event_comment_edited": "upravil komentář",
+    "addon_event_comment_deleted": "odstranil komentář",
+    "addon_event_issue_deleted": "smazal hlášení",
+    "addon_event_updated": "aktualizoval hlášení"
   },
   "de": {
     "tiles": "Tiles",
@@ -2175,7 +2203,14 @@
     "repo_prefill_error": "Repository konnte nicht gelesen werden",
     "repo_prefill_manual": "Fülle das Formular manuell aus.",
     "repo_install_app": "SurvivorsForge-App installieren",
-    "my_claim_info": "AddOns, die ein Administrator aus deinen Repositories hinzugefügt hat, kannst du nach Prüfung deiner GitHub-Administratorrechte und der installierten SurvivorsForge-App beanspruchen."
+    "my_claim_info": "AddOns, die ein Administrator aus deinen Repositories hinzugefügt hat, kannst du nach Prüfung deiner GitHub-Administratorrechte und der installierten SurvivorsForge-App beanspruchen.",
+    "addon_event_status": "hat den Status geändert von",
+    "addon_event_to": "zu",
+    "addon_event_issue_edited": "hat die Meldungsbeschreibung aktualisiert",
+    "addon_event_comment_edited": "hat einen Kommentar bearbeitet",
+    "addon_event_comment_deleted": "hat einen Kommentar entfernt",
+    "addon_event_issue_deleted": "hat die Meldung gelöscht",
+    "addon_event_updated": "hat die Meldung aktualisiert"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2610,7 +2645,14 @@
     "repo_prefill_error": "Não foi possível ler o repositório",
     "repo_prefill_manual": "Preencha o formulário manualmente.",
     "repo_install_app": "Instalar aplicativo SurvivorsForge",
-    "my_claim_info": "AddOns adicionados por um administrador a partir dos seus repositórios podem ser reivindicados após a verificação das suas permissões de administrador no GitHub e da instalação do aplicativo SurvivorsForge."
+    "my_claim_info": "AddOns adicionados por um administrador a partir dos seus repositórios podem ser reivindicados após a verificação das suas permissões de administrador no GitHub e da instalação do aplicativo SurvivorsForge.",
+    "addon_event_status": "alterou o status de",
+    "addon_event_to": "para",
+    "addon_event_issue_edited": "atualizou a descrição do relato",
+    "addon_event_comment_edited": "editou um comentário",
+    "addon_event_comment_deleted": "removeu um comentário",
+    "addon_event_issue_deleted": "excluiu o relato",
+    "addon_event_updated": "atualizou o relato"
   },
   "es": {
     "tiles": "Tiles",
@@ -3045,7 +3087,14 @@
     "repo_prefill_error": "No se pudo leer el repositorio",
     "repo_prefill_manual": "Rellena el formulario manualmente.",
     "repo_install_app": "Instalar la aplicación SurvivorsForge",
-    "my_claim_info": "Los AddOns añadidos por un administrador desde tus repositorios pueden reclamarse tras verificar tus permisos de administrador en GitHub y la instalación de la aplicación SurvivorsForge."
+    "my_claim_info": "Los AddOns añadidos por un administrador desde tus repositorios pueden reclamarse tras verificar tus permisos de administrador en GitHub y la instalación de la aplicación SurvivorsForge.",
+    "addon_event_status": "cambió el estado de",
+    "addon_event_to": "a",
+    "addon_event_issue_edited": "actualizó la descripción de la incidencia",
+    "addon_event_comment_edited": "editó un comentario",
+    "addon_event_comment_deleted": "eliminó un comentario",
+    "addon_event_issue_deleted": "eliminó la incidencia",
+    "addon_event_updated": "actualizó la incidencia"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3480,7 +3529,14 @@
     "repo_prefill_error": "Depozitul nu a putut fi citit",
     "repo_prefill_manual": "Completează formularul manual.",
     "repo_install_app": "Instalează aplicația SurvivorsForge",
-    "my_claim_info": "AddOns adăugate de un administrator din depozitele tale pot fi revendicate după verificarea drepturilor tale de administrator GitHub și a instalării aplicației SurvivorsForge."
+    "my_claim_info": "AddOns adăugate de un administrator din depozitele tale pot fi revendicate după verificarea drepturilor tale de administrator GitHub și a instalării aplicației SurvivorsForge.",
+    "addon_event_status": "a schimbat starea din",
+    "addon_event_to": "în",
+    "addon_event_issue_edited": "a actualizat descrierea raportării",
+    "addon_event_comment_edited": "a editat un comentariu",
+    "addon_event_comment_deleted": "a eliminat un comentariu",
+    "addon_event_issue_deleted": "a șters raportarea",
+    "addon_event_updated": "a actualizat raportarea"
   },
   "tr": {
     "tiles": "Tiles",
@@ -3915,7 +3971,14 @@
     "repo_prefill_error": "Depo okunamadı",
     "repo_prefill_manual": "Formu elle doldurun.",
     "repo_install_app": "SurvivorsForge uygulamasını yükle",
-    "my_claim_info": "Yöneticinin depolarınızdan eklediği AddOns, GitHub yönetici yetkileriniz ve SurvivorsForge uygulamasının kurulu olduğu doğrulandıktan sonra sahiplenilebilir."
+    "my_claim_info": "Yöneticinin depolarınızdan eklediği AddOns, GitHub yönetici yetkileriniz ve SurvivorsForge uygulamasının kurulu olduğu doğrulandıktan sonra sahiplenilebilir.",
+    "addon_event_status": "durumu şundan değiştirdi:",
+    "addon_event_to": "şuna:",
+    "addon_event_issue_edited": "bildirim açıklamasını güncelledi",
+    "addon_event_comment_edited": "yorumu düzenledi",
+    "addon_event_comment_deleted": "yorumu kaldırdı",
+    "addon_event_issue_deleted": "bildirimi sildi",
+    "addon_event_updated": "bildirimi güncelledi"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4350,7 +4413,14 @@
     "repo_prefill_error": "Не удалось прочитать репозиторий",
     "repo_prefill_manual": "Заполните форму вручную.",
     "repo_install_app": "Установить приложение SurvivorsForge",
-    "my_claim_info": "AddOns, добавленные администратором из ваших репозиториев, можно получить после проверки прав администратора GitHub и установленного приложения SurvivorsForge."
+    "my_claim_info": "AddOns, добавленные администратором из ваших репозиториев, можно получить после проверки прав администратора GitHub и установленного приложения SurvivorsForge.",
+    "addon_event_status": "изменил статус с",
+    "addon_event_to": "на",
+    "addon_event_issue_edited": "обновил описание обращения",
+    "addon_event_comment_edited": "изменил комментарий",
+    "addon_event_comment_deleted": "удалил комментарий",
+    "addon_event_issue_deleted": "удалил обращение",
+    "addon_event_updated": "обновил обращение"
   },
   "uk": {
     "tiles": "Tiles",
@@ -4785,7 +4855,14 @@
     "repo_prefill_error": "Не вдалося прочитати репозиторій",
     "repo_prefill_manual": "Заповніть форму вручну.",
     "repo_install_app": "Встановити застосунок SurvivorsForge",
-    "my_claim_info": "AddOns, додані адміністратором із ваших репозиторіїв, можна отримати після перевірки прав адміністратора GitHub та встановленого застосунку SurvivorsForge."
+    "my_claim_info": "AddOns, додані адміністратором із ваших репозиторіїв, можна отримати після перевірки прав адміністратора GitHub та встановленого застосунку SurvivorsForge.",
+    "addon_event_status": "змінив статус із",
+    "addon_event_to": "на",
+    "addon_event_issue_edited": "оновив опис звернення",
+    "addon_event_comment_edited": "змінив коментар",
+    "addon_event_comment_deleted": "видалив коментар",
+    "addon_event_issue_deleted": "видалив звернення",
+    "addon_event_updated": "оновив звернення"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -5220,7 +5297,14 @@
     "repo_prefill_error": "无法读取仓库",
     "repo_prefill_manual": "请手动填写表单。",
     "repo_install_app": "安装 SurvivorsForge 应用",
-    "my_claim_info": "管理员从你的仓库添加的 AddOns，可在 GitHub 验证仓库管理权限和 SurvivorsForge 应用安装状态后认领。"
+    "my_claim_info": "管理员从你的仓库添加的 AddOns，可在 GitHub 验证仓库管理权限和 SurvivorsForge 应用安装状态后认领。",
+    "addon_event_status": "将状态从",
+    "addon_event_to": "更改为",
+    "addon_event_issue_edited": "更新了问题描述",
+    "addon_event_comment_edited": "编辑了评论",
+    "addon_event_comment_deleted": "删除了评论",
+    "addon_event_issue_deleted": "删除了问题",
+    "addon_event_updated": "更新了问题"
   },
   "ja": {
     "tiles": "Tiles",
@@ -5655,7 +5739,14 @@
     "repo_prefill_error": "リポジトリを読み込めませんでした",
     "repo_prefill_manual": "フォームを手動で入力してください。",
     "repo_install_app": "SurvivorsForge アプリをインストール",
-    "my_claim_info": "管理者があなたのリポジトリから追加した AddOns は、GitHub の管理者権限と SurvivorsForge アプリのインストール確認後に所有権を申請できます。"
+    "my_claim_info": "管理者があなたのリポジトリから追加した AddOns は、GitHub の管理者権限と SurvivorsForge アプリのインストール確認後に所有権を申請できます。",
+    "addon_event_status": "ステータスを次から変更：",
+    "addon_event_to": "変更後：",
+    "addon_event_issue_edited": "問題の説明を更新しました",
+    "addon_event_comment_edited": "コメントを編集しました",
+    "addon_event_comment_deleted": "コメントを削除しました",
+    "addon_event_issue_deleted": "問題を削除しました",
+    "addon_event_updated": "問題を更新しました"
   },
   "ko": {
     "tiles": "Tiles",
@@ -6090,7 +6181,14 @@
     "repo_prefill_error": "저장소를 읽을 수 없습니다",
     "repo_prefill_manual": "양식을 직접 작성하세요.",
     "repo_install_app": "SurvivorsForge 앱 설치",
-    "my_claim_info": "관리자가 내 저장소에서 추가한 AddOns는 GitHub 저장소 관리자 권한과 SurvivorsForge 앱 설치를 확인한 후 소유권을 신청할 수 있습니다."
+    "my_claim_info": "관리자가 내 저장소에서 추가한 AddOns는 GitHub 저장소 관리자 권한과 SurvivorsForge 앱 설치를 확인한 후 소유권을 신청할 수 있습니다.",
+    "addon_event_status": "상태를 다음에서 변경:",
+    "addon_event_to": "변경 후:",
+    "addon_event_issue_edited": "이슈 설명을 업데이트함",
+    "addon_event_comment_edited": "댓글을 수정함",
+    "addon_event_comment_deleted": "댓글을 삭제함",
+    "addon_event_issue_deleted": "이슈를 삭제함",
+    "addon_event_updated": "이슈를 업데이트함"
   }
 };
   var supported = Object.keys(translations);
