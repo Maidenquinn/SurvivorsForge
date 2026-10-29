@@ -188,3 +188,19 @@ async fn creator_pages_need_login() {
     let page = web.get("/me/addons").await;
     assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/login"));
 }
+
+#[tokio::test]
+async fn the_install_step_goes_away_once_the_app_is_installed() {
+    let mut web = logged_in(owner()).await;
+    let page = web.get("/addons/new").await;
+    assert!(page.body.contains("Install the GitHub App"), "no answer from the API: show the step");
+
+    Mock::given(method("GET"))
+        .and(path("/v1/me/installation"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "installed": true, "manage_url": "https://github.com/settings/installations/77" })))
+        .mount(&web.api)
+        .await;
+    let page = web.get("/addons/new").await;
+    assert!(!page.body.contains(">Install the GitHub App<"), "{}", page.body);
+    assert!(page.body.contains("https://github.com/settings/installations/77"), "where to give it more repos");
+}

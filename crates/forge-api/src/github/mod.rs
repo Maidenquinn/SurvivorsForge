@@ -67,6 +67,8 @@ pub type GitHubResult<T> = Result<T, GitHubError>;
 pub trait GitHubApi: Send + Sync {
     /// The installation of the App on `owner/name`; `None` when the App is not installed there.
     async fn installation_for_repo(&self, full_name: &str) -> GitHubResult<Option<i64>>;
+    /// The installation of the App on the personal account `login`; `None` when there is none.
+    async fn installation_for_user(&self, login: &str) -> GitHubResult<Option<i64>>;
     async fn repo(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo>;
     async fn repo_by_name(&self, installation: Option<i64>, full_name: &str) -> GitHubResult<Repo>;
     /// `admin`, `maintain`, `write`, `triage`, `read` or `none`.
@@ -268,6 +270,16 @@ fn optional<T>(result: GitHubResult<T>) -> GitHubResult<Option<T>> {
 impl GitHubApi for GitHubClient {
     async fn installation_for_repo(&self, full_name: &str) -> GitHubResult<Option<i64>> {
         let url = format!("{}/repos/{full_name}/installation", self.api_url);
+        let response = self.request(self.http.get(&url), &self.app_jwt()?).send().await.map_err(network)?;
+        let installation: GitHubResult<Installation> = match check(response).await {
+            Ok(response) => parse(response).await,
+            Err(e) => Err(e),
+        };
+        Ok(optional(installation)?.map(|i| i.id))
+    }
+
+    async fn installation_for_user(&self, login: &str) -> GitHubResult<Option<i64>> {
+        let url = format!("{}/users/{login}/installation", self.api_url);
         let response = self.request(self.http.get(&url), &self.app_jwt()?).send().await.map_err(network)?;
         let installation: GitHubResult<Installation> = match check(response).await {
             Ok(response) => parse(response).await,

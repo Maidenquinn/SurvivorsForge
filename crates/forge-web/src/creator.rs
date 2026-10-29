@@ -119,13 +119,21 @@ pub struct NewAddonForm {
     pub folders: String,
 }
 
+/// Where the visitor manages the App on their account, if it is installed there. Unknown (GitHub
+/// down) counts as not installed, so the install step stays.
+async fn app_manage_url(state: &AppState, token: &str) -> Option<String> {
+    let answer = state.api.get("/v1/me/installation", Some(token)).await.ok()?;
+    answer["manage_url"].as_str().map(str::to_string)
+}
+
 pub async fn new_addon(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>) -> WebResult<Html<String>> {
-    let (user, _) = me(&state, &jar).await?;
+    let (user, token) = me(&state, &jar).await?;
     let form = NewAddonForm { source_type: "release".into(), ..Default::default() };
     Ok(render(&NewAddonPage {
         user: Some(user),
         csrf: csrf.0,
         install_url: state.install_url(),
+        manage_url: app_manage_url(&state, &token).await,
         categories: categories(&state).await?,
         form,
         errors: Errors::default(),
@@ -148,7 +156,8 @@ pub async fn create_addon(
         Ok(created) => Ok(Redirect::to(&format!("/addons/{}/edit", s(&created["slug"]))).into_response()),
         Err(e) => {
             let errors = form_errors(e)?;
-            let page = NewAddonPage { user: Some(user), csrf: csrf.0, install_url: state.install_url(), categories: categories(&state).await?, form, errors };
+            let manage_url = app_manage_url(&state, &token).await;
+            let page = NewAddonPage { user: Some(user), csrf: csrf.0, install_url: state.install_url(), manage_url, categories: categories(&state).await?, form, errors };
             Ok((StatusCode::UNPROCESSABLE_ENTITY, render(&page)).into_response())
         }
     }

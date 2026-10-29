@@ -260,6 +260,8 @@ pub struct NewAddonPage {
     pub user: Option<Visitor>,
     pub csrf: String,
     pub install_url: String,
+    /// Where the visitor picks the repos of their App installation; `None` when it is not installed.
+    pub manage_url: Option<String>,
     pub categories: Vec<CategoryOption>,
     pub form: crate::creator::NewAddonForm,
     pub errors: Errors,

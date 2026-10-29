@@ -54,3 +54,16 @@ async fn addons_go_into_categories_without_subcategories(pool: PgPool) {
     assert_eq!(app.patch("/v1/addons/lucky", Some(&alice), json!({ "category": "Nope" })).await.error(), "unknown_category");
     assert_eq!(app.patch("/v1/addons/lucky", Some(&alice), json!({ "category": "warlock" })).await.status, StatusCode::OK);
 }
+
+#[sqlx::test]
+async fn whether_the_app_is_installed_on_my_account(pool: PgPool) {
+    let app = TestApp::new(pool);
+    let alice = app.login(1, "alice").await;
+    assert_eq!(app.get("/v1/me/installation", None).await.status, StatusCode::UNAUTHORIZED);
+    let none = app.get("/v1/me/installation", Some(&alice)).await.json();
+    assert_eq!(none, json!({ "installed": false, "manage_url": null }));
+
+    app.github.data().installations.insert("alice/lucky".into(), 77);
+    let mine = app.get("/v1/me/installation", Some(&alice)).await.json();
+    assert_eq!(mine, json!({ "installed": true, "manage_url": "https://github.com/settings/installations/77" }));
+}

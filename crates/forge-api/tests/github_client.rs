@@ -130,6 +130,16 @@ async fn installation_lookup_uses_app_jwt_and_404_is_none() {
 }
 
 #[tokio::test]
+async fn account_installation_lookup() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET")).and(path("/users/alice/installation")).respond_with(ResponseTemplate::new(200).set_body_json(json!({ "id": 5 }))).mount(&server).await;
+    Mock::given(method("GET")).and(path("/users/bob/installation")).respond_with(ResponseTemplate::new(404)).mount(&server).await;
+    let gh = client(&server, Arc::new(Mutex::new(Utc::now())));
+    assert_eq!(gh.installation_for_user("alice").await.unwrap(), Some(5));
+    assert_eq!(gh.installation_for_user("bob").await.unwrap(), None);
+}
+
+#[tokio::test]
 async fn download_rejects_large_content_length() {
     let server = MockServer::start().await;
     Mock::given(method("GET")).and(path("/a.zip")).respond_with(ResponseTemplate::new(200).set_body_bytes(vec![0u8; 100])).mount(&server).await;

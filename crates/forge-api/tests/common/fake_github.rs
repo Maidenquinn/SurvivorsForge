@@ -63,6 +63,12 @@ impl GitHubApi for FakeGitHub {
         Ok(self.call().installations.get(&full_name.to_lowercase()).copied())
     }
 
+    /// Installed on the account when it is installed on any repo of the account.
+    async fn installation_for_user(&self, login: &str) -> GitHubResult<Option<i64>> {
+        let prefix = format!("{}/", login.to_lowercase());
+        Ok(self.call().installations.iter().find(|(repo, _)| repo.starts_with(&prefix)).map(|(_, id)| *id))
+    }
+
     async fn repo(&self, _installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo> {
         self.call().repos.get(&repo_id).cloned().ok_or(GitHubError::NotFound)
     }
