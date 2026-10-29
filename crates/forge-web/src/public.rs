@@ -40,7 +40,7 @@ fn range(min: &Value, max: &Value) -> String {
         (Some(a), Some(b)) => format!("{a} to {b}"),
         (Some(a), None) => format!("{a} and later"),
         (None, Some(b)) => format!("up to {b}"),
-        (None, None) => "Not stated".into(),
+        (None, None) => "not stated by the author".into(),
     }
 }
 

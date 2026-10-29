@@ -206,7 +206,7 @@ async fn risky_download_needs_confirmation() {
 async fn version_history() {
     let mut web = with_addon("scanned", "available").await;
     let page = web.get("/addons/lucky/versions").await;
-    for text in ["v1", "v0", "2026-05-01", "Pre-release", "Removed on GitHub", &"ab".repeat(6), "0.69.0 and later", "Not stated"] {
+    for text in ["v1", "v0", "2026-05-01", "Pre-release", "Removed on GitHub", &"ab".repeat(6), "0.69.0 and later", "not stated by the author"] {
         assert!(page.body.contains(text), "missing {text}");
     }
     let version = web.get("/addons/lucky/versions/v1").await;
@@ -432,4 +432,15 @@ async fn long_tags_are_shortened_in_the_heading() {
     mock(&web, "/v1/addons/lucky/versions", list).await;
     let page = web.get("/addons/lucky").await.body;
     assert!(page.contains(&format!(r#"<h2>Version <span title="{tag}">build-6284ab999530…</span></h2>"#)), "{page}");
+}
+
+#[tokio::test]
+async fn a_missing_game_version_reads_as_the_author_s_choice() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/addons/lucky", addon("scanned")).await;
+    let mut list = versions("scanned", "available");
+    list[0]["game_min"] = Value::Null;
+    mock(&web, "/v1/addons/lucky/versions", list).await;
+    let page = web.get("/addons/lucky").await.body;
+    assert!(page.contains("Game version: not stated by the author"), "{page}");
 }

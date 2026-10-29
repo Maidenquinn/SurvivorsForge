@@ -38,7 +38,7 @@
         {% endfor %}
       </ul>
     {% endif %}
-    <p class="muted">Runs on: {{ l.row.game }}</p>
+    <p class="muted">Game version: {{ l.row.game }}</p>
     {% if l.row.notice.downloadable %}
       <p><a class="button{% if l.row.notice.confirm %} danger{% endif %}" href="{{ l.href }}">Download from GitHub</a></p>
       <p class="muted">Unzip it into the game's <code>AddOns</code> folder, or install and update it with the <a href="https://rezondes.github.io/SurvivorsForge/">SurvivorsForge launcher</a>.</p>
