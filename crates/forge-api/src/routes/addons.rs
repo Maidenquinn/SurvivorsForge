@@ -1,6 +1,6 @@
 //! `/v1/addons`: create, read, change and delete addons.
 
-use crate::addons::{validate_folders, validate_name, validate_slug, validate_source, validate_summary};
+use crate::addons::{Permissions, permissions, validate_folders, validate_name, validate_slug, validate_source, validate_summary};
 use crate::app::AppState;
 use crate::auth::CurrentUser;
 use crate::error::{ApiError, ApiResult};
@@ -137,6 +137,8 @@ pub async fn addon_view(pool: &PgPool, id: i64) -> ApiResult<Value> {
              'asset_pattern', a.asset_pattern,
              'folders', (SELECT coalesce(json_agg(f.folder ORDER BY f.folder), '[]') FROM addon_folders f WHERE f.addon_id = a.id),
              'owner', json_build_object('github_id', u.github_id, 'login', u.login, 'avatar_url', u.avatar_url),
+             'contributors', (SELECT coalesce(json_agg(json_build_object('login', mu.login, 'avatar_url', mu.avatar_url) ORDER BY mu.login), '[]')
+                              FROM addon_members m JOIN users mu ON mu.id = m.user_id WHERE m.addon_id = a.id),
              'blocked', a.blocked_at IS NOT NULL,
              'created_at', a.created_at, 'updated_at', a.updated_at)
          FROM addons a JOIN users u ON u.id = a.owner_id WHERE a.id = $1",
@@ -222,15 +224,38 @@ pub struct PatchAddon {
     folders: Option<Vec<String>>,
 }
 
-/// The addon if `user` may change it at all: not blocked, and owner or admin.
-fn editable(addon: &AddonRow, user: &CurrentUser) -> ApiResult<()> {
+/// What `user` may do with `addon`.
+pub async fn user_permissions(pool: &PgPool, addon: &AddonRow, user: &CurrentUser) -> ApiResult<Permissions> {
+    let member: Option<(bool, bool)> =
+        sqlx::query_as("SELECT can_edit_description, can_edit_images FROM addon_members WHERE addon_id = $1 AND user_id = $2")
+            .bind(addon.id)
+            .bind(user.id)
+            .fetch_optional(pool)
+            .await?;
+    Ok(permissions(user.id, user.is_admin(), addon.owner_id, member))
+}
+
+/// Blocked addons stay as they are until an admin lifts the block.
+pub fn not_blocked(addon: &AddonRow) -> ApiResult<()> {
     if addon.blocked_at.is_some() {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "addon_blocked", "This addon is blocked"));
     }
-    if addon.owner_id != user.id && !user.is_admin() {
-        return Err(forbidden("Only the owner can change this"));
-    }
     Ok(())
+}
+
+/// `403` unless `allowed`.
+pub fn require(allowed: bool, message: &str) -> ApiResult<()> {
+    if allowed { Ok(()) } else { Err(forbidden(message)) }
+}
+
+/// Owner fields: everything except summary and description.
+fn touches_owner_fields(body: &PatchAddon) -> bool {
+    body.name.is_some()
+        || body.category.is_some()
+        || body.repo.is_some()
+        || body.source_type.is_some()
+        || body.asset_pattern.is_some()
+        || body.folders.is_some()
 }
 
 pub async fn update(
@@ -240,7 +265,10 @@ pub async fn update(
     Json(body): Json<PatchAddon>,
 ) -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
-    editable(&addon, &user)?;
+    not_blocked(&addon)?;
+    let can = user_permissions(&state.pool, &addon, &user).await?;
+    require(can.owner || !touches_owner_fields(&body), "Only the owner can change this")?;
+    require(can.edit_description || (body.summary.is_none() && body.description_md.is_none()), "You may not edit the description")?;
 
     if let Some(name) = &body.name {
         validate_name(name)?;
@@ -296,7 +324,8 @@ pub async fn update(
 /// Soft delete: the addon disappears, its slug, repo and folders are free again.
 pub async fn delete(State(state): State<AppState>, user: CurrentUser, Path(slug): Path<String>) -> ApiResult<StatusCode> {
     let addon = load_addon(&state.pool, &slug).await?;
-    editable(&addon, &user)?;
+    not_blocked(&addon)?;
+    require(user_permissions(&state.pool, &addon, &user).await?.owner, "Only the owner can delete this addon")?;
     let mut tx = state.pool.begin().await?;
     sqlx::query("UPDATE addons SET deleted_at = $2 WHERE id = $1").bind(addon.id).bind((state.clock)()).execute(&mut *tx).await?;
     sqlx::query("UPDATE addon_folders SET active = false WHERE addon_id = $1").bind(addon.id).execute(&mut *tx).await?;

@@ -38,6 +38,11 @@ pub fn router(state: AppState) -> Router {
             "/v1/addons/{slug}",
             get(routes::addons::show).patch(routes::addons::update).delete(routes::addons::delete),
         )
+        .route("/v1/addons/{slug}/members", get(routes::members::list).post(routes::members::add))
+        .route(
+            "/v1/addons/{slug}/members/{github_id}",
+            axum::routing::patch(routes::members::update).delete(routes::members::remove),
+        )
         .fallback(|| async { ApiError::not_found() })
         .with_state(state);
     with_layers(routes, &config)

@@ -100,9 +100,33 @@ impl TestApp {
         query_param(&reply.location(), "state").unwrap()
     }
 
+    /// Logs in `login` (GitHub id `github_id`) as admin of a new repo `login/slug` with id
+    /// `github_id * 100`, publishes the addon `slug` with folder `Slug` and returns the token.
+    pub async fn publish(&self, github_id: i64, login: &str, slug: &str) -> String {
+        let repo = format!("{login}/{slug}");
+        self.github.add_repo(github_id * 100, &repo, login);
+        let token = self.login(github_id, login).await;
+        let body = addon_body(slug, &repo, &[&capitalized(slug)]);
+        let reply = self.post("/v1/addons", Some(&token), body).await;
+        assert_eq!(reply.status, StatusCode::CREATED, "{}", reply.body);
+        token
+    }
+
     pub async fn user_id(&self, github_id: i64) -> i64 {
         sqlx::query_scalar("SELECT id FROM users WHERE github_id = $1").bind(github_id).fetch_one(&self.pool).await.unwrap()
     }
+}
+
+pub fn addon_body(slug: &str, repo: &str, folders: &[&str]) -> serde_json::Value {
+    serde_json::json!({
+        "slug": slug, "name": format!("Addon {slug}"), "repo": repo, "source_type": "release",
+        "asset_pattern": format!("{slug}-v*.zip"), "category": "UI", "summary": "Short.", "folders": folders,
+    })
+}
+
+pub fn capitalized(s: &str) -> String {
+    let mut chars = s.chars();
+    chars.next().map(|c| c.to_uppercase().chain(chars).collect()).unwrap_or_default()
 }
 
 pub fn urlencode(s: &str) -> String {

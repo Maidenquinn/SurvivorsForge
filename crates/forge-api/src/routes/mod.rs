@@ -2,3 +2,4 @@
 
 pub mod addons;
 pub mod me;
+pub mod members;

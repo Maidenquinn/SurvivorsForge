@@ -88,9 +88,38 @@ pub fn validate_folders(folders: &[String]) -> Result<(), ApiError> {
     Ok(())
 }
 
+/// What a user may do with one addon. Every endpoint asks this, nothing else.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Permissions {
+    /// Repo, asset pattern, folders, dependencies, compatibility, contributors, deleting.
+    pub owner: bool,
+    /// Summary and description.
+    pub edit_description: bool,
+    pub edit_images: bool,
+    pub admin: bool,
+}
+
+/// `member` holds the contributor flags `(can_edit_description, can_edit_images)` when the user is one.
+pub fn permissions(user_id: i64, is_admin: bool, owner_id: i64, member: Option<(bool, bool)>) -> Permissions {
+    let owner = is_admin || user_id == owner_id;
+    let (description, images) = member.unwrap_or((false, false));
+    Permissions { owner, edit_description: owner || description, edit_images: owner || images, admin: is_admin }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn permissions_matrix() {
+        let all = Permissions { owner: true, edit_description: true, edit_images: true, admin: false };
+        assert_eq!(permissions(1, false, 1, None), all, "owner");
+        assert_eq!(permissions(2, true, 1, None), Permissions { admin: true, ..all }, "admin may do what the owner may");
+        assert_eq!(permissions(2, false, 1, None), Permissions::default(), "stranger");
+        assert_eq!(permissions(2, false, 1, Some((false, false))), Permissions::default(), "member without flags");
+        assert_eq!(permissions(2, false, 1, Some((true, false))), Permissions { edit_description: true, ..Default::default() });
+        assert_eq!(permissions(2, false, 1, Some((false, true))), Permissions { edit_images: true, ..Default::default() });
+    }
 
     fn code<T>(result: Result<T, ApiError>) -> &'static str {
         result.err().map(|e| e.code).unwrap_or("ok")
