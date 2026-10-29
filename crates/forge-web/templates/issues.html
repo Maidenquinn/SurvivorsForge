@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Issues - {{ name }}{% endblock %}
+{% block content %}
+<p><a href="/addons/{{ slug }}">← {{ name }}</a></p>
+<h1>Issues</h1>
+<section class="panel">
+  {% if issues.is_empty() %}<p>No issues yet.</p>{% endif %}
+  {% for issue in issues %}
+  <p><a href="/addons/{{ slug }}/issues/{{ issue.id }}"><strong>#{{ issue.id }} {{ issue.title }}</strong></a>
+    <span class="badge">{{ issue.status }}</span> · {{ issue.kind }} · by {{ issue.author }}</p>
+  {% endfor %}
+</section>
+{% if user.is_some() %}
+<section class="panel">
+  <h2>Open an issue</h2>
+  <form method="post" action="/addons/{{ slug }}/issues">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <p><label>Title <input name="title" required minlength="3" maxlength="160"></label></p>
+    <p><label>Type <select name="kind"><option value="bug">Bug</option><option value="feature">Feature request</option><option value="question">Question</option></select></label></p>
+    <p><label>Details <textarea name="body" required maxlength="10000" rows="6"></textarea></label></p>
+    <button type="submit">Create issue</button>
+  </form>
+</section>
+{% else %}<p><a href="/login">Log in</a> to open an issue.</p>{% endif %}
+{% endblock %}
