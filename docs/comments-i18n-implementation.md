@@ -1,6 +1,6 @@
 # Comments + i18n delivery contract
 
-Status: implementation design; NOT shipped or tested.
+Status: implementation in progress on `feat/internal-issues`; not released. Unit tests have been added but full integration, Docker and browser acceptance remain outstanding.
 
 ## Scope and UX acceptance
 
@@ -55,3 +55,26 @@ selection must not bypass CSRF protection or introduce an open redirect.
 4. Run cargo fmt, clippy, API/web tests, Docker build, and browser smoke tests.
 5. Validate mobile and keyboard UX and preserve local PostgreSQL volumes.
 6. No upstream PR until the broader roadmap is complete.
+
+## Regression matrix for final acceptance
+
+Run against a disposable test database, **never** the user's local PostgreSQL volume.
+
+| Area | Required scenario | Expected result |
+| --- | --- | --- |
+| Anonymous | GET comments / POST without bearer | Read succeeds; write is rejected |
+| Author | Create, edit, delete own comment | Succeeds; soft-deleted entry disappears |
+| Identity | Same display login, different numeric user ID | Cannot edit/delete another account's comment |
+| Moderation | Owner/delegated moderator deletes another author's comment | Delete succeeds; edit is forbidden |
+| Isolation | Use comment ID from addon A under addon B slug | 404; neither addon changes |
+| Blocked addon | GET, POST, PATCH, DELETE | Blocked policy applies consistently |
+| Validation | Empty, whitespace, 10,000 and 10,001 Unicode characters | Reject empty/oversized; accept exactly 10,000 |
+| Pagination | 0, 1, 29, 30, 31, 60 comments | No phantom next page at exactly 30 |
+| Concurrency | Simultaneous posts near 100/day cap | Never exceeds cap |
+| Race | Delete while edit is pending | No false successful edit |
+| Rendering | HTML/script tags in user comment | Escaped as text; no script execution |
+| Progressive UI | Create/edit/delete, browser Back, pagination | Updates without full page navigation |
+| Fallback | JavaScript disabled | All forms and pagination still work |
+| Accessibility | Keyboard, screen reader, reduced motion, 14 locales | Labels and feedback are usable |
+
+Current automated coverage: comment length and role helpers (API), numeric identity and pagination helpers (web), catalog key parity script. Remaining integration/browser checks are **not yet passed**.
