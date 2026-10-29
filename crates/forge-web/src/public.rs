@@ -207,9 +207,16 @@ pub async fn addon(
             status: s(&i["status"]), author: s(&i["author"]),
         }).collect()
     } else { Vec::new() };
+    let version_rows = if tab == "versions" {
+        versions.as_array().into_iter().flatten().map(|v| {
+            let row = version_row(v, verified_author);
+            (download_href(&slug, &row), row)
+        }).collect()
+    } else { Vec::new() };
     let page = AddonPage {
         tab,
         issues,
+        version_rows,
         can_claim,
         install_url: state.install_url(),
         error: claim.error,
