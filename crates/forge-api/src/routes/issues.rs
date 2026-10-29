@@ -45,15 +45,32 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser, Path(slug)
     let addon = load_addon(&state.pool, &slug).await?;
     if addon.blocked_at.is_some() { return Err(forbidden()); }
     let now = (state.clock)();
+    // Serialize submissions by author: simultaneous double-clicks must not create duplicates.
+    let mut tx = state.pool.begin().await?;
+    sqlx::query("SELECT pg_advisory_xact_lock($1)")
+        .bind(user.id).execute(&mut *tx).await?;
+    let duplicate: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM addon_issues WHERE addon_id=$1 AND author_id=$2
+         AND kind=$3 AND lower(btrim(title))=lower($4) AND btrim(body)=$5
+         AND deleted_at IS NULL AND created_at > $6)"
+    ).bind(addon.id).bind(user.id).bind(&body.kind).bind(body.title.trim())
+     .bind(body.body.trim()).bind(now - chrono::Duration::hours(24))
+     .fetch_one(&mut *tx).await?;
+    if duplicate {
+        return Err(ApiError::new(StatusCode::CONFLICT, "duplicate_issue",
+            "You already submitted this exact issue in the last 24 hours"));
+    }
     let recent: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM addon_issues WHERE author_id = $1 AND created_at > $2"
-    ).bind(user.id).bind(now - chrono::Duration::hours(24)).fetch_one(&state.pool).await?;
+    ).bind(user.id).bind(now - chrono::Duration::hours(24))
+     .fetch_one(&mut *tx).await?;
     if recent >= 20 { return Err(ApiError::new(StatusCode::TOO_MANY_REQUESTS, "issue_limit", "Daily issue limit reached")); }
     let id: i64 = sqlx::query_scalar(
         "INSERT INTO addon_issues (addon_id, author_id, title, body, kind, created_at, updated_at)
          VALUES ($1,$2,$3,$4,$5,$6,$6) RETURNING id"
     ).bind(addon.id).bind(user.id).bind(body.title.trim()).bind(body.body.trim())
-     .bind(&body.kind).bind(now).fetch_one(&state.pool).await?;
+     .bind(&body.kind).bind(now).fetch_one(&mut *tx).await?;
+    tx.commit().await?;
     Ok((StatusCode::CREATED, Json(json!({"id":id}))))
 }
 pub async fn show(State(state): State<AppState>, Path((slug, id)): Path<(String, i64)>) -> ApiResult<Json<Value>> {
