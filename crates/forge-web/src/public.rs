@@ -5,7 +5,7 @@ use crate::app::{AppState, visitor};
 use crate::csrf::CsrfToken;
 use crate::error::{WebError, WebResult, error_page};
 use crate::templates::{
-    AddonPage, AddonsPage, BlockedPage, Card, Dep, DownloadPage, FindingRow, IssueItem, LatestBlock, Shot, VersionPage, VersionRow, VersionsPage, render,
+    AddonPage, AddonsPage, BlockedPage, Card, Dep, DownloadPage, FindingRow, IssueItem, InlineIssue, IssueComment, LatestBlock, Shot, VersionPage, VersionRow, VersionsPage, render,
 };
 use crate::trust::{Notice, notice};
 use axum::Extension;
@@ -158,6 +158,7 @@ fn grouped(n: i64) -> String {
 pub struct ClaimError {
     error: Option<String>,
     tab: Option<String>,
+    issue: Option<i64>,
 }
 
 pub async fn addon(
@@ -213,9 +214,31 @@ pub async fn addon(
             (download_href(&slug, &row), row)
         }).collect()
     } else { Vec::new() };
+    let selected_issue = if tab == "issues" {
+        if let Some(id) = claim.issue.filter(|id| *id > 0 && issues.iter().any(|i| i.id == *id)) {
+            let detail = state.api.get(&format!("/v1/addons/{}/issues/{id}", seg(&slug)), None).await?;
+            Some(InlineIssue {
+                id, title: s(&detail["title"]), body: s(&detail["body"]),
+                kind: s(&detail["kind"]), status: s(&detail["status"]),
+                author: s(&detail["author"]),
+                comments: detail["comments"].as_array().into_iter().flatten().map(|c| IssueComment {
+                    author: s(&c["author"]), body: s(&c["body"])
+                }).collect(),
+            })
+        } else { None }
+    } else { None };
+    let can_manage_issues = if selected_issue.is_some() {
+        if let Some((_, token)) = visitor(&state, &jar).await? {
+            state.api.get(&format!("/v1/addons/{}/permissions", seg(&slug)), Some(&token)).await
+                .map(|permissions| permissions["owner"] == true || permissions["admin"] == true || permissions["edit_description"] == true)
+                .unwrap_or(false)
+        } else { false }
+    } else { false };
     let page = AddonPage {
         tab,
         issues,
+        selected_issue,
+        can_manage_issues,
         version_rows,
         can_claim,
         install_url: state.install_url(),
