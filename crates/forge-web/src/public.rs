@@ -5,7 +5,7 @@ use crate::app::{AppState, visitor};
 use crate::csrf::CsrfToken;
 use crate::error::{WebError, WebResult, error_page};
 use crate::templates::{
-    AddonPage, AddonsPage, BlockedPage, Card, Dep, DownloadPage, FindingRow, IssueItem, InlineIssue, IssueComment, LatestBlock, Shot, VersionPage, VersionRow, VersionsPage, render,
+    AddonPage, AddonsPage, BlockedPage, Card, Dep, DownloadPage, FindingRow, IssueItem, InlineIssue, IssueComment, IssueEvent, LatestBlock, Shot, VersionPage, VersionRow, VersionsPage, render,
 };
 use crate::trust::{Notice, notice};
 use axum::Extension;
@@ -217,12 +217,18 @@ pub async fn addon(
     let selected_issue = if tab == "issues" {
         if let Some(id) = claim.issue.filter(|id| *id > 0 && issues.iter().any(|i| i.id == *id)) {
             let detail = state.api.get(&format!("/v1/addons/{}/issues/{id}", seg(&slug)), None).await?;
+            let logged_in = user.as_ref().map(|u| u.login.as_str()).unwrap_or("");
+            let issue_author = s(&detail["author"]);
+            let acknowledged = detail["acknowledged_at"].is_string();
             Some(InlineIssue {
-                id, title: s(&detail["title"]), body: s(&detail["body"]),
+                id,
+                can_edit: user.as_ref().is_some_and(|u| u.admin) || (!logged_in.is_empty() && logged_in.eq_ignore_ascii_case(&issue_author) && !acknowledged),
+                can_delete: user.as_ref().is_some_and(|u| u.admin) || (!logged_in.is_empty() && logged_in.eq_ignore_ascii_case(&issue_author) && !acknowledged),
+                events: detail["events"].as_array().into_iter().flatten().map(|e| IssueEvent { action: s(&e["action"]), actor: s(&e["actor"]), old_value: s(&e["old_value"]), new_value: s(&e["new_value"]) }).collect(), title: s(&detail["title"]), body: s(&detail["body"]),
                 kind: s(&detail["kind"]), status: s(&detail["status"]),
                 author: s(&detail["author"]),
                 comments: detail["comments"].as_array().into_iter().flatten().map(|c| IssueComment {
-                    author: s(&c["author"]), body: s(&c["body"])
+                    id: c["id"].as_i64().unwrap_or(0), can_edit: user.as_ref().is_some_and(|u| u.admin || u.login.eq_ignore_ascii_case(c["author"].as_str().unwrap_or(""))) && c["deleted"] != true, author: s(&c["author"]), body: s(&c["body"])
                 }).collect(),
             })
         } else { None }
