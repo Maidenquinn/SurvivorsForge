@@ -154,6 +154,7 @@ pub fn router(state: AppState) -> Router {
         .route("/logout", post(logout))
         .route("/static/htmx.min.js", get(|| async { asset("text/javascript", HTMX_JS) }))
         .route("/static/app.css", get(|| async { asset("text/css", APP_CSS) }))
+        .route("/static/i18n.js", get(|| async { asset("text/javascript", I18N_JS) }))
         .route("/static/view.js", get(|| async { asset("text/javascript", VIEW_JS) }))
         // The launcher's fonts (SIL OFL, licenses next to them in ui/fonts).
         // The launcher's icon, as tab icon and home screen icon.
@@ -187,6 +188,7 @@ fn font(body: &'static [u8]) -> Response {
 
 const HTMX_JS: &str = include_str!("../static/htmx.min.js");
 const APP_CSS: &str = include_str!("../static/app.css");
+const I18N_JS: &str = include_str!("../static/i18n.js");
 const VIEW_JS: &str = include_str!("../static/view.js");
 
 /// Goes into the links to the stylesheet and scripts (`?v=`) and changes with their content, so a
