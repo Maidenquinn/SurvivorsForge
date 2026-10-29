@@ -109,3 +109,35 @@ async fn download_follows_the_api_or_waits_for_the_build() {
     assert_eq!(building.status, StatusCode::OK);
     assert!(building.body.contains(r#"http-equiv="refresh""#) && building.body.contains("Building the pack"));
 }
+
+#[tokio::test]
+async fn the_public_pack_list() {
+    let mut web = TestWeb::new().await;
+    Mock::given(method("GET"))
+        .and(path("/v1/packs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "total": 1, "page": 1, "per_page": 20, "packs": [
+            { "id": "AbCdE12345", "name": "My UI", "created_at": "2026-10-29T10:00:00Z", "created_by": "alice", "addons": ["Lucky", "Odds"] }
+        ] })))
+        .mount(&web.api)
+        .await;
+    let page = web.get("/packs").await;
+    assert_eq!(page.status, StatusCode::OK, "{}", page.body);
+    for text in ["href=\"/packs/AbCdE12345\"", "My UI", "by alice", "Lucky, Odds", "href=\"/packs/new\""] {
+        assert!(page.body.contains(text), "missing {text}");
+    }
+    assert!(page.body.contains("<a href=\"/packs\">Packs</a>"), "in the top navigation");
+}
+
+#[tokio::test]
+async fn packs_can_be_listed_when_created() {
+    let mut web = logged_in().await;
+    assert!(web.get("/packs/new").await.body.contains(r#"name="listed""#));
+    Mock::given(method("POST"))
+        .and(path("/v1/packs"))
+        .and(body_partial_json(json!({ "listed": true })))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({ "id": "AbCdE12345" })))
+        .mount(&web.api)
+        .await;
+    let page = web.post_form("/packs/new", &[("name", "Mine"), ("addon", "lucky"), ("listed", "1")]).await;
+    assert_eq!(page.location(), "/packs/AbCdE12345");
+}

@@ -5,7 +5,7 @@ use crate::api_client::ApiError;
 use crate::app::{AppState, visitor};
 use crate::csrf::CsrfToken;
 use crate::error::{WebError, WebResult};
-use crate::templates::{NewPackPage, PackBuildingPage, PackChoice, PackEntry, PackPage, render};
+use crate::templates::{NewPackPage, PackBuildingPage, PackChoice, PackEntry, PackListRow, PackPage, PacksPage, render};
 use crate::trust::notice;
 use axum::extract::{Path, RawQuery, State};
 use axum::response::{Html, IntoResponse, Redirect, Response};
@@ -67,8 +67,9 @@ pub async fn create_pack(State(state): State<AppState>, jar: PrivateCookieJar, E
     let (user, token) = visitor(&state, &jar).await?.ok_or(WebError::LoginRequired)?;
     let picked = values(Some(&body), "addon");
     let name = values(Some(&body), "name").pop().unwrap_or_default();
+    let listed = !values(Some(&body), "listed").is_empty();
     let addons: Vec<Value> = picked.iter().map(|slug| json!({ "slug": slug })).collect();
-    match state.api.post("/v1/packs", Some(&token), &json!({ "name": name.trim(), "addons": addons })).await {
+    match state.api.post("/v1/packs", Some(&token), &json!({ "name": name.trim(), "listed": listed, "addons": addons })).await {
         Ok(created) => Ok(Redirect::to(&format!("/packs/{}", s(&created["id"]))).into_response()),
         Err(ApiError::Api { status, message, .. }) if status == 422 || status == 429 => {
             let choices = choices(&state, &picked).await?;
@@ -77,6 +78,34 @@ pub async fn create_pack(State(state): State<AppState>, jar: PrivateCookieJar, E
         }
         Err(e) => Err(e.into()),
     }
+}
+
+/// `GET /packs?page=`: the packs their authors chose to show, newest first.
+pub async fn packs(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, RawQuery(raw): RawQuery) -> WebResult<Html<String>> {
+    let user = visitor(&state, &jar).await?.map(|(v, _)| v);
+    let page: i64 = values(raw.as_deref(), "page").pop().and_then(|p| p.parse().ok()).unwrap_or(1).max(1);
+    let list = state.api.get(&format!("/v1/packs?page={page}"), None).await?;
+    let rows = list["packs"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|p| PackListRow {
+            id: s(&p["id"]),
+            name: Some(s(&p["name"])).filter(|n| !n.is_empty()).unwrap_or_else(|| "Addon pack".into()),
+            created_by: s(&p["created_by"]),
+            created: s(&p["created_at"]).chars().take(10).collect(),
+            addons: p["addons"].as_array().into_iter().flatten().map(s).collect::<Vec<_>>().join(", "),
+        })
+        .collect();
+    let total = list["total"].as_i64().unwrap_or(0);
+    let per_page = list["per_page"].as_i64().unwrap_or(20).max(1);
+    Ok(render(&PacksPage {
+        user,
+        csrf: csrf.0,
+        rows,
+        prev: (page > 1).then(|| format!("/packs?page={}", page - 1)),
+        next: (page * per_page < total).then(|| format!("/packs?page={}", page + 1)),
+    }))
 }
 
 /// Pack ids are 10 letters and digits; anything else never reaches the API.

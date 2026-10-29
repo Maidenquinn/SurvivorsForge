@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Addon packs - SurvivorsForge{% endblock %}
+{% block head %}<meta name="description" content="Addon packs for the browser version of Azeroth Survivors: several checked addons in one zip.">{% endblock %}
+{% block content %}
+<div class="title-row">
+  <h1>Addon packs</h1>
+  <a class="button" href="/packs/new">Build a pack</a>
+</div>
+<p class="muted">Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show.</p>
+{% if rows.is_empty() %}
+  <section class="panel"><p>No pack is listed yet. Build one and tick "Show it on the public pack list".</p></section>
+{% else %}
+<div class="grid">
+  {% for p in rows %}
+  <article class="panel card">
+    <h2><a href="/packs/{{ p.id }}">{{ p.name }}</a></h2>
+    <p class="muted">{% if p.created_by != "" %}by {{ p.created_by }} · {% endif %}{{ p.created }}</p>
+    <p>{{ p.addons }}</p>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+<nav class="pager">
+  {% if let Some(p) = prev %}<a href="{{ p }}">Previous</a>{% endif %}
+  {% if let Some(n) = next %}<a href="{{ n }}">Next</a>{% endif %}
+</nav>
+{% endblock %}

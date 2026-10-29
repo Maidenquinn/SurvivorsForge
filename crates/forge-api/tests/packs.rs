@@ -202,3 +202,31 @@ async fn prune_drops_stale_and_over_budget_zips(pool: PgPool) {
     forge_api::pack_job::prune(&tight.state()).await.unwrap();
     assert_eq!(files(), 0);
 }
+
+#[sqlx::test]
+async fn only_listed_and_available_packs_are_public(pool: PgPool) {
+    let (app, _dir) = app_with_packs(pool).await;
+    let token = app.publish(1, "alice", "lucky").await;
+    app.publish(2, "bob", "odds").await;
+    checked_version(&app, "lucky", "clean").await;
+    checked_version(&app, "odds", "clean").await;
+    let create = |body: serde_json::Value| {
+        let (app, token) = (&app, token.clone());
+        async move { app.post("/v1/packs", Some(&token), body).await.json()["id"].as_str().unwrap().to_string() }
+    };
+    create(json!({ "name": "Hidden", "addons": [{ "slug": "lucky" }] })).await;
+    let listed = create(json!({ "name": "My UI", "listed": true, "addons": [{ "slug": "lucky" }, { "slug": "odds" }] })).await;
+    create(json!({ "name": "Odds only", "listed": true, "addons": [{ "slug": "odds" }] })).await;
+    assert_eq!(app.get(&format!("/v1/packs/{listed}"), None).await.json()["listed"], true);
+
+    let list = app.get("/v1/packs", None).await.json();
+    let names: Vec<&str> = list["packs"].as_array().unwrap().iter().map(|p| p["name"].as_str().unwrap()).collect();
+    assert_eq!(names, ["Odds only", "My UI"], "newest first, the unlisted one stays hidden");
+    assert_eq!(list["total"], 2);
+    let mine = list["packs"].as_array().unwrap().iter().find(|p| p["id"] == listed.as_str()).unwrap();
+    assert_eq!((mine["created_by"].as_str(), mine["addons"].clone()), (Some("alice"), json!(["Addon lucky", "Addon odds"])));
+
+    sqlx::query("UPDATE addons SET blocked_at = now() WHERE slug = 'odds'").execute(&app.pool).await.unwrap();
+    let names: Vec<String> = app.get("/v1/packs", None).await.json()["packs"].as_array().unwrap().iter().map(|p| p["name"].as_str().unwrap().to_string()).collect();
+    assert!(names.is_empty(), "packs that cannot be downloaded are not offered: {names:?}");
+}

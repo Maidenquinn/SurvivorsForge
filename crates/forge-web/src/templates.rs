@@ -564,6 +564,25 @@ pub struct PackPage {
     pub entries: Vec<PackEntry>,
 }
 
+pub struct PackListRow {
+    pub id: String,
+    pub name: String,
+    pub created_by: String,
+    pub created: String,
+    /// Addon names, comma-separated.
+    pub addons: String,
+}
+
+#[derive(Template)]
+#[template(path = "packs/list.html")]
+pub struct PacksPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub rows: Vec<PackListRow>,
+    pub prev: Option<String>,
+    pub next: Option<String>,
+}
+
 #[derive(Template)]
 #[template(path = "packs/building.html")]
 pub struct PackBuildingPage {

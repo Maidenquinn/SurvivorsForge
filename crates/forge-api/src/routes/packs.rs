@@ -40,6 +40,9 @@ fn public_id() -> String {
 pub struct NewPack {
     #[serde(default)]
     name: String,
+    /// Shown on the public pack list; otherwise only the link leads to it.
+    #[serde(default)]
+    listed: bool,
     addons: Vec<PackAddon>,
 }
 
@@ -115,13 +118,14 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser, Json(body)
     let id = public_id();
     let mut tx = state.pool.begin().await?;
     let pack: i64 = sqlx::query_scalar(
-        "INSERT INTO packs (public_id, name, created_by, content_key, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        "INSERT INTO packs (public_id, name, created_by, content_key, created_at, listed) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
     )
     .bind(&id)
     .bind(name)
     .bind(user.id)
     .bind(content_key(&ids))
     .bind(now)
+    .bind(body.listed)
     .fetch_one(&mut *tx)
     .await?;
     sqlx::query("INSERT INTO pack_versions (pack_id, version_id) SELECT $1, unnest($2::bigint[])")
@@ -137,6 +141,7 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser, Json(body)
 struct PackRow {
     id: i64,
     name: String,
+    listed: bool,
     created_at: chrono::DateTime<chrono::Utc>,
     creator: Option<String>,
     content_key: String,
@@ -144,7 +149,7 @@ struct PackRow {
 
 async fn load(state: &AppState, public_id: &str) -> ApiResult<PackRow> {
     sqlx::query_as(
-        "SELECT p.id, p.name, p.created_at, u.login::text AS creator, p.content_key
+        "SELECT p.id, p.name, p.listed, p.created_at, u.login::text AS creator, p.content_key
          FROM packs p LEFT JOIN users u ON u.id = p.created_by WHERE p.public_id = $1",
     )
     .bind(public_id)
@@ -202,6 +207,7 @@ pub async fn show(State(state): State<AppState>, Path(public_id): Path<String>) 
     Ok(Json(json!({
         "id": public_id,
         "name": pack.name,
+        "listed": pack.listed,
         "created_at": pack.created_at,
         "created_by": pack.creator,
         "available": addons.iter().all(|a| a.available),
@@ -212,6 +218,44 @@ pub async fn show(State(state): State<AppState>, Path(public_id): Path<String>) 
             "error": file.as_ref().and_then(|f| f.error.clone()),
         },
     })))
+}
+
+const PER_PAGE: i64 = 20;
+
+#[derive(Deserialize)]
+pub struct ListQuery {
+    #[serde(default)]
+    page: Option<i64>,
+}
+
+/// `GET /v1/packs?page=`: the listed packs that can be downloaded, newest first.
+pub async fn list(State(state): State<AppState>, axum::extract::Query(query): axum::extract::Query<ListQuery>) -> ApiResult<Json<Value>> {
+    let page = query.page.unwrap_or(1).max(1);
+    let list: Value = sqlx::query_scalar(
+        "WITH open AS (
+             SELECT p.id, p.public_id, p.name, p.created_at, u.login::text AS creator
+             FROM packs p LEFT JOIN users u ON u.id = p.created_by
+             WHERE p.listed AND NOT EXISTS (
+                 SELECT 1 FROM pack_versions pv
+                 JOIN versions v ON v.id = pv.version_id JOIN addons a ON a.id = v.addon_id
+                 JOIN version_trust t ON t.version_id = v.id
+                 WHERE pv.pack_id = p.id AND NOT (a.deleted_at IS NULL AND v.sha256 IS NOT NULL AND t.trust = ANY($1)))
+         )
+         SELECT json_build_object(
+             'total', (SELECT count(*) FROM open), 'page', $2::bigint, 'per_page', $3::bigint,
+             'packs', coalesce((SELECT json_agg(item ORDER BY created_at DESC, id DESC) FROM (
+                 SELECT o.id, o.created_at, json_build_object(
+                     'id', o.public_id, 'name', o.name, 'created_at', o.created_at, 'created_by', o.creator,
+                     'addons', (SELECT json_agg(a.name ORDER BY lower(a.name)) FROM pack_versions pv
+                                JOIN versions v ON v.id = pv.version_id JOIN addons a ON a.id = v.addon_id WHERE pv.pack_id = o.id)) AS item
+                 FROM open o ORDER BY o.created_at DESC, o.id DESC LIMIT $3 OFFSET ($2 - 1) * $3) page), '[]'))",
+    )
+    .bind(PACKABLE)
+    .bind(page)
+    .bind(PER_PAGE)
+    .fetch_one(&state.pool)
+    .await?;
+    Ok(Json(list))
 }
 
 /// A failed build is tried again after this long, in case GitHub was only down.
