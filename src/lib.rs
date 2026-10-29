@@ -16,7 +16,7 @@ use std::path::Path;
 
 pub const APP_NAME: &str = "SurvivorsForge";
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
-/// GitHub repo of SurvivorsForge itself: hosts the verified list and the releases for self-update.
+/// GitHub repo of SurvivorsForge itself: hosts the releases for self-update.
 pub const APP_REPO: &str = "Rezondes/SurvivorsForge";
 
 #[derive(Debug, Clone, PartialEq)]
@@ -40,6 +40,10 @@ pub enum Error {
     NotInstallable(String),
     /// The downloaded file is not the one the platform scanned.
     HashMismatch { expected: String, actual: String },
+    /// A download URL outside `github::DOWNLOAD_HOSTS`.
+    ForbiddenHost(String),
+    /// The platform cannot be reached, so nothing is installed or updated.
+    Offline,
 }
 
 impl fmt::Display for Error {
@@ -51,8 +55,8 @@ impl fmt::Display for Error {
             Error::NoAddonFound => write!(f, "No addon found"),
             Error::NotFound => write!(f, "Not found on GitHub"),
             Error::RateLimited => write!(f, "GitHub is limiting requests right now. Try again in a few minutes"),
-            Error::Http(code) => write!(f, "GitHub answered with error {code}"),
-            Error::Network(e) => write!(f, "Cannot reach GitHub: {e}"),
+            Error::Http(code) => write!(f, "The server answered with error {code}"),
+            Error::Network(e) => write!(f, "Network error: {e}"),
             Error::Parse(e) => write!(f, "Unexpected response: {e}"),
             Error::NoRelease => write!(f, "The repo has no release"),
             Error::NoTags => write!(f, "The repo has no tags"),
@@ -66,6 +70,8 @@ impl fmt::Display for Error {
                 &expected[..expected.len().min(12)],
                 &actual[..actual.len().min(12)]
             ),
+            Error::ForbiddenHost(url) => write!(f, "Downloads are only allowed from GitHub, not from {url}"),
+            Error::Offline => write!(f, "The SurvivorsForge server cannot be reached. Installing and updating resume when it is back"),
             Error::InvalidRepo(input) => write!(f, "\"{input}\" is not a GitHub repo (expected owner/repo or a GitHub URL)"),
         }
     }

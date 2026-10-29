@@ -98,7 +98,7 @@ To approximate a Steam Deck in Game Mode, set `XDG_CURRENT_DESKTOP=gamescope` (f
 | `src/state.rs` | `state.json`: which addon came from which source in which version |
 | `src/install.rs` | Atomic install/update, uninstall to the recycle bin |
 | `src/registry.rs` | Verified list: load order, validation, asset glob matching |
-| `src/github.rs` | GitHub client on github.com web endpoints, the `GitHub` trait |
+| `src/github.rs` | Release and tag metadata through the platform API, zip downloads from GitHub, the `GitHub` trait |
 | `src/updates.rs` | Resolves the remote version per source, decides "update available" |
 | `src/repo_detect.rs` | Detection for manually added repos |
 | `src/controller.rs` | Pure view logic: rows, badges, filters, zip install plan |
@@ -168,7 +168,9 @@ Repos that are already in the verified list are refused with a pointer to Browse
 
 ### GitHub access
 
-SurvivorsForge does not use the GitHub REST API. Without a token it allows 60 requests per hour, and a single update check needs about one request per addon, so a few app starts would use it up. Everything comes from plain github.com endpoints instead, which have no such budget:
+The launcher asks the platform API for release and tag metadata (`/v1/github/{owner}/{repo}/releases/latest`, `/releases/{tag}`, `/refs`). The API reads GitHub and caches the answers for 10 minutes. Only the zip files come from GitHub directly, and only from GitHub's download hosts (`github.com`, `codeload.github.com`, `objects.githubusercontent.com`, `release-assets.githubusercontent.com`).
+
+The API does not use the GitHub REST API for this. Without a token it allows 60 requests per hour. Everything comes from plain github.com endpoints instead, which have no such budget:
 
 | Need | Endpoint |
 |---|---|
@@ -179,10 +181,10 @@ SurvivorsForge does not use the GitHub REST API. Without a token it allows 60 re
 
 github.com answers `401` for a repo that does not exist (it asks for a login), which maps to "Not found on GitHub".
 
-The asset list is read from HTML. If GitHub changes that fragment, `parses_release_assets` in `src/github.rs` fails against a fresh copy of `tests/fixtures/github/assets_survivor_ui.html`, and the app reports "no matching addon zip". The network test checks all endpoints for real:
+The asset list is read from HTML (parsers in `crates/forge-core/src/github_web.rs`). If GitHub changes that fragment, `parses_release_assets` in `src/github.rs` fails against a fresh copy of `tests/fixtures/github/assets_survivor_ui.html`, and the app reports "no matching addon zip". The network test checks the whole chain against a running API:
 
 ```bash
-cargo test --lib -- --ignored github_live
+SURVIVORSFORGE_API_URL=http://127.0.0.1:8080 cargo test --lib -- --ignored api_live
 ```
 
 ## Verified addon list
@@ -217,11 +219,11 @@ Validation rejects unknown schema versions, duplicate ids and folders claimed by
 
 Load order at runtime:
 
-1. The remote copy from `https://raw.githubusercontent.com/Rezondes/SurvivorsForge/main/registry/verified.json`.
+1. The platform API (`/v1/registry`).
 2. The last valid copy in the cache.
 3. The copy compiled into the binary.
 
-To change the list for all users, edit the file on `main`. No new release is needed.
+Without the API the launcher is offline: it shows the cached list with its age, and installs and updates wait until the API answers again. The addon list is managed on the platform; this file is the built-in copy for the first start without network.
 
 ## Platform
 

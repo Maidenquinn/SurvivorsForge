@@ -178,14 +178,18 @@ The volume name starts with the Compose project name, by default the folder name
 
 ## 6. The launcher
 
-A launcher reads the platform when it is built with the API's address:
+The launcher talks only to the API: the addon list, release and tag metadata and game versions
+come from there. Only the zip files are downloaded from GitHub directly. Build it with the API's
+address:
 
 ```bash
 SURVIVORSFORGE_API_URL=https://api.forge.example.com cargo build --release
 ```
 
 In the release workflow, set `SURVIVORSFORGE_API_URL` as an environment variable of the build
-step. Without it the launcher reads only `registry/verified.json`, as before.
+step. Without it the build uses the placeholder `https://api.survivorsforge.invalid`, which never
+answers. The same variable at run time overrides the built-in address, for testing against a local
+API. When the API cannot be reached, the launcher shows its cached list and installs nothing.
 
 ## Running only the API
 

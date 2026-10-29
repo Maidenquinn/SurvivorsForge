@@ -1,39 +1,42 @@
-//! The list of verified addons (`registry/verified.json`).
-//!
-//! Load order: the platform API (when this build knows its URL) -> remote JSON from the
-//! SurvivorsForge repo -> last good cached copy -> the copy compiled into the binary.
+//! The list of addons: the platform API (`/v1/registry`), else the last good cached copy, else
+//! the copy compiled into the binary. Without the API the launcher is offline: it shows the cached
+//! list but installs and updates nothing.
 
 pub use forge_core::registry::*;
 
 use crate::Result;
 use std::path::Path;
+use std::time::{Duration, SystemTime};
 
 pub const EMBEDDED: &str = include_str!("../registry/verified.json");
-pub const REMOTE_URL: &str =
-    concat!("https://raw.githubusercontent.com/", "Rezondes/SurvivorsForge", "/main/registry/verified.json");
 const CACHE_FILE: &str = "verified.json";
+/// Stands in until a release build sets the real address with `SURVIVORSFORGE_API_URL`.
+pub const PLACEHOLDER_API_URL: &str = "https://api.survivorsforge.invalid";
 
-/// The platform API, set at build time with `SURVIVORSFORGE_API_URL`. Without it the launcher only
-/// knows the verified list, exactly like before the platform existed.
-pub fn api_url() -> Option<&'static str> {
-    option_env!("SURVIVORSFORGE_API_URL").map(|u| u.trim_end_matches('/')).filter(|u| !u.is_empty())
+/// The platform API: `SURVIVORSFORGE_API_URL` at run time (self-hosting, tests), else the address
+/// compiled in by the release build, else the placeholder.
+pub fn api_url() -> String {
+    pick_api_url(std::env::var("SURVIVORSFORGE_API_URL").ok().as_deref(), option_env!("SURVIVORSFORGE_API_URL"))
 }
 
-/// Where to fetch the registry from, best first.
-pub fn sources(api: Option<&str>) -> Vec<(Origin, String)> {
-    let mut sources = Vec::new();
-    if let Some(api) = api {
-        sources.push((Origin::Api, format!("{api}/v1/registry")));
-    }
-    sources.push((Origin::Remote, REMOTE_URL.to_string()));
-    sources
+fn pick_api_url(runtime: Option<&str>, build: Option<&str>) -> String {
+    [runtime, build]
+        .into_iter()
+        .flatten()
+        .map(|u| u.trim().trim_end_matches('/'))
+        .find(|u| !u.is_empty())
+        .unwrap_or(PLACEHOLDER_API_URL)
+        .to_string()
+}
+
+pub fn registry_url(api: &str) -> String {
+    format!("{api}/v1/registry")
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Origin {
     /// The platform API: every addon with its trust level.
     Api,
-    Remote,
     Cache,
     Embedded,
 }
@@ -42,21 +45,37 @@ pub fn embedded() -> Registry {
     Registry::parse(EMBEDDED).expect("embedded registry is valid")
 }
 
-/// Picks the first usable registry of `fetched`, in order. A valid one also refreshes the cache.
-pub fn load(fetched: Vec<(Origin, Result<String>)>, cache_dir: &Path) -> (Registry, Origin) {
+/// The API's answer if it is a valid registry (it also refreshes the cache), else the cache, else
+/// the built-in copy. `None` loads without asking the API (at start-up).
+pub fn load(fetched: Option<Result<String>>, cache_dir: &Path) -> (Registry, Origin) {
     let cache = cache_dir.join(CACHE_FILE);
-    for (origin, text) in fetched {
-        if let Ok(text) = text
-            && let Ok(registry) = Registry::parse(&text)
-        {
-            let _ = crate::write_atomic(&cache, text.as_bytes());
-            return (registry, origin);
-        }
+    if let Some(Ok(text)) = fetched
+        && let Ok(registry) = Registry::parse(&text)
+    {
+        let _ = crate::write_atomic(&cache, text.as_bytes());
+        return (registry, Origin::Api);
     }
     if let Some(registry) = std::fs::read_to_string(&cache).ok().and_then(|t| Registry::parse(&t).ok()) {
         return (registry, Origin::Cache);
     }
     (embedded(), Origin::Embedded)
+}
+
+/// How old the cached list is, for the offline notice.
+pub fn cache_age(cache_dir: &Path, now: SystemTime) -> Option<Duration> {
+    let modified = std::fs::metadata(cache_dir.join(CACHE_FILE)).and_then(|m| m.modified()).ok()?;
+    now.duration_since(modified).ok()
+}
+
+/// "5 minutes", "3 hours", "2 days".
+pub fn describe_age(age: Duration) -> String {
+    let minutes = age.as_secs() / 60;
+    let (n, unit) = match minutes {
+        0..60 => (minutes, "minute"),
+        60..1440 => (minutes / 60, "hour"),
+        _ => (minutes / 1440, "day"),
+    };
+    format!("{n} {unit}{}", if n == 1 { "" } else { "s" })
 }
 
 #[cfg(test)]
@@ -87,48 +106,37 @@ mod tests {
     }
 
     #[test]
-    fn fallback_order() {
+    fn api_then_cache_then_embedded() {
         let dir = tempfile::tempdir().unwrap();
-        let (registry, origin) = load(vec![(Origin::Remote, Err(Error::Network("offline".into())))], dir.path());
-        assert_eq!(origin, Origin::Embedded);
-        assert_eq!(registry, embedded());
+        let offline = || Some(Err(Error::Network("offline".into())));
+        assert_eq!(load(offline(), dir.path()), (embedded(), Origin::Embedded));
 
-        let remote = r#"{"schema":1,"addons":[]}"#.to_string();
-        let (registry, origin) = load(vec![(Origin::Remote, Ok(remote))], dir.path());
-        assert_eq!(origin, Origin::Remote);
-        assert!(registry.addons.is_empty());
-
-        let (registry, origin) = load(vec![(Origin::Remote, Err(Error::Network("offline".into())))], dir.path());
-        assert_eq!(origin, Origin::Cache);
-        assert!(registry.addons.is_empty());
-
-        let (_, origin) = load(vec![(Origin::Remote, Ok("broken".into()))], dir.path());
-        assert_eq!(origin, Origin::Cache, "invalid remote falls back to cache");
-    }
-
-
-    #[test]
-    fn api_first_then_fallbacks() {
-        let dir = tempfile::tempdir().unwrap();
         let api = r#"{"schema":1,"addons":[{"id":"api","name":"A","author":"a","repo":"o/a","folders":["A"],"source":{"type":"tag"},"trust":"scanned"}]}"#;
-        let raw = r#"{"schema":1,"addons":[]}"#;
-        let offline = || Err(Error::Network("offline".into()));
-
-        let (registry, origin) = load(vec![(Origin::Api, Ok(api.into())), (Origin::Remote, Ok(raw.into()))], dir.path());
+        let (registry, origin) = load(Some(Ok(api.into())), dir.path());
         assert_eq!((origin, registry.addons.len()), (Origin::Api, 1));
         assert_eq!(registry.addons[0].trust, Some(forge_core::trust::Trust::Scanned));
 
-        let (_, origin) = load(vec![(Origin::Api, Ok("<html>502</html>".into())), (Origin::Remote, Ok(raw.into()))], dir.path());
-        assert_eq!(origin, Origin::Remote, "a broken API answer falls back to the raw file");
-        let (registry, origin) = load(vec![(Origin::Api, offline()), (Origin::Remote, offline())], dir.path());
-        assert_eq!((origin, registry.addons.len()), (Origin::Cache, 0), "then the cache");
+        let (registry, origin) = load(offline(), dir.path());
+        assert_eq!((origin, registry.addons.len()), (Origin::Cache, 1), "the cached API answer");
+        let (_, origin) = load(Some(Ok("<html>502</html>".into())), dir.path());
+        assert_eq!(origin, Origin::Cache, "a broken API answer falls back to the cache");
+        assert_eq!(load(None, dir.path()).1, Origin::Cache, "start-up reads the cache");
+        assert!(cache_age(dir.path(), SystemTime::now() + Duration::from_secs(120)).unwrap() >= Duration::from_secs(119));
     }
 
     #[test]
-    fn no_api_url_keeps_old_behaviour() {
-        assert_eq!(sources(None), [(Origin::Remote, REMOTE_URL.to_string())]);
-        let both = sources(Some("https://api.test"));
-        assert_eq!(both[0], (Origin::Api, "https://api.test/v1/registry".to_string()));
-        assert_eq!(both[1].0, Origin::Remote);
+    fn api_url_runtime_before_build_before_placeholder() {
+        assert_eq!(pick_api_url(Some("http://localhost:8080/"), Some("https://api.real")), "http://localhost:8080");
+        assert_eq!(pick_api_url(Some(" "), Some("https://api.real")), "https://api.real");
+        assert_eq!(pick_api_url(None, None), PLACEHOLDER_API_URL);
+        assert_eq!(registry_url("https://api.test"), "https://api.test/v1/registry");
+    }
+
+    #[test]
+    fn ages_read_naturally() {
+        assert_eq!(describe_age(Duration::from_secs(30)), "0 minutes");
+        assert_eq!(describe_age(Duration::from_secs(60)), "1 minute");
+        assert_eq!(describe_age(Duration::from_secs(3 * 3600)), "3 hours");
+        assert_eq!(describe_age(Duration::from_secs(2 * 86400)), "2 days");
     }
 }

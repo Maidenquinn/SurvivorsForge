@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 use survivorsforge::config::{self, Config};
 use survivorsforge::controller::{self, Badge, Row, RowState, UNMANAGED_PREFIX};
-use survivorsforge::github::{normalize_repo, Client, GitHub};
+use survivorsforge::github::{normalize_repo, ApiGitHub, Client, GitHub};
 use survivorsforge::install::{self, Request};
 use survivorsforge::registry::{self, Origin, Registry, SourceSpec};
 use survivorsforge::repo_detect;
@@ -37,6 +37,8 @@ struct Core {
     self_update: Option<Available>,
     /// The platform's game versions, oldest first; empty without the platform.
     game_versions: Vec<controller::GameVersion>,
+    /// The last check could not reach the platform: installs and updates wait.
+    offline: bool,
 }
 
 type Shared = Arc<Mutex<Core>>;
@@ -47,7 +49,7 @@ fn lock(shared: &Shared) -> MutexGuard<'_, Core> {
 
 impl Core {
     fn new(data_dir: PathBuf, config: Option<Config>) -> Core {
-        let registry = registry::load(Vec::new(), &data_dir.join("cache")).0;
+        let registry = registry::load(None, &data_dir.join("cache")).0;
         let mut core = Core {
             data_dir,
             config: Config::default(),
@@ -63,6 +65,7 @@ impl Core {
             status_error: false,
             self_update: None,
             game_versions: Vec::new(),
+            offline: false,
         };
         if let Some(config) = config {
             core.switch_config(config);
@@ -94,6 +97,11 @@ impl Core {
 
     fn client(&self) -> Client {
         Client::new()
+    }
+
+    /// Release and tag metadata, through the platform.
+    fn github(&self) -> ApiGitHub {
+        ApiGitHub::new(Client::new(), &registry::api_url())
     }
 
     fn rescan(&mut self) {
@@ -274,13 +282,16 @@ fn install_remote(
     source: Source,
     remote: Option<RemoteVersion>,
 ) -> survivorsforge::Result<String> {
-    let (client, downloads, addons) = {
+    let (client, github, downloads, addons) = {
         let core = lock(shared);
-        (core.client(), core.downloads(), core.addons_dir().to_path_buf())
+        if core.offline {
+            return Err(Error::Offline);
+        }
+        (core.client(), core.github(), core.downloads(), core.addons_dir().to_path_buf())
     };
     let remote = match remote {
         Some(remote) => remote,
-        None => updates::resolve_remote(&client, repo, spec)?,
+        None => updates::resolve_remote(&github, repo, spec)?,
     };
     let zip = downloads.join(format!("{}.zip", unique_name()));
     client.download(&remote.download, &zip)?;
@@ -470,17 +481,22 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
     }
     refresh(ui, shared);
     run_bg(ui.as_weak(), shared.clone(), None, |shared| {
-        let (client, mut state, cache) = {
+        let (client, github, mut state, cache) = {
             let core = lock(shared);
-            (core.client(), core.state.clone(), core.data_dir.join("cache"))
+            (core.client(), core.github(), core.state.clone(), core.data_dir.join("cache"))
         };
-        let fetched = registry::sources(registry::api_url()).into_iter().map(|(origin, url)| (origin, client.get_text(&url))).collect();
-        let (registry, origin) = registry::load(fetched, &cache);
-        let game_versions = fetch_game_versions(&client);
-        let results = updates::check_all(&client, &mut state, &registry);
-        let self_update = match client.latest_release(APP_REPO) {
-            Ok(Some(release)) => self_update::available(APP_VERSION, &release),
-            _ => None,
+        let api = registry::api_url();
+        let (registry, origin) = registry::load(Some(client.get_text(&registry::registry_url(&api))), &cache);
+        let offline = origin != Origin::Api;
+        // Offline every check would fail: keep the last statuses instead of a wall of errors.
+        let (game_versions, results, self_update) = if offline {
+            (Vec::new(), None, None)
+        } else {
+            let self_update = match github.latest_release(APP_REPO) {
+                Ok(Some(release)) => self_update::available(APP_VERSION, &release),
+                _ => None,
+            };
+            (fetch_game_versions(&client, &api), Some(updates::check_all(&github, &mut state, &registry)), self_update)
         };
 
         let mut core = lock(shared);
@@ -500,10 +516,22 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
         if changed {
             core.save_state();
         }
-        core.statuses = results.into_iter().collect();
+        if let Some(results) = results {
+            core.statuses = results.into_iter().collect();
+        }
         core.self_update = self_update;
+        core.offline = offline;
         core.checking = false;
         core.rescan();
+        if offline {
+            let age = registry::cache_age(&cache, std::time::SystemTime::now())
+                .filter(|_| origin == Origin::Cache)
+                .map(|age| format!("the list from {} ago", registry::describe_age(age)))
+                .unwrap_or_else(|| "the built-in list".into());
+            return Err(Error::NotInstallable(format!(
+                "Offline: the SurvivorsForge server cannot be reached, showing {age}. Installing and updating is paused."
+            )));
+        }
 
         let updates = controller::update_all_ids(&core.statuses).len();
         let failed = core.statuses.values().filter(|s| matches!(s, UpdateStatus::CheckFailed(_))).count();
@@ -514,11 +542,6 @@ fn check_updates(ui: &AppWindow, shared: &Shared) {
         };
         if failed > 0 {
             message += &format!(", {failed} checks failed");
-        }
-        match origin {
-            Origin::Api | Origin::Remote => {}
-            Origin::Cache => message += " (verified list: cached copy)",
-            Origin::Embedded => message += " (verified list: built-in copy)",
         }
         Ok(message)
     });
@@ -622,11 +645,11 @@ fn on_repo_submit(ui: &AppWindow, shared: &Shared) {
     ui.set_repo_busy(true);
     let (weak, shared) = (ui.as_weak(), shared.clone());
     std::thread::spawn(move || {
-        let (client, registry, downloads) = {
+        let (client, github, registry, downloads) = {
             let core = lock(&shared);
-            (core.client(), core.registry.clone(), core.downloads())
+            (core.client(), core.github(), core.registry.clone(), core.downloads())
         };
-        let result = repo_detect::detect(&client, &registry, &repo, &mut |url| {
+        let result = repo_detect::detect(&github, &registry, &repo, &mut |url| {
             let zip = downloads.join(format!("{}.zip", unique_name()));
             client.download(url, &zip)?;
             archive::analyze(&zip).map_err(Error::from).map(|addons| (zip.clone(), addons)).inspect_err(|_| {
@@ -790,8 +813,7 @@ fn fill_game_versions(ui: &AppWindow, core: &Core) {
 }
 
 /// The platform's game versions, oldest first. Empty when there is no platform or it fails.
-fn fetch_game_versions(client: &Client) -> Vec<controller::GameVersion> {
-    let Some(api) = registry::api_url() else { return Vec::new() };
+fn fetch_game_versions(client: &Client, api: &str) -> Vec<controller::GameVersion> {
     let Ok(text) = client.get_text(&format!("{api}/v1/game-versions")) else { return Vec::new() };
     let list: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     list.iter()

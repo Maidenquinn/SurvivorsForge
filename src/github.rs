@@ -1,13 +1,13 @@
-//! Thin GitHub client on github.com web endpoints; the parsers live in `forge_core::github_web`.
+//! What the launcher needs from GitHub: release and tag metadata comes from forge-api
+//! (`crate::api::ApiGitHub`), only the zip files are downloaded from GitHub directly.
 
 pub use forge_core::github_web::*;
 
 use crate::{Error, Result};
 use std::io::Read;
 use std::path::Path;
+use std::collections::HashMap;
 use std::time::Duration;
-
-const WEB: &str = "https://github.com";
 
 /// What the update and detection logic needs from GitHub. `Client` is the real one; tests use fakes.
 pub trait GitHub {
@@ -61,10 +61,20 @@ pub fn source_zip_url(repo: &str, git_ref: &str) -> String {
     format!("https://codeload.github.com/{repo}/zip/{git_ref}")
 }
 
+/// The only hosts zips are downloaded from: GitHub's release and archive downloads.
+pub const DOWNLOAD_HOSTS: &[&str] =
+    &["github.com", "codeload.github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com"];
+
+/// `url` is https on one of `DOWNLOAD_HOSTS`.
+pub fn download_allowed(url: &str) -> bool {
+    let Some(rest) = url.strip_prefix("https://") else { return false };
+    let host = rest.split(['/', '?', '#']).next().unwrap_or_default().to_ascii_lowercase();
+    DOWNLOAD_HOSTS.contains(&host.as_str())
+}
+
+#[derive(Clone)]
 pub struct Client {
     agent: ureq::Agent,
-    /// Same settings, but returns redirects instead of following them.
-    no_redirect: ureq::Agent,
 }
 
 impl Default for Client {
@@ -75,13 +85,12 @@ impl Default for Client {
 
 impl Client {
     pub fn new() -> Client {
-        let builder = || {
-            ureq::AgentBuilder::new()
-                .timeout_connect(Duration::from_secs(10))
-                .timeout_read(Duration::from_secs(60))
-                .user_agent(&format!("{}/{}", crate::APP_NAME, crate::APP_VERSION))
-        };
-        Client { agent: builder().build(), no_redirect: builder().redirects(0).build() }
+        let agent = ureq::AgentBuilder::new()
+            .timeout_connect(Duration::from_secs(10))
+            .timeout_read(Duration::from_secs(60))
+            .user_agent(&format!("{}/{}", crate::APP_NAME, crate::APP_VERSION))
+            .build();
+        Client { agent }
     }
 
     fn call(req: ureq::Request) -> Result<ureq::Response> {
@@ -96,12 +105,14 @@ impl Client {
         Self::call(self.agent.get(url))?.into_string().map_err(|e| Error::Network(e.to_string()))
     }
 
-    fn refs(&self, repo: &str) -> Result<Refs> {
-        Ok(parse_refs(&self.get_text(&format!("{WEB}/{repo}.git/info/refs?service=git-upload-pack"))?))
-    }
-
-    /// Downloads into a temp file next to `dest` and renames it only when complete.
+    /// Downloads into a temp file next to `dest` and renames it only when complete. Only from
+    /// GitHub: the URL comes from the server, which must not point the launcher elsewhere.
+    // ponytail: ureq follows redirects unchecked; the start URL is checked, and the hash check
+    // after the download catches a swapped file of a platform version.
     pub fn download(&self, url: &str, dest: &Path) -> Result<()> {
+        if !download_allowed(url) {
+            return Err(Error::ForbiddenHost(url.to_string()));
+        }
         let resp = Self::call(self.agent.get(url))?;
         let tmp = dest.with_extension("part");
         if let Some(dir) = dest.parent() {
@@ -121,20 +132,54 @@ impl Client {
     }
 }
 
-impl GitHub for Client {
+/// Release and tag metadata through forge-api (`/v1/github/...`), which caches it.
+pub struct ApiGitHub {
+    client: Client,
+    api: String,
+}
+
+#[derive(serde::Deserialize)]
+struct RefsAnswer {
+    head: Option<String>,
+    #[serde(default)]
+    branches: HashMap<String, String>,
+    #[serde(default)]
+    tags: Vec<Tag>,
+}
+
+impl ApiGitHub {
+    pub fn new(client: Client, api: &str) -> ApiGitHub {
+        ApiGitHub { client, api: api.trim_end_matches('/').to_string() }
+    }
+
+    fn get<T: serde::de::DeserializeOwned>(&self, path: &str) -> Result<T> {
+        let text = self.client.get_text(&format!("{}/v1/github/{path}", self.api))?;
+        serde_json::from_str(&text).map_err(|e| Error::Parse(e.to_string()))
+    }
+
+    fn refs(&self, repo: &str) -> Result<RefsAnswer> {
+        self.get(&format!("{repo}/refs"))
+    }
+}
+
+/// Percent-encodes a tag for one path segment (`/` and other reserved characters).
+fn encode_segment(s: &str) -> String {
+    s.bytes()
+        .map(|b| if b.is_ascii_alphanumeric() || b"-_.~+".contains(&b) { (b as char).to_string() } else { format!("%{b:02X}") })
+        .collect()
+}
+
+impl GitHub for ApiGitHub {
     fn latest_release(&self, repo: &str) -> Result<Option<Release>> {
-        let resp = Self::call(self.no_redirect.get(&format!("{WEB}/{repo}/releases/latest")))?;
-        let Some(tag) = resp.header("location").and_then(parse_latest_location) else { return Ok(None) };
-        self.release(repo, &tag).map(Some)
+        self.get(&format!("{repo}/releases/latest"))
     }
 
     fn release(&self, repo: &str, tag: &str) -> Result<Release> {
-        let html = self.get_text(&format!("{WEB}/{repo}/releases/expanded_assets/{tag}"))?;
-        Ok(Release { assets: parse_assets(&html, WEB, repo, tag), tag: tag.to_string() })
+        self.get(&format!("{repo}/releases/{}", encode_segment(tag)))
     }
 
     fn tags(&self, repo: &str) -> Result<Vec<Tag>> {
-        Ok(tags_from_refs(&self.refs(repo)?.refs))
+        Ok(self.refs(repo)?.tags)
     }
 
     fn default_branch(&self, repo: &str) -> Result<String> {
@@ -142,13 +187,7 @@ impl GitHub for Client {
     }
 
     fn commit_sha(&self, repo: &str, git_ref: &str) -> Result<String> {
-        let wanted = format!("refs/heads/{git_ref}");
-        self.refs(repo)?
-            .refs
-            .into_iter()
-            .find(|(_, name)| *name == wanted)
-            .map(|(sha, _)| sha)
-            .ok_or_else(|| Error::Parse(format!("branch {git_ref} not found")))
+        self.refs(repo)?.branches.remove(git_ref).ok_or_else(|| Error::Parse(format!("branch {git_ref} not found")))
     }
 }
 
@@ -169,14 +208,14 @@ mod tests {
     #[test]
     fn parses_release_assets() {
         let html = include_str!("../tests/fixtures/github/assets_survivor_ui.html");
-        let assets = parse_assets(html, WEB, "morderous/survivor-ui", "v3.0.36");
+        let assets = parse_assets(html, "https://github.com", "morderous/survivor-ui", "v3.0.36");
         let names: Vec<&str> = assets.iter().map(|a| a.name.as_str()).collect();
         assert_eq!(names, ["SurvivorUI-Installer.zip", "SurvivorUI-v3.0.36.zip"]);
         assert_eq!(
             assets[1].url,
             "https://github.com/morderous/survivor-ui/releases/download/v3.0.36/SurvivorUI-v3.0.36.zip"
         );
-        assert!(parse_assets("<p>nothing</p>", WEB, "a/b", "v1").is_empty());
+        assert!(parse_assets("<p>nothing</p>", "https://github.com", "a/b", "v1").is_empty());
     }
 
     #[test]
@@ -238,23 +277,35 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "needs network"]
-    fn github_live() {
-        let client = Client::new();
-        let release = client.latest_release("cadoky/LuckyOdds").unwrap().unwrap();
+    fn downloads_only_from_github() {
+        assert!(download_allowed("https://github.com/o/r/releases/download/v1/a.zip"));
+        assert!(download_allowed("https://codeload.github.com/o/r/zip/v1"));
+        for url in ["http://github.com/a.zip", "https://github.com.evil.test/a.zip", "https://evil.test/github.com/a.zip", "file:///c:/a.zip"] {
+            assert!(!download_allowed(url), "{url}");
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let refused = Client::new().download("https://evil.test/a.zip", &dir.path().join("a.zip"));
+        assert_eq!(refused, Err(Error::ForbiddenHost("https://evil.test/a.zip".into())));
+    }
+
+    #[test]
+    fn tags_are_encoded_for_the_path() {
+        assert_eq!(encode_segment("v1.2+b/x y"), "v1.2+b%2Fx%20y");
+    }
+
+    #[test]
+    #[ignore = "needs a running forge-api in SURVIVORSFORGE_API_URL and network"]
+    fn api_live() {
+        let github = ApiGitHub::new(Client::new(), &crate::registry::api_url());
+        let release = github.latest_release("cadoky/LuckyOdds").unwrap().unwrap();
         assert!(release.tag.starts_with('v'));
         let dir = tempfile::tempdir().unwrap();
         let zip = dir.path().join("a.zip");
-        client.download(&release.assets[0].url, &zip).unwrap();
+        Client::new().download(&release.assets[0].url, &zip).unwrap();
         assert!(!crate::archive::analyze(&zip).unwrap().is_empty());
-        assert_eq!(client.default_branch("cadoky/LuckyOdds").unwrap(), "main");
-        assert_eq!(client.commit_sha("cadoky/LuckyOdds", "main").unwrap().len(), 40);
-        assert!(client.tags("threenox/BordoUI").unwrap()[0].name.starts_with('v'));
-        let spec = crate::registry::SourceSpec::Release { asset: "AzerothFieldKit-*.zip".into() };
-        let pre = crate::updates::resolve_remote(&client, "Maidenquinn/azeroth-fieldkit", &spec).unwrap();
-        assert!(pre.id.starts_with('v') && pre.download.ends_with(".zip"));
-        assert_eq!(client.latest_release("Maidenquinn/azeroth-fieldkit").unwrap(), None);
-        assert_eq!(client.latest_release("nope-xyz-123/nothing"), Err(Error::NotFound));
-        assert_eq!(client.tags("nope-xyz-123/nothing"), Err(Error::NotFound));
+        assert_eq!(github.default_branch("cadoky/LuckyOdds").unwrap(), "main");
+        assert_eq!(github.commit_sha("cadoky/LuckyOdds", "main").unwrap().len(), 40);
+        assert!(github.tags("threenox/BordoUI").unwrap()[0].name.starts_with('v'));
+        assert_eq!(github.latest_release("nope-xyz-123/nothing"), Err(Error::NotFound));
     }
 }
