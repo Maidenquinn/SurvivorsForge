@@ -67,6 +67,9 @@ pub struct NoteForm {
     name: String,
     #[serde(default)]
     sort_key: String,
+    /// Admin page to return to after a version action.
+    #[serde(default)]
+    back: String,
     /// Categories only: the top-level category, empty for none.
     #[serde(default)]
     parent: String,
@@ -134,7 +137,9 @@ pub async fn version_action(
         "accept-source" => (Method::POST, format!("/v1/admin/versions/{id}/accept-source"), "New file accepted."),
         _ => return Err(WebError::NotFound),
     };
-    back("/admin/review", state.api.call(method, &route, Some(&token), Some(&body)).await, done)
+    // Only our own admin pages, never a URL from the form.
+    let page = if form.back.starts_with("/admin/addons/") && !form.back.contains("//") { form.back.as_str() } else { "/admin/review" };
+    back(page, state.api.call(method, &route, Some(&token), Some(&body)).await, done)
 }
 
 pub async fn reports(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Query(flash): Query<Flash>) -> WebResult<Html<String>> {
@@ -215,6 +220,29 @@ pub async fn ban(State(state): State<AppState>, jar: PrivateCookieJar, Path((git
     back(&page, result, done)
 }
 
+#[derive(Deserialize)]
+pub struct AddonSearch {
+    #[serde(default)]
+    q: String,
+}
+
+/// `GET /admin/addons?q=`: find an addon by name to manage it.
+pub async fn addons(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Query(search): Query<AddonSearch>) -> WebResult<Html<String>> {
+    let (user, _) = admin(&state, &jar).await?;
+    let q = search.q.trim().to_string();
+    let query = reqwest::Url::parse_with_params("http://x/v1/addons", &[("q", q.as_str()), ("sort", if q.is_empty() { "name" } else { "relevance" })])
+        .map(|u| u.query().unwrap_or_default().to_string())
+        .unwrap_or_default();
+    let list = state.api.get(&format!("/v1/addons?{query}"), None).await?;
+    let found = list["addons"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|a| (s(&a["slug"]), s(&a["name"]), a["trust"].as_str().unwrap_or("none").to_string()))
+        .collect();
+    Ok(render(&crate::templates::AdminAddonsPage { user: Some(user), csrf: csrf.0, q, found }))
+}
+
 pub async fn addon(
     State(state): State<AppState>,
     jar: PrivateCookieJar,
@@ -224,9 +252,26 @@ pub async fn addon(
 ) -> WebResult<Html<String>> {
     let (user, _) = admin(&state, &jar).await?;
     let a = state.api.get(&format!("/v1/addons/{slug}"), None).await?;
+    let versions = state
+        .api
+        .get(&format!("/v1/addons/{slug}/versions"), None)
+        .await?
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|v| crate::templates::AdminVersionRow {
+            id: v["id"].as_i64().unwrap_or(0),
+            tag: s(&v["tag"]),
+            published: s(&v["published_at"]).chars().take(10).collect(),
+            trust: s(&v["trust"]),
+            critical: v["findings"]["critical"].as_i64().unwrap_or(0),
+            warn: v["findings"]["warn"].as_i64().unwrap_or(0),
+        })
+        .collect();
     Ok(render(&AdminAddonPage {
         user: Some(user),
         csrf: csrf.0,
+        versions,
         slug,
         name: s(&a["name"]),
         owner: if a["owner"].is_object() { s(&a["owner"]["login"]) } else { String::new() },

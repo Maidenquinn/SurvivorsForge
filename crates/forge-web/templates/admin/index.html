@@ -2,6 +2,11 @@
 {% block title %}Admin - SurvivorsForge{% endblock %}
 {% block content %}
 <h1>Admin</h1>
+<form class="panel admin-actions" method="get" action="/admin/addons" role="search">
+  <label for="q">Manage an addon: versions, verification, owner, block</label>
+  <input id="q" type="search" name="q" placeholder="Name">
+  <button type="submit">Find</button>
+</form>
 <div class="grid">
   <a class="panel tile" href="/admin/review"><strong>{{ queue }}</strong> version{% if queue != 1 %}s{% endif %} to review</a>
   <a class="panel tile" href="/admin/reports"><strong>{{ reports }}</strong> open report{% if reports != 1 %}s{% endif %}</a>

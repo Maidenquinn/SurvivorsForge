@@ -438,6 +438,8 @@ pub struct AdminRow {
 pub struct AdminAddonPage {
     pub user: Option<Visitor>,
     pub csrf: String,
+    /// Newest first.
+    pub versions: Vec<AdminVersionRow>,
     pub slug: String,
     pub name: String,
     pub owner: String,
@@ -445,6 +447,25 @@ pub struct AdminAddonPage {
     pub block_reason: String,
     pub msg: Option<String>,
     pub error: Option<String>,
+}
+
+pub struct AdminVersionRow {
+    pub id: i64,
+    pub tag: String,
+    pub published: String,
+    pub trust: String,
+    pub critical: i64,
+    pub warn: i64,
+}
+
+#[derive(Template)]
+#[template(path = "admin/addons.html")]
+pub struct AdminAddonsPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub q: String,
+    /// (slug, name, trust of the current version)
+    pub found: Vec<(String, String, String)>,
 }
 
 #[derive(Template)]

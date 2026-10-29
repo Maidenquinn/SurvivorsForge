@@ -17,6 +17,34 @@
   </form>
 </section>
 <section class="panel">
+  <h2>Versions</h2>
+  {% if versions.is_empty() %}<p class="muted">No version yet.</p>{% endif %}
+  {% for v in versions %}
+  <div class="member">
+    <strong><a href="/addons/{{ slug }}/versions/{{ v.tag }}">{{ v.tag }}</a></strong>
+    <span class="muted">{{ v.published }}</span>
+    <span class="badge {% if v.trust == "verified" %}ok{% else if v.trust == "flagged" || v.trust == "blocked" %}bad{% endif %}">{{ v.trust }}</span>
+    {% if v.critical > 0 %}<span class="muted">{{ v.critical }} critical</span>{% endif %}
+    {% if v.warn > 0 %}<span class="muted">{{ v.warn }} warn</span>{% endif %}
+    {% if v.trust == "blocked" %}
+      {% let action = "unblock" %}{% let label = "Unblock" %}{% let class = "secondary" %}
+      {% include "admin/version_action.html" %}
+    {% else %}
+      {% if v.trust == "verified" %}
+        {% let action = "unverify" %}{% let label = "Remove verification" %}{% let class = "secondary" %}
+        {% include "admin/version_action.html" %}
+      {% else if v.trust != "unscanned" %}
+        {% let action = "verify" %}{% let label = "Verify" %}{% let class = "" %}
+        {% include "admin/version_action.html" %}
+      {% endif %}
+      {% let action = "block" %}{% let label = "Block" %}{% let class = "danger" %}
+      {% include "admin/version_action.html" %}
+    {% endif %}
+  </div>
+  {% endfor %}
+  <p class="muted">The tag opens the version with every finding. Verifying a flagged version needs a note why the findings are fine.</p>
+</section>
+<section class="panel">
   <h2>Block</h2>
   {% if blocked %}
   <p><span class="badge bad">Blocked</span> {{ block_reason }}</p>

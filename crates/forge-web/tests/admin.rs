@@ -116,10 +116,53 @@ async fn game_versions_and_categories_crud() {
     assert!(page.location().starts_with("/admin/list/categories?msg="));
 }
 
+fn lucky_versions() -> Value {
+    json!([
+        { "id": 12, "tag": "v2", "published_at": "2026-06-01T00:00:00Z", "trust": "flagged", "findings": { "critical": 0, "warn": 2, "info": 0 } },
+        { "id": 11, "tag": "v1", "published_at": "2026-05-01T00:00:00Z", "trust": "verified", "findings": { "critical": 0, "warn": 0, "info": 1 } },
+        { "id": 10, "tag": "v0", "published_at": "2026-04-01T00:00:00Z", "trust": "blocked", "findings": { "critical": 1, "warn": 0, "info": 0 } },
+    ])
+}
+
+#[tokio::test]
+async fn every_version_of_an_addon_can_be_verified_or_blocked() {
+    let mut web = as_admin().await;
+    get_json(&web, "/v1/addons/lucky", json!({ "slug": "lucky", "name": "Lucky", "owner": null, "blocked": false })).await;
+    get_json(&web, "/v1/addons/lucky/versions", lucky_versions()).await;
+    let page = web.get("/admin/addons/lucky").await;
+    assert_eq!(page.status, StatusCode::OK, "{}", page.body);
+    for text in ["v2", "2 warn", "/admin/versions/12/verify", "/admin/versions/12/block", "/admin/versions/11/unverify", "/admin/versions/10/unblock", "/addons/lucky/versions/v2"] {
+        assert!(page.body.contains(text), "missing {text}");
+    }
+    assert!(!page.body.contains("/admin/versions/11/verify\""), "verified versions offer no second verify");
+
+    expect(&web, "POST", "/v1/admin/versions/12/verification", json!({ "note": "fine" })).await;
+    let done = web.post_form("/admin/versions/12/verify", &[("note", "fine"), ("back", "/admin/addons/lucky")]).await;
+    assert!(done.location().starts_with("/admin/addons/lucky?msg="), "back to the addon: {}", done.location());
+    expect(&web, "DELETE", "/v1/admin/versions/10/block", json!({ "note": "ok now" })).await;
+    let done = web.post_form("/admin/versions/10/unblock", &[("note", "ok now"), ("back", "https://evil.test/")]).await;
+    assert!(done.location().starts_with("/admin/review?"), "only admin pages as target: {}", done.location());
+}
+
+#[tokio::test]
+async fn admins_find_addons_by_name() {
+    let mut web = as_admin().await;
+    Mock::given(method("GET"))
+        .and(path("/v1/addons"))
+        .and(wiremock::matchers::query_param("q", "luck"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "total": 1, "addons": [{ "slug": "lucky", "name": "Lucky Odds", "trust": "flagged" }] })))
+        .mount(&web.api)
+        .await;
+    let page = web.get("/admin/addons?q=luck").await;
+    assert!(page.body.contains("href=\"/admin/addons/lucky\"") && page.body.contains("Lucky Odds"), "{}", page.body);
+    assert!(web.get("/admin").await.body.contains("action=\"/admin/addons\""), "search on the admin start page");
+}
+
 #[tokio::test]
 async fn owner_transfer_form() {
     let mut web = as_admin().await;
     get_json(&web, "/v1/addons/lucky", json!({ "slug": "lucky", "name": "Lucky", "owner": null, "blocked": false })).await;
+    get_json(&web, "/v1/addons/lucky/versions", json!([])).await;
     let page = web.get("/admin/addons/lucky").await;
     assert!(page.body.contains("Nobody yet"));
     expect(&web, "POST", "/v1/admin/addons/lucky/owner", json!({ "login": "cadoky", "note": "author" })).await;

@@ -109,6 +109,14 @@ async fn addon_page_sections() {
 }
 
 #[tokio::test]
+async fn admins_get_a_manage_link_on_addon_pages() {
+    let mut web = with_addon("scanned", "available").await;
+    assert!(!web.get("/addons/lucky").await.body.contains("/admin/addons/lucky"));
+    web.login_as("tok", common::me("root", "admin")).await;
+    assert!(web.get("/addons/lucky").await.body.contains("/admin/addons/lucky"));
+}
+
+#[tokio::test]
 async fn trust_notice_per_level() {
     let cases = [
         ("unscanned", "available", "Not checked automatically yet", true),

@@ -207,6 +207,7 @@ label.pick:last-child { border-bottom: none; }
 input[readonly] { color: var(--gold-bright); }
 .member { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .member form { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0; }
+.inline-action input { width: 12em; min-height: 34px; }
 .preview { border: 1px dashed var(--outline); border-radius: var(--radius); padding: 12px; min-height: 48px; background: var(--field); }
 .htmx-indicator { display: none; }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline; }

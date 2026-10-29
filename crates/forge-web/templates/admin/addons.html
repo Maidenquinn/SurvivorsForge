@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Addons - Admin - SurvivorsForge{% endblock %}
+{% block content %}
+<p><a href="/admin">Admin</a></p>
+<h1>Addons</h1>
+<form class="panel" method="get" action="/admin/addons" role="search">
+  <label for="q">Name</label>
+  <input id="q" type="search" name="q" value="{{ q }}">
+  <p><button type="submit">Search</button></p>
+</form>
+<section class="panel">
+  {% if found.is_empty() %}<p class="muted">No addon matches.</p>{% endif %}
+  {% for (slug, name, trust) in found %}
+  <div class="member"><a href="/admin/addons/{{ slug }}">{{ name }}</a> <span class="badge">{{ trust }}</span></div>
+  {% endfor %}
+</section>
+{% endblock %}

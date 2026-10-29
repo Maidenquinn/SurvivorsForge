@@ -110,6 +110,7 @@ pub fn router(state: AppState) -> Router {
         .route("/admin/reports/{id}/resolve", post(crate::admin::resolve_report))
         .route("/admin/users", get(crate::admin::users))
         .route("/admin/users/{id}/{action}", post(crate::admin::ban))
+        .route("/admin/addons", get(crate::admin::addons))
         .route("/admin/addons/new", get(crate::admin::add_addon_page).post(crate::admin::add_addon))
         .route("/admin/addons/{slug}", get(crate::admin::addon))
         .route("/admin/addons/{slug}/{action}", post(crate::admin::addon_action))
