@@ -130,6 +130,21 @@ async fn installation_lookup_uses_app_jwt_and_404_is_none() {
 }
 
 #[tokio::test]
+async fn a_read_token_lifts_the_limit_without_installation() {
+    // GitHub allows 60 requests per hour without a token and 5000 with one.
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/users/o/repos"))
+        .and(header("authorization", "Bearer read-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([repo_json()])))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let gh = client(&server, Arc::new(Mutex::new(Utc::now()))).with_read_token(Some("read-token".into()));
+    assert_eq!(gh.user_repos("o").await.unwrap().len(), 1);
+}
+
+#[tokio::test]
 async fn user_repos_need_no_installation() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))

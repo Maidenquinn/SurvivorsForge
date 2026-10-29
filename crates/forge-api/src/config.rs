@@ -16,6 +16,8 @@ pub struct Config {
     /// The website's address: it limits each visitor itself, so the API does not count its requests.
     pub website_ip: Option<IpAddr>,
     pub github_api_url: String,
+    /// Token for public GitHub reads outside an installation; 5000 instead of 60 requests per hour.
+    pub github_read_token: Option<String>,
     pub github_app_id: String,
     /// PEM text; `\n` escapes allowed. Read by `github::app_auth::load_private_key`.
     pub github_app_private_key: Option<String>,
@@ -72,6 +74,7 @@ impl Config {
         "TRUSTED_PROXIES",
         "WEBSITE_IP",
         "GITHUB_API_URL",
+        "GITHUB_READ_TOKEN",
         "GITHUB_APP_ID",
         "GITHUB_APP_PRIVATE_KEY",
         "GITHUB_APP_PRIVATE_KEY_FILE",
@@ -124,6 +127,7 @@ impl Config {
                 .collect::<Result<_, _>>()?,
             website_ip: get("WEBSITE_IP").map(|ip| ip.parse().map_err(|_| invalid("WEBSITE_IP", ip))).transpose()?,
             github_api_url: parse("GITHUB_API_URL", "https://api.github.com")?.trim_end_matches('/').to_string(),
+            github_read_token: get("GITHUB_READ_TOKEN").map(str::to_string),
             github_app_id: required("GITHUB_APP_ID")?,
             github_app_private_key: get("GITHUB_APP_PRIVATE_KEY").map(str::to_string),
             github_app_private_key_file: get("GITHUB_APP_PRIVATE_KEY_FILE").map(str::to_string),
@@ -165,6 +169,7 @@ impl Config {
             trusted_proxies: Vec::new(),
             website_ip: None,
             github_api_url: "http://github.test".into(),
+            github_read_token: None,
             github_app_id: "1".into(),
             github_app_private_key: None,
             github_app_private_key_file: None,

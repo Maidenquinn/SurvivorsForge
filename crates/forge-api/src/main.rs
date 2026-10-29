@@ -70,7 +70,7 @@ fn build_state(config: Config, pool: sqlx::PgPool) -> Result<AppState, String> {
         client_id: config.github_client_id.clone(),
         client_secret: config.github_client_secret.clone(),
     };
-    let github = GitHubClient::new(&config.github_api_url, &config.github_app_id, key, Arc::new(chrono::Utc::now)).with_oauth(oauth);
+    let github = GitHubClient::new(&config.github_api_url, &config.github_app_id, key, Arc::new(chrono::Utc::now)).with_oauth(oauth).with_read_token(config.github_read_token.clone());
     Ok(AppState { pool, config: Arc::new(config), github: Arc::new(github), clock: Arc::new(chrono::Utc::now) })
 }
 
