@@ -27,6 +27,8 @@ pub struct Config {
     pub public_image_url: String,
     /// Secret of the GitHub App webhook, checked against `X-Hub-Signature-256`.
     pub github_webhook_secret: String,
+    /// Versions the source check looks at per run.
+    pub source_check_batch: i64,
 }
 
 #[derive(Debug, PartialEq)]
@@ -58,6 +60,7 @@ impl Config {
         "ADMIN_GITHUB_IDS",
         "PUBLIC_IMAGE_URL",
         "GITHUB_WEBHOOK_SECRET",
+        "SOURCE_CHECK_BATCH",
     ];
 
     pub fn from_env() -> Result<Config, ConfigError> {
@@ -96,6 +99,10 @@ impl Config {
                 .collect::<Result<_, _>>()?,
             public_image_url: required("PUBLIC_IMAGE_URL")?.trim_end_matches('/').to_string(),
             github_webhook_secret: required("GITHUB_WEBHOOK_SECRET")?,
+            source_check_batch: {
+                let batch = parse("SOURCE_CHECK_BATCH", "200")?;
+                batch.parse().map_err(|_| invalid("SOURCE_CHECK_BATCH", &batch))?
+            },
         })
     }
 
@@ -119,6 +126,7 @@ impl Config {
             admin_github_ids: Vec::new(),
             public_image_url: "https://web.test/img".into(),
             github_webhook_secret: "webhook-secret".into(),
+            source_check_batch: 200,
         }
     }
 }

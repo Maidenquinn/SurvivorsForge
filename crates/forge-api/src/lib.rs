@@ -11,6 +11,7 @@ pub mod jobs;
 pub mod rate_limit;
 pub mod routes;
 pub mod scan_job;
+pub mod source_check;
 pub mod sync;
 pub mod worker;
 

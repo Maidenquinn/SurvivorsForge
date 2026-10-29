@@ -89,3 +89,18 @@ pub async fn unverify(
     tx.commit().await?;
     Ok(StatusCode::NO_CONTENT)
 }
+
+/// The file on GitHub changed after the scan; the admin accepts the new one.
+pub async fn accept_source(
+    State(state): State<AppState>,
+    AdminUser(admin): AdminUser,
+    Path(version_id): Path<i64>,
+    body: Option<Json<VerifyBody>>,
+) -> ApiResult<StatusCode> {
+    let note = body.map(|b| b.0.note).unwrap_or_default();
+    if crate::source_check::accept_source(&state, admin.id, version_id, note.trim()).await? {
+        Ok(StatusCode::NO_CONTENT)
+    } else {
+        Err(ApiError::not_found())
+    }
+}

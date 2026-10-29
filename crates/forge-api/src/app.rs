@@ -45,6 +45,7 @@ pub fn router(state: AppState) -> Router {
             "/v1/admin/versions/{id}/verification",
             post(routes::admin_verify::verify).delete(routes::admin_verify::unverify),
         )
+        .route("/v1/admin/versions/{id}/accept-source", post(routes::admin_verify::accept_source))
         .route("/v1/addons/{slug}/members", get(routes::members::list).post(routes::members::add))
         .route(
             "/v1/addons/{slug}/members/{github_id}",
