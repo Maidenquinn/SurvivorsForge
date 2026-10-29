@@ -38,7 +38,7 @@ pub async fn create(State(state): State<AppState>, jar: PrivateCookieJar, Path(s
     let (_,token) = visitor(&state,&jar).await?.ok_or(WebError::LoginRequired)?;
     let result = state.api.post(&format!("/v1/addons/{}/issues",segment(&slug)),Some(&token),
         &json!({"title":form.title,"body":form.body,"kind":form.kind})).await?;
-    Ok(Redirect::to(&format!("/addons/{}/issues/{}",segment(&slug),result["id"].as_i64().unwrap_or(0))))
+    Ok(Redirect::to(&format!("/addons/{}?tab=issues&issue={}#issue-detail",segment(&slug),result["id"].as_i64().unwrap_or(0))))
 }
 pub async fn show(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>,
     Path((slug,id)): Path<(String,i64)>) -> WebResult<Html<String>> {
@@ -63,7 +63,7 @@ pub async fn comment(State(state): State<AppState>, jar: PrivateCookieJar,
     let (_,token) = visitor(&state,&jar).await?.ok_or(WebError::LoginRequired)?;
     state.api.post(&format!("/v1/addons/{}/issues/{id}/comments",segment(&slug)),Some(&token),
         &json!({"body":form.body})).await?;
-    Ok(Redirect::to(&format!("/addons/{}/issues/{id}",segment(&slug))))
+    Ok(Redirect::to(&format!("/addons/{}?tab=issues&issue={id}#issue-detail",segment(&slug))))
 }
 pub async fn status(State(state): State<AppState>, jar: PrivateCookieJar,
     Path((slug,id)): Path<(String,i64)>, Form(form): Form<StatusForm>) -> WebResult<Redirect> {
@@ -71,5 +71,5 @@ pub async fn status(State(state): State<AppState>, jar: PrivateCookieJar,
     state.api.call(reqwest::Method::PATCH,
         &format!("/v1/addons/{}/issues/{id}",segment(&slug)),Some(&token),
         Some(&json!({"status":form.status}))).await?;
-    Ok(Redirect::to(&format!("/addons/{}/issues/{id}",segment(&slug))))
+    Ok(Redirect::to(&format!("/addons/{}?tab=issues&issue={id}#issue-detail",segment(&slug))))
 }
