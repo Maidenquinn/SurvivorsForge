@@ -412,7 +412,9 @@
     "trust_unavailable": "Unavailable",
     "admin_ban_user": "Ban",
     "admin_make_admin": "Make an admin",
-    "admin_banned": "Banned"
+    "admin_banned": "Banned",
+    "pub_updated": "Updated",
+    "creator_images_title": "Images"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -824,7 +826,9 @@
     "trust_unavailable": "Indisponible",
     "admin_ban_user": "Bannir",
     "admin_make_admin": "Nommer administrateur",
-    "admin_banned": "Banni"
+    "admin_banned": "Banni",
+    "pub_updated": "Mis à jour",
+    "creator_images_title": "Images"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1236,7 +1240,9 @@
     "trust_unavailable": "Niedostępne",
     "admin_ban_user": "Zbanuj",
     "admin_make_admin": "Nadaj prawa administratora",
-    "admin_banned": "Zbanowany"
+    "admin_banned": "Zbanowany",
+    "pub_updated": "Zaktualizowano",
+    "creator_images_title": "Obrazy"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1648,7 +1654,9 @@
     "trust_unavailable": "Nedostupné",
     "admin_ban_user": "Zakázat",
     "admin_make_admin": "Jmenovat správcem",
-    "admin_banned": "Zakázaný"
+    "admin_banned": "Zakázaný",
+    "pub_updated": "Aktualizováno",
+    "creator_images_title": "Obrázky"
   },
   "de": {
     "tiles": "Tiles",
@@ -2060,7 +2068,9 @@
     "trust_unavailable": "Nicht verfügbar",
     "admin_ban_user": "Sperren",
     "admin_make_admin": "Zum Administrator machen",
-    "admin_banned": "Gesperrt"
+    "admin_banned": "Gesperrt",
+    "pub_updated": "Aktualisiert",
+    "creator_images_title": "Bilder"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2472,7 +2482,9 @@
     "trust_unavailable": "Indisponível",
     "admin_ban_user": "Banir",
     "admin_make_admin": "Tornar administrador",
-    "admin_banned": "Banido"
+    "admin_banned": "Banido",
+    "pub_updated": "Atualizado",
+    "creator_images_title": "Imagens"
   },
   "es": {
     "tiles": "Tiles",
@@ -2884,7 +2896,9 @@
     "trust_unavailable": "No disponible",
     "admin_ban_user": "Bloquear",
     "admin_make_admin": "Nombrar administrador",
-    "admin_banned": "Bloqueado"
+    "admin_banned": "Bloqueado",
+    "pub_updated": "Actualizado",
+    "creator_images_title": "Imágenes"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3296,7 +3310,9 @@
     "trust_unavailable": "Indisponibil",
     "admin_ban_user": "Interzice",
     "admin_make_admin": "Numire administrator",
-    "admin_banned": "Interzis"
+    "admin_banned": "Interzis",
+    "pub_updated": "Actualizat",
+    "creator_images_title": "Imagini"
   },
   "tr": {
     "tiles": "Tiles",
@@ -3708,7 +3724,9 @@
     "trust_unavailable": "Kullanılamıyor",
     "admin_ban_user": "Yasakla",
     "admin_make_admin": "Yönetici yap",
-    "admin_banned": "Yasaklandı"
+    "admin_banned": "Yasaklandı",
+    "pub_updated": "Güncellendi",
+    "creator_images_title": "Resimler"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4120,7 +4138,9 @@
     "trust_unavailable": "Недоступно",
     "admin_ban_user": "Заблокировать",
     "admin_make_admin": "Назначить администратором",
-    "admin_banned": "Забанен"
+    "admin_banned": "Забанен",
+    "pub_updated": "Обновлено",
+    "creator_images_title": "Изображения"
   },
   "uk": {
     "tiles": "Tiles",
@@ -4532,7 +4552,9 @@
     "trust_unavailable": "Недоступно",
     "admin_ban_user": "Заблокувати",
     "admin_make_admin": "Призначити адміністратором",
-    "admin_banned": "Забанений"
+    "admin_banned": "Забанений",
+    "pub_updated": "Оновлено",
+    "creator_images_title": "Зображення"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -4944,7 +4966,9 @@
     "trust_unavailable": "不可用",
     "admin_ban_user": "封禁",
     "admin_make_admin": "设为管理员",
-    "admin_banned": "已封禁"
+    "admin_banned": "已封禁",
+    "pub_updated": "已更新",
+    "creator_images_title": "图片"
   },
   "ja": {
     "tiles": "Tiles",
@@ -5356,7 +5380,9 @@
     "trust_unavailable": "利用不可",
     "admin_ban_user": "停止する",
     "admin_make_admin": "管理者にする",
-    "admin_banned": "停止中"
+    "admin_banned": "停止中",
+    "pub_updated": "更新日",
+    "creator_images_title": "画像"
   },
   "ko": {
     "tiles": "Tiles",
@@ -5768,7 +5794,9 @@
     "trust_unavailable": "사용할 수 없음",
     "admin_ban_user": "차단",
     "admin_make_admin": "관리자로 지정",
-    "admin_banned": "차단됨"
+    "admin_banned": "차단됨",
+    "pub_updated": "업데이트",
+    "creator_images_title": "이미지"
   }
 };
   var supported = Object.keys(translations);
