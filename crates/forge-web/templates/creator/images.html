@@ -32,7 +32,12 @@
     {% for img in images %}
     <figure>
       <img src="{{ img.url }}" alt="{{ img.caption }}" loading="lazy">
-      <figcaption>{{ img.caption }}</figcaption>
+      <form method="post" action="/addons/{{ slug }}/images/{{ img.id }}/caption" class="caption-form">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <label for="caption-{{ img.id }}" class="sr-only">Caption of screenshot {{ loop.index }}</label>
+        <input id="caption-{{ img.id }}" name="caption" value="{{ img.caption }}" maxlength="200" placeholder="No caption">
+        <button type="submit" class="secondary">Save</button>
+      </form>
       <div class="actions">
         <form method="post" action="/addons/{{ slug }}/images/{{ img.id }}/move" class="inline">
           <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="direction" value="up">

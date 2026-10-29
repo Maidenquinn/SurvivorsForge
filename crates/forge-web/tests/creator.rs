@@ -162,6 +162,22 @@ async fn the_edit_toolbar_stays_on_every_edit_page() {
 }
 
 #[tokio::test]
+async fn captions_can_be_changed_later() {
+    let mut web = logged_in(owner()).await;
+    let images = web.get("/addons/lucky/images").await.body;
+    assert!(images.contains(r#"action="/addons/lucky/images/7/caption""#) && images.contains(r#"value="x""#), "{images}");
+    Mock::given(method("PATCH"))
+        .and(path("/v1/addons/lucky/images/7"))
+        .and(body_partial_json(json!({ "caption": "Bags open" })))
+        .respond_with(ResponseTemplate::new(204))
+        .expect(1)
+        .mount(&web.api)
+        .await;
+    let page = web.post_form("/addons/lucky/images/7/caption", &[("caption", "Bags open")]).await;
+    assert!(page.body.contains("Caption saved."), "{}", page.body);
+}
+
+#[tokio::test]
 async fn several_screenshots_in_one_upload() {
     let mut web = logged_in(owner()).await;
     Mock::given(method("POST"))

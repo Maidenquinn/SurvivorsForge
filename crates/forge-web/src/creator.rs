@@ -612,6 +612,30 @@ pub async fn move_image(
     Ok(Redirect::to(&format!("/addons/{slug}/images")).into_response())
 }
 
+#[derive(Deserialize)]
+pub struct CaptionForm {
+    #[serde(default)]
+    caption: String,
+}
+
+/// Changes the caption of an uploaded screenshot.
+pub async fn caption_image(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Extension(csrf): Extension<CsrfToken>,
+    Path((slug, id)): Path<(String, i64)>,
+    Form(form): Form<CaptionForm>,
+) -> WebResult<Response> {
+    let (user, token) = me(&state, &jar).await?;
+    let body = json!({ "caption": form.caption });
+    let (message, error) = match state.api.call(Method::PATCH, &format!("/v1/addons/{slug}/images/{id}"), Some(&token), Some(&body)).await {
+        Ok(_) => (Some("Caption saved.".to_string()), None),
+        Err(ApiError::Api { message, status, .. }) if status != 403 && status != 404 => (None, Some(message)),
+        Err(e) => return Err(e.into()),
+    };
+    Ok(images_page(&state, user, &token, csrf.0, &slug, message, error).await?.into_response())
+}
+
 pub async fn delete_image(State(state): State<AppState>, jar: PrivateCookieJar, Path((slug, id)): Path<(String, i64)>) -> WebResult<Response> {
     let (_, token) = me(&state, &jar).await?;
     state.api.call(Method::DELETE, &format!("/v1/addons/{slug}/images/{id}"), Some(&token), None).await?;

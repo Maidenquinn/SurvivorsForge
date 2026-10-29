@@ -114,6 +114,7 @@ pub fn router(state: AppState) -> Router {
         )
         .route("/addons/{slug}/images/{id}/move", post(crate::creator::move_image))
         .route("/addons/{slug}/images/{id}/delete", post(crate::creator::delete_image))
+        .route("/addons/{slug}/images/{id}/caption", post(crate::creator::caption_image))
         .route("/addons/{slug}/members", get(crate::creator::members).post(crate::creator::add_member))
         .route("/addons/{slug}/members/{github_id}", post(crate::creator::update_member))
         .route("/addons/{slug}/members/{github_id}/delete", post(crate::creator::remove_member))

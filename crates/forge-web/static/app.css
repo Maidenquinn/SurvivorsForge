@@ -261,6 +261,8 @@ pre { background: var(--field); border: 1px solid var(--line); border-radius: va
 .shots figure { margin: 0; }
 .shots img { width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); }
 .shots figcaption { color: var(--muted); font-size: var(--meta); }
+.caption-form { display: flex; gap: 6px; margin: 6px 0; }
+.caption-form input { flex: 1; min-width: 0; min-height: 34px; }
 .description img { max-width: 100%; height: auto; }
 .pager { display: flex; justify-content: space-between; margin-top: 16px; }
 .actions { display: flex; gap: 12px; flex-wrap: wrap; }
