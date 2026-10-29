@@ -4,6 +4,7 @@ pub mod addons;
 pub mod app;
 pub mod audit;
 pub mod auth;
+pub mod cache;
 pub mod config;
 pub mod error;
 pub mod github;

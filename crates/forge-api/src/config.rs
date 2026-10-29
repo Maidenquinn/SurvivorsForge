@@ -10,6 +10,8 @@ pub struct Config {
     pub bind_addr: SocketAddr,
     pub migrate_on_start: bool,
     pub rate_limit_per_minute: u32,
+    /// Seconds public answers stay in the API's cache; 0 turns it off.
+    pub cache_seconds: u64,
     pub trusted_proxies: Vec<IpAddr>,
     pub github_api_url: String,
     pub github_app_id: String,
@@ -50,6 +52,7 @@ impl Config {
         "BIND_ADDR",
         "MIGRATE_ON_START",
         "RATE_LIMIT_PER_MINUTE",
+        "CACHE_SECONDS",
         "TRUSTED_PROXIES",
         "GITHUB_API_URL",
         "GITHUB_APP_ID",
@@ -80,12 +83,14 @@ impl Config {
         let migrate = parse("MIGRATE_ON_START", "false")?;
         let limit = parse("RATE_LIMIT_PER_MINUTE", "120")?;
         let proxies = parse("TRUSTED_PROXIES", "")?;
+        let cache = parse("CACHE_SECONDS", "60")?;
         Ok(Config {
             database_url: required("DATABASE_URL")?,
             public_api_url: required("PUBLIC_API_URL")?.trim_end_matches('/').to_string(),
             bind_addr: bind.parse().map_err(|_| invalid("BIND_ADDR", &bind))?,
             migrate_on_start: migrate.parse().map_err(|_| invalid("MIGRATE_ON_START", &migrate))?,
             rate_limit_per_minute: limit.parse().map_err(|_| invalid("RATE_LIMIT_PER_MINUTE", &limit))?,
+            cache_seconds: cache.parse().map_err(|_| invalid("CACHE_SECONDS", &cache))?,
             trusted_proxies: list(&proxies)
                 .map(|p| p.parse().map_err(|_| invalid("TRUSTED_PROXIES", p)))
                 .collect::<Result<_, _>>()?,
@@ -118,6 +123,8 @@ impl Config {
             bind_addr: "127.0.0.1:0".parse().unwrap(),
             migrate_on_start: false,
             rate_limit_per_minute: 10_000,
+            // Off: tests change the database directly and read it right back.
+            cache_seconds: 0,
             trusted_proxies: Vec::new(),
             github_api_url: "http://github.test".into(),
             github_app_id: "1".into(),
@@ -173,6 +180,7 @@ mod tests {
         let config = Config::from_map(&env(MINIMAL)).unwrap();
         assert!(!config.migrate_on_start);
         assert_eq!(config.rate_limit_per_minute, 120);
+        assert_eq!(config.cache_seconds, 60);
         assert_eq!(config.public_api_url, "https://api.example.com");
         let mut on = env(MINIMAL);
         on.insert("MIGRATE_ON_START".into(), "true".into());

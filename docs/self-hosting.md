@@ -88,6 +88,7 @@ Your own GitHub user ID for `ADMIN_GITHUB_IDS` is the `id` field of
 | `BIND_ADDR` | no | Address the API listens on in its container | `0.0.0.0:8080` |
 | `MIGRATE_ON_START` | no | Apply database migrations when the API starts | `true` |
 | `RATE_LIMIT_PER_MINUTE` | no | Requests per minute and client IP, for the API and the website each | `120` |
+| `CACHE_SECONDS` | no | How long public answers stay in the API's memory cache; a write through the API empties it, worker changes show after this time; `0` turns it off | `60` |
 | `TRUSTED_PROXIES` | no, set by Compose | Proxies whose `X-Forwarded-For` counts | API: `FORGE_CADDY_IP` and `FORGE_WEB_IP`; website: `FORGE_CADDY_IP` |
 | `SOURCE_CHECK_BATCH` | no | Versions compared with GitHub per 6-hourly run | `200` |
 | `GITHUB_API_URL` | no | GitHub REST API | `https://api.github.com` |

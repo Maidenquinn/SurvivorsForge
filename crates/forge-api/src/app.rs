@@ -1,5 +1,6 @@
 //! The HTTP router of the API.
 
+use crate::cache::{self, ResponseCache};
 use crate::config::Config;
 use crate::auth::oauth;
 use crate::error::ApiError;
@@ -102,8 +103,10 @@ pub fn router(state: AppState) -> Router {
 /// The layers every response passes through: panic guard, rate limit, default headers.
 pub fn with_layers(routes: Router, config: &Config) -> Router {
     let limiter = Arc::new(RateLimiter::new(config.rate_limit_per_minute, config.trusted_proxies.clone()));
+    let cache = Arc::new(ResponseCache::new(Duration::from_secs(config.cache_seconds)));
     routes
         .layer(CatchPanicLayer::custom(|_| ApiError::internal().into_response()))
+        .layer(middleware::from_fn_with_state(cache, cache::middleware))
         .layer(middleware::from_fn_with_state(limiter, rate_limit::middleware))
         .layer(SetResponseHeaderLayer::if_not_present(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff")))
         .layer(SetResponseHeaderLayer::if_not_present(header::CACHE_CONTROL, HeaderValue::from_static("no-store")))
