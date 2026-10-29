@@ -27,7 +27,7 @@ pub async fn list(State(state): State<AppState>, Path(slug): Path<String>, Query
     -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
     not_blocked(&addon)?;
-    let before = page.before.unwrap_or(i64::MAX);
+    let before = page.before.filter(|id| *id > 0).unwrap_or(i64::MAX);
     let comments: Value = sqlx::query_scalar(
         "SELECT coalesce(json_agg(json_build_object(
             'id', c.id, 'body', c.body, 'author', u.login,
@@ -78,6 +78,7 @@ pub async fn edit(State(state): State<AppState>, user: CurrentUser,
 pub async fn remove(State(state): State<AppState>, user: CurrentUser,
     Path((slug,id)): Path<(String,i64)>) -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
+    not_blocked(&addon)?;
     let author: Option<i64> = sqlx::query_scalar(
         "SELECT author_id FROM addon_comments WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL"
     ).bind(id).bind(addon.id).fetch_optional(&state.pool).await?;
