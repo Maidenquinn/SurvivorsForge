@@ -12,7 +12,7 @@
   {% if let Some(icon) = icon_url %}<img class="icon big" src="{{ icon }}" alt="" width="96" height="96">{% endif %}
   <div>
     <h1>{{ name }}</h1>
-    <p class="muted">by {{ author }}{% if !claimed && user.is_some() %} (not claimed on this site yet){% endif %} Â· <a href="/addons?category={{ category|urlencode }}">{{ category }}</a> Â· <a href="https://github.com/{{ repo }}" rel="external noopener">GitHub</a>{% if let Some(u) = user %}{% if u.admin %} Â· <a href="/admin/addons/{{ slug }}">Manage as admin</a>{% endif %}{% endif %}</p>
+    <p class="muted">by {{ author }}{% if !claimed && user.is_some() %} (not claimed on this site yet){% endif %} · <a href="/addons?category={{ category|urlencode }}">{{ category }}</a> · <a href="https://github.com/{{ repo }}" rel="external noopener">GitHub</a>{% if let Some(u) = user %}{% if u.admin %} · <a href="/admin/addons/{{ slug }}">Manage as admin</a>{% endif %}{% endif %}</p>
     <p>{{ summary }}</p>
   </div>
 </header>
@@ -29,7 +29,7 @@
   {% match latest %}
   {% when Some with (l) %}
     <h2>Version {% if l.row.tag_short != l.row.tag %}<span title="{{ l.row.tag }}">{{ l.row.tag_short }}</span>{% else %}{{ l.row.tag }}{% endif %}</h2>
-    {% if l.row.published != "" %}<p class="muted">Published {{ l.row.published }}{% if let Some(n) = l.row.downloads %} Â· {{ n }} downloads{% endif %}</p>{% endif %}
+    {% if l.row.published != "" %}<p class="muted">Published {{ l.row.published }}{% if let Some(n) = l.row.downloads %} · {{ n }} downloads{% endif %}</p>{% endif %}
     <div class="notice {{ l.row.notice.class }}" role="status">
       <strong>{{ l.row.notice.badge }}.</strong> {{ l.row.notice.text }}
     </div>
@@ -50,7 +50,7 @@
       <p class="muted" data-launcher-missing>The launcher installs it, its libraries and every update. No launcher yet? <a href="https://rezondes.github.io/SurvivorsForge/">Get SurvivorsForge</a>, free for Windows, Linux and Steam Deck.</p>
       <p class="muted">Without the launcher: unzip the download into the game's <code>AddOns</code> folder.</p>
     {% endif %}
-    <p><a href="/addons/{{ slug }}/versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} Â· <a href="/packs/new?addon={{ slug }}">Put into an addon pack</a>{% endif %}</p>
+    <p><a href="/addons/{{ slug }}/versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} · <a href="/packs/new?addon={{ slug }}">Put into an addon pack</a>{% endif %}</p>
   {% when None %}
     <p>No release yet.</p>
   {% endmatch %}
@@ -62,7 +62,7 @@
   <a href="/addons/{{ slug }}?tab=issues" {% if tab == "issues" %}aria-current="page"{% endif %}>Issues</a>
   <a href="/addons/{{ slug }}?tab=gallery" {% if tab == "gallery" %}aria-current="page"{% endif %}>Gallery</a>
   <a href="/addons/{{ slug }}?tab=versions" {% if tab == "versions" %}aria-current="page"{% endif %}>Versions</a>
-  <span class="addon-tabs-future" title="Community comments coming in a future update">Comments Â· Soon</span>
+  <span class="addon-tabs-future" title="Community comments coming in a future update">Comments · Soon</span>
 </nav>
 {% if tab == "issues" %}
 <section class="addon-tab-section" data-dynamic-issues>
@@ -82,10 +82,10 @@
     <div id="addon-issues-list">
     {% for issue in issues %}
       <article class="issue-row" data-status="{{ issue.status }}" data-search="{{ issue.title }} {{ issue.author }} {{ issue.kind }}">
-        <span class="issue-state issue-state-{{ issue.status }}" aria-label="{{ issue.status }}">{% if issue.status == "open" %}○{% else if issue.status == "acknowledged" %}◉{% else if issue.status == "in_progress" %}▷{% else if issue.status == "resolved" %}✓{% else %}⊘{% endif %}</span>
+        <span class="issue-state issue-state-{{ issue.status }}" aria-label="{% if issue.status == "in_progress" %}In progress{% else %}{{ issue.status }}{% endif %}">{% if issue.status == "open" %}○{% else if issue.status == "acknowledged" %}◉{% else if issue.status == "in_progress" %}▷{% else if issue.status == "resolved" %}✓{% else %}⊘{% endif %}</span>
         <div class="issue-row-content">
           <a class="issue-row-title" href="/addons/{{ slug }}?tab=issues&amp;issue={{ issue.id }}#issue-detail">{{ issue.title }}</a>
-          <div class="issue-row-meta">#{{ issue.id }} Â· {{ issue.author }} <span class="badge">{{ issue.kind }}</span> <span class="badge">{{ issue.status }}</span></div>
+          <div class="issue-row-meta">#{{ issue.id }} · {{ issue.author }} <span class="badge">{{ issue.kind }}</span> <span class="badge">{% if issue.status == "in_progress" %}In progress{% else if issue.status == "acknowledged" %}Acknowledged{% else if issue.status == "resolved" %}Resolved{% else if issue.status == "closed" %}Closed{% else %}Open{% endif %}</span></div>
         </div>
         <a class="issue-row-arrow" href="/addons/{{ slug }}?tab=issues&amp;issue={{ issue.id }}#issue-detail" aria-label="Read issue #{{ issue.id }}">→</a>
       </article>
@@ -98,7 +98,7 @@
   <section id="issue-detail" class="inline-issue-detail" aria-label="Selected issue">
     <div class="issues-heading">
       <div><h2>{{ issue.title }} <span class="issue-number">#{{ issue.id }}</span></h2>
-        <p class="muted">{{ issue.author }} Â· <span class="badge">{{ issue.kind }}</span> <span class="badge">{{ issue.status }}</span></p>
+        <p class="muted">{{ issue.author }} · <span class="badge">{{ issue.kind }}</span> <span class="badge">{% if issue.status == "in_progress" %}In progress{% else if issue.status == "acknowledged" %}Acknowledged{% else if issue.status == "resolved" %}Resolved{% else if issue.status == "closed" %}Closed{% else %}Open{% endif %}</span></p>
       </div>
       <a class="button secondary" href="/addons/{{ slug }}?tab=issues">Close details</a>
     </div>
@@ -200,7 +200,7 @@
   {% if shots.is_empty() %}<p class="muted">No screenshots uploaded yet.</p>{% endif %}
   {% if !shots.is_empty() %}
   <dialog class="gallery-lightbox" id="gallery-lightbox" aria-label="Screenshot viewer">
-    <div class="gallery-lightbox-actions"><button type="button" data-gallery-prev aria-label="Previous screenshot">←</button><span data-gallery-count></span><button type="button" data-gallery-next aria-label="Next screenshot">→</button><button type="button" data-gallery-close aria-label="Close gallery">✕</button></div>
+    <div class="gallery-lightbox-actions"><button type="button" data-gallery-prev aria-label="Previous screenshot">←</button><span data-gallery-count></span><button type="button" data-gallery-next aria-label="Next screenshot">→</button><button type="button" data-gallery-fullscreen aria-label="Enter fullscreen" title="Fullscreen">⛶</button><button type="button" data-gallery-close aria-label="Close gallery">✕</button></div>
     <img alt="Selected addon screenshot" data-gallery-image>
     <p data-gallery-caption></p>
   </dialog>
