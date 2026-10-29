@@ -429,7 +429,13 @@
     "admin_version_count": "versions",
     "admin_role_label": "Role:",
     "admin_owns_label": "Owns",
-    "role_user": "user"
+    "role_user": "user",
+    "repo_prefill_success": "Filled in from repository",
+    "repo_prefill_check": "Check every field and choose a category before publishing.",
+    "repo_prefill_error": "Could not read repository",
+    "repo_prefill_manual": "Fill in the form manually.",
+    "repo_install_app": "Install the SurvivorsForge App",
+    "my_claim_info": "AddOns added by an administrator from your repositories can be claimed after GitHub verifies your repository administrator permissions and the installation of the SurvivorsForge App."
   },
   "fr": {
     "tiles": "Vignettes",
@@ -858,7 +864,13 @@
     "admin_version_count": "versions",
     "admin_role_label": "Rôle :",
     "admin_owns_label": "Possède",
-    "role_user": "utilisateur"
+    "role_user": "utilisateur",
+    "repo_prefill_success": "Formulaire prérempli depuis le dépôt",
+    "repo_prefill_check": "Vérifiez chaque champ et choisissez une catégorie avant de publier.",
+    "repo_prefill_error": "Impossible de lire le dépôt",
+    "repo_prefill_manual": "Remplissez le formulaire manuellement.",
+    "repo_install_app": "Installer l'application SurvivorsForge",
+    "my_claim_info": "Les AddOns ajoutés par un administrateur depuis vos dépôts peuvent être revendiqués après vérification de vos droits GitHub et de l'installation de l'application SurvivorsForge."
   },
   "pl": {
     "tiles": "Tiles",
@@ -1287,7 +1299,13 @@
     "admin_version_count": "wersje",
     "admin_role_label": "Rola:",
     "admin_owns_label": "Posiada",
-    "role_user": "użytkownik"
+    "role_user": "użytkownik",
+    "repo_prefill_success": "Formularz wypełniono z repozytorium",
+    "repo_prefill_check": "Sprawdź wszystkie pola i wybierz kategorię przed publikacją.",
+    "repo_prefill_error": "Nie można odczytać repozytorium",
+    "repo_prefill_manual": "Wypełnij formularz ręcznie.",
+    "repo_install_app": "Zainstaluj aplikację SurvivorsForge",
+    "my_claim_info": "AddOns dodane przez administratora z Twoich repozytoriów można przejąć po sprawdzeniu uprawnień administratora GitHub i instalacji aplikacji SurvivorsForge."
   },
   "cs": {
     "tiles": "Tiles",
@@ -1716,7 +1734,13 @@
     "admin_version_count": "verze",
     "admin_role_label": "Role:",
     "admin_owns_label": "Vlastní",
-    "role_user": "uživatel"
+    "role_user": "uživatel",
+    "repo_prefill_success": "Formulář vyplněn z repozitáře",
+    "repo_prefill_check": "Před zveřejněním zkontrolujte všechna pole a vyberte kategorii.",
+    "repo_prefill_error": "Repozitář nelze přečíst",
+    "repo_prefill_manual": "Vyplňte formulář ručně.",
+    "repo_install_app": "Nainstalovat aplikaci SurvivorsForge",
+    "my_claim_info": "AddOns přidané správcem z vašich repozitářů lze převzít po ověření správcovských práv na GitHubu a instalace aplikace SurvivorsForge."
   },
   "de": {
     "tiles": "Tiles",
@@ -2145,7 +2169,13 @@
     "admin_version_count": "Versionen",
     "admin_role_label": "Rolle:",
     "admin_owns_label": "Besitzt",
-    "role_user": "Benutzer"
+    "role_user": "Benutzer",
+    "repo_prefill_success": "Formular aus dem Repository ausgefüllt",
+    "repo_prefill_check": "Prüfe alle Felder und wähle vor der Veröffentlichung eine Kategorie.",
+    "repo_prefill_error": "Repository konnte nicht gelesen werden",
+    "repo_prefill_manual": "Fülle das Formular manuell aus.",
+    "repo_install_app": "SurvivorsForge-App installieren",
+    "my_claim_info": "AddOns, die ein Administrator aus deinen Repositories hinzugefügt hat, kannst du nach Prüfung deiner GitHub-Administratorrechte und der installierten SurvivorsForge-App beanspruchen."
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2574,7 +2604,13 @@
     "admin_version_count": "versões",
     "admin_role_label": "Função:",
     "admin_owns_label": "Possui",
-    "role_user": "usuário"
+    "role_user": "usuário",
+    "repo_prefill_success": "Formulário preenchido com dados do repositório",
+    "repo_prefill_check": "Verifique os campos e escolha uma categoria antes de publicar.",
+    "repo_prefill_error": "Não foi possível ler o repositório",
+    "repo_prefill_manual": "Preencha o formulário manualmente.",
+    "repo_install_app": "Instalar aplicativo SurvivorsForge",
+    "my_claim_info": "AddOns adicionados por um administrador a partir dos seus repositórios podem ser reivindicados após a verificação das suas permissões de administrador no GitHub e da instalação do aplicativo SurvivorsForge."
   },
   "es": {
     "tiles": "Tiles",
@@ -3003,7 +3039,13 @@
     "admin_version_count": "versiones",
     "admin_role_label": "Función:",
     "admin_owns_label": "Tiene",
-    "role_user": "usuario"
+    "role_user": "usuario",
+    "repo_prefill_success": "Formulario rellenado desde el repositorio",
+    "repo_prefill_check": "Revisa todos los campos y elige una categoría antes de publicar.",
+    "repo_prefill_error": "No se pudo leer el repositorio",
+    "repo_prefill_manual": "Rellena el formulario manualmente.",
+    "repo_install_app": "Instalar la aplicación SurvivorsForge",
+    "my_claim_info": "Los AddOns añadidos por un administrador desde tus repositorios pueden reclamarse tras verificar tus permisos de administrador en GitHub y la instalación de la aplicación SurvivorsForge."
   },
   "ro": {
     "tiles": "Tiles",
@@ -3432,7 +3474,13 @@
     "admin_version_count": "versiuni",
     "admin_role_label": "Rol:",
     "admin_owns_label": "Deține",
-    "role_user": "utilizator"
+    "role_user": "utilizator",
+    "repo_prefill_success": "Formular completat din depozit",
+    "repo_prefill_check": "Verifică toate câmpurile și alege o categorie înainte de publicare.",
+    "repo_prefill_error": "Depozitul nu a putut fi citit",
+    "repo_prefill_manual": "Completează formularul manual.",
+    "repo_install_app": "Instalează aplicația SurvivorsForge",
+    "my_claim_info": "AddOns adăugate de un administrator din depozitele tale pot fi revendicate după verificarea drepturilor tale de administrator GitHub și a instalării aplicației SurvivorsForge."
   },
   "tr": {
     "tiles": "Tiles",
@@ -3861,7 +3909,13 @@
     "admin_version_count": "sürüm",
     "admin_role_label": "Rol:",
     "admin_owns_label": "Sahip olduğu",
-    "role_user": "kullanıcı"
+    "role_user": "kullanıcı",
+    "repo_prefill_success": "Form depo bilgileriyle dolduruldu",
+    "repo_prefill_check": "Yayımlamadan önce tüm alanları kontrol edin ve kategori seçin.",
+    "repo_prefill_error": "Depo okunamadı",
+    "repo_prefill_manual": "Formu elle doldurun.",
+    "repo_install_app": "SurvivorsForge uygulamasını yükle",
+    "my_claim_info": "Yöneticinin depolarınızdan eklediği AddOns, GitHub yönetici yetkileriniz ve SurvivorsForge uygulamasının kurulu olduğu doğrulandıktan sonra sahiplenilebilir."
   },
   "ru": {
     "tiles": "Tiles",
@@ -4290,7 +4344,13 @@
     "admin_version_count": "версии",
     "admin_role_label": "Роль:",
     "admin_owns_label": "Владеет",
-    "role_user": "пользователь"
+    "role_user": "пользователь",
+    "repo_prefill_success": "Форма заполнена из репозитория",
+    "repo_prefill_check": "Перед публикацией проверьте все поля и выберите категорию.",
+    "repo_prefill_error": "Не удалось прочитать репозиторий",
+    "repo_prefill_manual": "Заполните форму вручную.",
+    "repo_install_app": "Установить приложение SurvivorsForge",
+    "my_claim_info": "AddOns, добавленные администратором из ваших репозиториев, можно получить после проверки прав администратора GitHub и установленного приложения SurvivorsForge."
   },
   "uk": {
     "tiles": "Tiles",
@@ -4719,7 +4779,13 @@
     "admin_version_count": "версії",
     "admin_role_label": "Роль:",
     "admin_owns_label": "Володіє",
-    "role_user": "користувач"
+    "role_user": "користувач",
+    "repo_prefill_success": "Форму заповнено з репозиторію",
+    "repo_prefill_check": "Перед публікацією перевірте всі поля й виберіть категорію.",
+    "repo_prefill_error": "Не вдалося прочитати репозиторій",
+    "repo_prefill_manual": "Заповніть форму вручну.",
+    "repo_install_app": "Встановити застосунок SurvivorsForge",
+    "my_claim_info": "AddOns, додані адміністратором із ваших репозиторіїв, можна отримати після перевірки прав адміністратора GitHub та встановленого застосунку SurvivorsForge."
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -5148,7 +5214,13 @@
     "admin_version_count": "版本",
     "admin_role_label": "角色：",
     "admin_owns_label": "拥有",
-    "role_user": "用户"
+    "role_user": "用户",
+    "repo_prefill_success": "已从仓库自动填写表单",
+    "repo_prefill_check": "发布前请检查所有字段并选择分类。",
+    "repo_prefill_error": "无法读取仓库",
+    "repo_prefill_manual": "请手动填写表单。",
+    "repo_install_app": "安装 SurvivorsForge 应用",
+    "my_claim_info": "管理员从你的仓库添加的 AddOns，可在 GitHub 验证仓库管理权限和 SurvivorsForge 应用安装状态后认领。"
   },
   "ja": {
     "tiles": "Tiles",
@@ -5577,7 +5649,13 @@
     "admin_version_count": "バージョン",
     "admin_role_label": "役割：",
     "admin_owns_label": "所有 AddOns：",
-    "role_user": "ユーザー"
+    "role_user": "ユーザー",
+    "repo_prefill_success": "リポジトリからフォームを自動入力しました",
+    "repo_prefill_check": "公開前にすべての項目を確認してカテゴリを選択してください。",
+    "repo_prefill_error": "リポジトリを読み込めませんでした",
+    "repo_prefill_manual": "フォームを手動で入力してください。",
+    "repo_install_app": "SurvivorsForge アプリをインストール",
+    "my_claim_info": "管理者があなたのリポジトリから追加した AddOns は、GitHub の管理者権限と SurvivorsForge アプリのインストール確認後に所有権を申請できます。"
   },
   "ko": {
     "tiles": "Tiles",
@@ -6006,7 +6084,13 @@
     "admin_version_count": "버전",
     "admin_role_label": "역할:",
     "admin_owns_label": "소유",
-    "role_user": "사용자"
+    "role_user": "사용자",
+    "repo_prefill_success": "저장소 정보로 양식을 채웠습니다",
+    "repo_prefill_check": "게시 전 모든 항목을 확인하고 카테고리를 선택하세요.",
+    "repo_prefill_error": "저장소를 읽을 수 없습니다",
+    "repo_prefill_manual": "양식을 직접 작성하세요.",
+    "repo_install_app": "SurvivorsForge 앱 설치",
+    "my_claim_info": "관리자가 내 저장소에서 추가한 AddOns는 GitHub 저장소 관리자 권한과 SurvivorsForge 앱 설치를 확인한 후 소유권을 신청할 수 있습니다."
   }
 };
   var supported = Object.keys(translations);
