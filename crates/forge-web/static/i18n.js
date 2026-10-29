@@ -3,6 +3,8 @@
   "use strict";
   var translations = {
   "en": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "AddOns",
@@ -102,6 +104,8 @@
     "edit_comment": "Edit comment"
   },
   "fr": {
+    "tiles": "Vignettes",
+    "list": "Liste",
     "duplicate_issue": "Ce signalement identique a déjà été envoyé. Modifiez le titre ou la description avant de réessayer.",
     "issue_submit_error": "Impossible d'envoyer le signalement. Veuillez réessayer.",
     "addons": "AddOns",
@@ -201,6 +205,8 @@
     "edit_comment": "Modifier le commentaire"
   },
   "pl": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Dodatki",
@@ -300,6 +306,8 @@
     "edit_comment": "Edytuj komentarz"
   },
   "cs": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Doplňky",
@@ -399,6 +407,8 @@
     "edit_comment": "Upravit komentář"
   },
   "de": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Addons",
@@ -498,6 +508,8 @@
     "edit_comment": "Kommentar bearbeiten"
   },
   "pt-BR": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Complementos",
@@ -597,6 +609,8 @@
     "edit_comment": "Editar comentário"
   },
   "es": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Complementos",
@@ -696,6 +710,8 @@
     "edit_comment": "Editar comentario"
   },
   "ro": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Suplimente",
@@ -795,6 +811,8 @@
     "edit_comment": "Editează comentariul"
   },
   "tr": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Eklentiler",
@@ -894,6 +912,8 @@
     "edit_comment": "Yorumu düzenle"
   },
   "ru": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Аддоны",
@@ -993,6 +1013,8 @@
     "edit_comment": "Редактировать комментарий"
   },
   "uk": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "Аддони",
@@ -1092,6 +1114,8 @@
     "edit_comment": "Редагувати коментар"
   },
   "zh-Hans": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "插件",
@@ -1191,6 +1215,8 @@
     "edit_comment": "编辑评论"
   },
   "ja": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "アドオン",
@@ -1290,6 +1316,8 @@
     "edit_comment": "コメントを編集"
   },
   "ko": {
+    "tiles": "Tiles",
+    "list": "List",
     "duplicate_issue": "This issue has already been submitted. Change the title or description before trying again.",
     "issue_submit_error": "Could not submit the issue. Please try again.",
     "addons": "애드온",
@@ -1417,6 +1445,21 @@
     document.querySelectorAll("[data-i18n-aria-label]").forEach(function (el) {
       var key = el.getAttribute("data-i18n-aria-label");
       el.setAttribute("aria-label", translations[locale][key] || translations.en[key] || "");
+    });
+    var categoryFr = {"All Classes":"Toutes les classes","Warrior":"Guerrier","Paladin":"Paladin","Hunter":"Chasseur","Rogue":"Voleur","Priest":"Prêtre","Shaman":"Chaman","Mage":"Mage","Warlock":"Démoniste","Druid":"Druide","Combat":"Combat","Libraries":"Bibliothèques","Unit Frames":"Cadres d'unités","Action Bars":"Barres d'action","Miscellaneous":"Divers","Classes":"Classes"};
+    document.querySelectorAll("[data-category-label]").forEach(function (el) {
+      var original = el.getAttribute("data-category-label");
+      var translated = locale === "fr" ? (categoryFr[original] || original) : original;
+      if (el.tagName === "OPTGROUP") el.label = translated;
+      else el.textContent = translated;
+    });
+    document.querySelectorAll("[data-category-all]").forEach(function (el) {
+      var original = el.getAttribute("data-category-all");
+      el.textContent = locale === "fr" ? "Toutes les catégories : " + (categoryFr[original] || original) : "All " + original;
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach(function (el) {
+      var key = el.getAttribute("data-i18n-title");
+      el.title = translations[locale][key] || translations.en[key] || key;
     });
     var select = document.getElementById("forge-locale");
     if (select) select.value = locale;
