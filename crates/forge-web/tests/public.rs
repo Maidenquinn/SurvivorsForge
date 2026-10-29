@@ -489,3 +489,14 @@ async fn category_links_are_encoded() {
         assert!(web.get(page).await.body.contains(r#"href="/addons?category=Action%20Bars""#), "{page}");
     }
 }
+
+#[tokio::test]
+async fn the_home_page_leads_with_the_launcher() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/addons", json!({ "total": 0, "addons": [] })).await;
+    let page = web.get("/").await.body;
+    let launcher = page.find(r#"class="button large" href="https://github.com/Rezondes/SurvivorsForge/releases/latest""#).expect("launcher download");
+    let browse = page.find(r#"class="button secondary" href="/addons""#).expect("browse addons");
+    assert!(launcher < browse, "the launcher comes first");
+    assert!(page.contains("Windows · Linux &amp; Steam Deck") || page.contains("Windows · Linux &#38; Steam Deck"), "{page}");
+}

@@ -141,6 +141,10 @@ form.inline { display: inline; margin: 0; }
 .card:hover { background: var(--row-hover); border-color: var(--outline); }
 .hero { padding: 40px 0; text-align: center; }
 .hero h1 { font-size: 2.2rem; }
+.hero > p { max-width: 640px; margin-left: auto; margin-right: auto; }
+.actions.center { justify-content: center; }
+/* The one action a page leads with: the launcher download on the home page */
+.button.large { min-height: 44px; padding: 10px 24px; font-size: 1.1rem; }
 .muted { color: var(--muted); }
 
 /* Fields */
