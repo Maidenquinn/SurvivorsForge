@@ -544,3 +544,10 @@ async fn the_home_page_explains_the_checks() {
         assert!(page.contains(&format!("<h3>{text}</h3>")), "missing {text}: {page}");
     }
 }
+
+#[tokio::test]
+async fn addon_authors_find_how_to_publish() {
+    let mut web = TestWeb::new().await;
+    let page = web.get("/").await.body;
+    assert!(page.contains("Made an addon?") && page.contains(r#"href="/addons/new">Publish it from your GitHub repo</a>"#), "{page}");
+}
