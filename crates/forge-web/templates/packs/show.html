@@ -4,35 +4,35 @@
 {% block og_description %}{{ entries.len() }} checked addon{% if entries.len() != 1 %}s{% endif %} in one zip for the browser version of Azeroth Survivors.{% endblock %}
 {% block head %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<h1>{% if name != "" %}{{ name }}{% else %}Addon pack{% endif %}</h1>
-<p class="muted">{{ entries.len() }} addon{% if entries.len() != 1 %}s{% endif %}{% if created_by != "" %} · by {{ created_by }}{% endif %} · {{ created }}</p>
+<h1>{% if name != "" %}{{ name }}{% else %}<span data-i18n="pack_show_title">Addon pack</span>{% endif %}</h1>
+<p class="muted">{{ entries.len() }} addon{% if entries.len() != 1 %}s{% endif %}{% if created_by != "" %} · <span data-i18n="pack_by">by</span> {{ created_by }}{% endif %} · {{ created }}</p>
 
 <section class="panel download">
   {% if available %}
-    <p><a class="button" href="/packs/{{ id }}/download">Download the pack{% if let Some(s) = size %} ({{ s }}){% endif %}</a></p>
-    <p class="muted">One zip, every addon in its own folder. Upload it in the browser version of the game.{% if size.is_none() %} Packed on the first download, which takes up to a minute.{% endif %}</p>
+    <p><a class="button" href="/packs/{{ id }}/download"><span data-i18n="pack_download">Download the pack</span>{% if let Some(s) = size %} ({{ s }}){% endif %}</a></p>
+    <p class="muted"><span data-i18n="pack_zip_info">One zip, every addon in its own folder. Upload it in the browser version of the game.</span>{% if size.is_none() %} <span data-i18n="pack_first_download">Packed on the first download, which takes up to a minute.</span>{% endif %}</p>
   {% else %}
-    <div class="notice bad">An addon of this pack is no longer available, so the pack cannot be downloaded. <a href="{{ rebuild }}">Build a new one</a> without it.</div>
+    <div class="notice bad"><span data-i18n="pack_unavailable_message">An addon of this pack is no longer available, so the pack cannot be downloaded.</span> <a href="{{ rebuild }}" data-i18n="pack_build_new">Build a new one</a> <span data-i18n="pack_without">without it.</span></div>
   {% endif %}
-  <label for="link">Link to share</label>
+  <label for="link" data-i18n="pack_share">Link to share</label>
   <div class="copy-row">
     <input id="link" value="{{ link }}" readonly>
-    <button type="button" class="secondary" data-copy="link" hidden>Copy</button>
+    <button type="button" class="secondary" data-copy="link" hidden data-i18n="pack_copy">Copy</button>
   </div>
   <p class="muted" role="status" data-copied="link"></p>
 </section>
 
 <section class="panel">
-  <h2>In this pack</h2>
+  <h2 data-i18n="pack_included">In this pack</h2>
   <div class="table-wrap">
     <table class="pack-table">
-      <thead><tr><th>Addon</th><th>Version</th><th data-i18n="safety">Safety check</th><th>Folders</th></tr></thead>
+      <thead><tr><th>Addon</th><th>Version</th><th data-i18n="safety">Safety check</th><th data-i18n="pack_folders">Folders</th></tr></thead>
       <tbody>
         {% for e in entries %}
         <tr>
           <td><a href="/addons/{{ e.slug }}">{{ e.name }}</a></td>
           <td>{{ e.tag }}</td>
-          <td class="check">{% if e.available %}<span class="badge {{ e.notice.class }}">{{ e.notice.badge }}</span>{% else %}<span class="badge bad">Unavailable</span>{% endif %}</td>
+          <td class="check">{% if e.available %}<span class="badge {{ e.notice.class }}">{{ e.notice.badge }}</span>{% else %}<span class="badge bad" data-i18n="pack_unavailable_badge">Unavailable</span>{% endif %}</td>
           <td>{{ e.folders }}</td>
         </tr>
         {% endfor %}
@@ -40,5 +40,5 @@
     </table>
   </div>
 </section>
-<p><a href="{{ rebuild }}">Build your own pack from this one</a></p>
+<p><a href="{{ rebuild }}" data-i18n="pack_build_from">Build your own pack from this one</a></p>
 {% endblock %}

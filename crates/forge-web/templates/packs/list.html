@@ -3,14 +3,14 @@
 {% block head %}<meta name="description" content="Addon packs for the browser version of Azeroth Survivors: several checked addons in one zip.">{% endblock %}
 {% block content %}
 <div class="title-row">
-  <h1><span data-l10n-en="Addon packs" data-l10n-fr="Packs d'AddOns">Addon packs</span></h1>
-  <a class="button" href="/packs/new"><span data-l10n-en="Build a pack" data-l10n-fr="Créer un pack">Build a pack</span></a>
+  <h1><span data-i18n="pack_list_title">Addon packs</span></h1>
+  <a class="button" href="/packs/new"><span data-i18n="pack_list_build">Build a pack</span></a>
 </div>
-<p class="muted"><span data-l10n-en="Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show." data-l10n-fr="Plusieurs AddOns réunis dans un fichier ZIP pour la version navigateur du jeu. Ces packs sont partagés par leurs créateurs.">Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show.</span></p>
+<p class="muted"><span data-i18n="pack_list_intro">Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show.</span></p>
 <form class="search" method="get" action="/packs" role="search"
       hx-get="/packs" hx-trigger="input changed delay:300ms from:input, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results" hx-select-oob="#result-status" hx-swap="innerHTML scroll:top">
   <label for="q"><span data-i18n="search">Search</span></label>
-  <input id="q" type="search" name="q" value="{{ q }}" placeholder="Pack name or an addon in it" autocomplete="off">
+  <input id="q" type="search" name="q" value="{{ q }}" placeholder="Pack name or an addon in it" data-i18n-placeholder="pack_list_placeholder" autocomplete="off">
   <noscript><button type="submit"><span data-i18n="search">Search</span></button></noscript>
 </form>
 
@@ -21,13 +21,13 @@
     {% include "view_toggle.html" %}
   </div>
   {% if rows.is_empty() %}
-    <section class="panel">{% if q != "" %}<p><span data-l10n-en="No pack matches. Try a shorter name." data-l10n-fr="Aucun pack trouvé. Essayez un nom plus court.">No pack matches. Try a shorter name.</span></p><p><a href="/packs"><span data-l10n-en="Show all packs" data-l10n-fr="Afficher tous les packs">Show all packs</span></a></p>{% else %}<p><span data-l10n-en="No pack is listed yet. Build one and tick &quot;Show it on the public pack list&quot;." data-l10n-fr="Aucun pack public pour le moment. Créez-en un et activez sa publication.">No pack is listed yet. Build one and tick "Show it on the public pack list".</span></p>{% endif %}</section>
+    <section class="panel">{% if q != "" %}<p><span data-i18n="pack_list_no_match">No pack matches. Try a shorter name.</span></p><p><a href="/packs"><span data-i18n="pack_list_all">Show all packs</span></a></p>{% else %}<p><span data-i18n="pack_list_empty">No pack is listed yet. Build one and tick "Show it on the public pack list".</span></p>{% endif %}</section>
   {% else %}
   <div class="grid">
     {% for p in rows %}
     <article class="panel card">
       <h2><a href="/packs/{{ p.id }}">{{ p.name }}</a></h2>
-      <p class="muted">{% if p.created_by != "" %}by {{ p.created_by }} · {% endif %}{{ p.created }}</p>
+      <p class="muted">{% if p.created_by != "" %}<span data-i18n="pack_by">by</span> {{ p.created_by }} · {% endif %}{{ p.created }}</p>
       <p>{{ p.addons }}</p>
     </article>
     {% endfor %}
