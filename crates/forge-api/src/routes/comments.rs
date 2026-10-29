@@ -90,3 +90,27 @@ pub async fn remove(State(state): State<AppState>, user: CurrentUser,
         .bind(id).bind(addon.id).bind((state.clock)()).bind(user.id).execute(&state.pool).await?;
     Ok(Json(json!({"id":id,"deleted":true})))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::valid;
+
+    #[test]
+    fn rejects_blank_and_whitespace_only_comments() {
+        assert!(!valid(""));
+        assert!(!valid("  \n\t "));
+    }
+
+    #[test]
+    fn accepts_unicode_and_boundary_lengths() {
+        assert!(valid("Merci pour cet addon ! 🎮"));
+        assert!(valid(&"é".repeat(10_000)));
+        assert!(!valid(&"é".repeat(10_001)));
+    }
+
+    #[test]
+    fn counts_unicode_scalars_not_utf8_bytes() {
+        assert!(valid(&"界".repeat(10_000)));
+        assert!(!valid(&"界".repeat(10_001)));
+    }
+}
