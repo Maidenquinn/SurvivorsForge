@@ -14,10 +14,10 @@
   <noscript><button type="submit"><span data-i18n="search">Search</span></button></noscript>
 </form>
 
-<p id="result-status" class="sr-only" role="status">{{ total }} pack{% if total != 1 %}s{% endif %}</p>
+<p id="result-status" class="sr-only" role="status">{{ total }} <span data-i18n="pack_count_label">packs</span></p>
 <div id="results" class="list">
   <div class="result-bar">
-    <p class="muted">{{ total }} pack{% if total != 1 %}s{% endif %}</p>
+    <p class="muted">{{ total }} <span data-i18n="pack_count_label">packs</span></p>
     {% include "view_toggle.html" %}
   </div>
   {% if rows.is_empty() %}
