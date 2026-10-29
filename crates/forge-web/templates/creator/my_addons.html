@@ -35,7 +35,7 @@
 </table>
 </div>
 {% if claimable %}
-<p class="muted">Addons an admin added from your repos. Claiming checks on GitHub that you are an admin of the repo and that the <a href="{{ install_url }}" rel="noopener">SurvivorsForge App</a> is installed on it.</p>
+<p class="muted"><span data-i18n="my_claim_info">AddOns added by an administrator from your repositories can be claimed after GitHub verifies your repository administrator permissions and the installation of the SurvivorsForge App.</span> <a href="{{ install_url }}" rel="noopener" data-i18n="repo_install_app">Install the SurvivorsForge App</a></p>
 {% endif %}
 {% endif %}
 {% endblock %}
