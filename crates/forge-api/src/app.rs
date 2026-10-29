@@ -45,6 +45,9 @@ pub fn router(state: AppState) -> Router {
             "/v1/addons/{slug}",
             get(routes::addons::show).patch(routes::addons::update).delete(routes::addons::delete),
         )
+        .route("/v1/addons/{slug}/issues", get(routes::issues::list).post(routes::issues::create))
+        .route("/v1/addons/{slug}/issues/{id}", get(routes::issues::show).patch(routes::issues::set_status))
+        .route("/v1/addons/{slug}/issues/{id}/comments", post(routes::issues::comment))
         .route("/v1/addons/{slug}/versions", get(routes::versions::list))
         .route(
             "/v1/addons/{slug}/images",
