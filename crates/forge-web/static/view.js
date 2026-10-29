@@ -130,3 +130,101 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 });
+
+/* Dynamic issue navigation: progressively enhances ordinary links and forms.
+   The server still owns authorization, validation and CSRF checks. */
+(function () {
+  var busy = false;
+  function panel() { return document.querySelector("[data-dynamic-issues]"); }
+  async function navigate(url, options, push) {
+    if (busy) return;
+    busy = true;
+    var root = panel();
+    if (root) root.setAttribute("aria-busy", "true");
+    try {
+      var response = await fetch(url, Object.assign({credentials: "same-origin", headers: {"Accept": "text/html"}}, options || {}));
+      if (!response.ok) throw new Error("Request failed (" + response.status + ")");
+      var doc = new DOMParser().parseFromString(await response.text(), "text/html");
+      var next = doc.querySelector("[data-dynamic-issues]");
+      if (!next) {
+        window.location.assign(response.url);
+        return;
+      }
+      var current = panel();
+      if (!current) return;
+      current.replaceWith(next);
+      if (push) history.pushState({issuePanel: true}, "", response.url);
+      setup();
+      var detail = document.getElementById("issue-detail");
+      if (detail) detail.scrollIntoView({block: "nearest"});
+    } catch (error) {
+      if (root) {
+        root.removeAttribute("aria-busy");
+        var message = root.querySelector("[data-issue-error]");
+        if (!message) {
+          message = document.createElement("p");
+          message.className = "notice bad";
+          message.setAttribute("role", "alert");
+          message.dataset.issueError = "";
+          root.prepend(message);
+        }
+        message.textContent = error.message + ". Please retry.";
+      }
+    } finally { busy = false; }
+  }
+  function setup() {
+    var root = panel();
+    if (!root) return;
+    var rows = Array.from(root.querySelectorAll(".issue-row"));
+    var tabs = Array.from(root.querySelectorAll("[data-inline-filter]"));
+    var search = root.querySelector("#addon-issues-search");
+    var empty = root.querySelector("#addon-issues-empty");
+    var filter = "open";
+    function refresh() {
+      var query = (search && search.value || "").trim().toLowerCase(), count = 0;
+      rows.forEach(function (row) {
+        var status = row.dataset.status;
+        var match = filter === "all" || (filter === "open" ? status === "open" || status === "in_progress" : status === "closed" || status === "resolved");
+        row.hidden = !(match && (row.dataset.search || "").toLowerCase().includes(query));
+        if (!row.hidden) count++;
+      });
+      if (empty) empty.hidden = count > 0 || rows.length === 0;
+      tabs.forEach(function (tab) {
+        var active = tab.dataset.inlineFilter === filter;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-pressed", String(active));
+      });
+    }
+    tabs.forEach(function (tab) { tab.addEventListener("click", function () { filter = tab.dataset.inlineFilter; refresh(); }); });
+    if (search) search.addEventListener("input", refresh);
+    root.querySelectorAll("[data-open-new-issue]").forEach(function (link) {
+      link.addEventListener("click", function () {
+        var details = root.querySelector("#new-issue");
+        if (details) details.open = true;
+      });
+    });
+    refresh();
+  }
+  document.addEventListener("DOMContentLoaded", setup);
+  document.addEventListener("click", function (event) {
+    var link = event.target.closest("[data-dynamic-issues] a[href]");
+    if (!link || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    var url = new URL(link.href);
+    if (url.origin !== location.origin || url.pathname !== location.pathname || url.searchParams.get("tab") !== "issues") return;
+    event.preventDefault();
+    navigate(url.href, null, true);
+  });
+  document.addEventListener("submit", function (event) {
+    var form = event.target.closest("[data-dynamic-issues] form");
+    if (!form || event.defaultPrevented || !form.matches('form[action*="/issues"]')) return;
+    event.preventDefault();
+    var submit = form.querySelector('[type="submit"]');
+    if (submit) submit.disabled = true;
+    navigate(form.action, {method: "POST", body: new FormData(form)}, true).finally(function () {
+      if (submit && submit.isConnected) submit.disabled = false;
+    });
+  });
+  window.addEventListener("popstate", function () {
+    if (panel() && new URL(location.href).searchParams.get("tab") === "issues") navigate(location.href, null, false);
+  });
+})();
