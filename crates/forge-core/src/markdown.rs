@@ -1,6 +1,6 @@
 //! Addon descriptions: Markdown in, sanitized HTML out. The only place user text becomes HTML.
 
-use pulldown_cmark::{Options, Parser, html};
+use pulldown_cmark::{Event, Options, Parser, html};
 use std::collections::HashSet;
 
 const TAGS: &[&str] = &[
@@ -10,9 +10,12 @@ const TAGS: &[&str] = &[
 
 /// Renders `md` to HTML that is safe to embed: no scripts, no event handlers, no styles, links only to
 /// `http`, `https` and `mailto`, images only from `image_base` (the platform's own image URL).
+/// A single line break stays one, as in GitHub comments; authors paste text, not prose.
 pub fn render(md: &str, image_base: &str) -> String {
+    let events = Parser::new_ext(md, Options::ENABLE_TABLES | Options::ENABLE_STRIKETHROUGH)
+        .map(|e| if e == Event::SoftBreak { Event::HardBreak } else { e });
     let mut raw = String::new();
-    html::push_html(&mut raw, Parser::new_ext(md, Options::ENABLE_TABLES | Options::ENABLE_STRIKETHROUGH));
+    html::push_html(&mut raw, events);
 
     let image_base = format!("{}/", image_base.trim_end_matches('/'));
     ammonia::Builder::default()
@@ -95,6 +98,12 @@ mod tests {
         let out = r("[site](https://example.test)");
         assert!(out.contains("rel=\"nofollow noopener noreferrer ugc\""), "{out}");
         assert!(out.contains("href=\"https://example.test\""), "{out}");
+    }
+
+    #[test]
+    fn a_single_line_break_stays_a_line_break() {
+        let out = r("Golden chest pins.\nShows stack counts.");
+        assert!(out.contains("Golden chest pins.<br>"), "{out}");
     }
 
     #[test]

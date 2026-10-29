@@ -83,6 +83,7 @@
   <textarea id="description_md" name="description_md" rows="12" placeholder="## Features&#10;&#10;- ..."
             hx-post="/addons/new/preview" hx-trigger="input changed delay:500ms" hx-target="#preview">{{ form.description_md }}</textarea>
   {% if errors.get("description") != "" %}<p class="field-error">{{ errors.get("description") }}</p>{% endif %}
+  <p class="muted"><code># Heading</code> (with a space), <code>**bold**</code>, <code>*italic*</code>, <code>- list</code>, <code>[link](https://...)</code>. Every line break is kept.</p>
   <h3>Preview</h3>
   <div id="preview" class="description preview"></div>
   <p class="muted">You add screenshots and the icon right after publishing: they need the addon to exist.</p>
