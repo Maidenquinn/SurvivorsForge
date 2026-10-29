@@ -2,7 +2,7 @@
 use crate::app::AppState;
 use crate::auth::CurrentUser;
 use crate::error::{ApiError, ApiResult};
-use crate::routes::addons::{load_addon, user_permissions};
+use crate::routes::addons::{load_addon, user_permissions, not_blocked};
 use axum::{Json, extract::{Path, Query, State}, http::StatusCode};
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -26,7 +26,7 @@ fn valid(text: &str) -> bool {
 pub async fn list(State(state): State<AppState>, Path(slug): Path<String>, Query(page): Query<Page>)
     -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
-    if addon.blocked_at.is_some() { return Err(ApiError::not_found()); }
+    not_blocked(&addon)?;
     let before = page.before.unwrap_or(i64::MAX);
     let comments: Value = sqlx::query_scalar(
         "SELECT coalesce(json_agg(json_build_object(
@@ -46,7 +46,7 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser,
     -> ApiResult<(StatusCode, Json<Value>)> {
     if !valid(&body.body) { return Err(invalid()); }
     let addon = load_addon(&state.pool, &slug).await?;
-    if addon.blocked_at.is_some() { return Err(forbidden()); }
+    not_blocked(&addon)?;
     let now = (state.clock)();
     let recent: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM addon_comments WHERE author_id=$1 AND created_at>$2"
@@ -64,7 +64,7 @@ pub async fn edit(State(state): State<AppState>, user: CurrentUser,
     Path((slug,id)): Path<(String,i64)>, Json(body): Json<Body>) -> ApiResult<Json<Value>> {
     if !valid(&body.body) { return Err(invalid()); }
     let addon = load_addon(&state.pool, &slug).await?;
-    if addon.blocked_at.is_some() { return Err(forbidden()); }
+    not_blocked(&addon)?;
     let author: Option<i64> = sqlx::query_scalar(
         "SELECT author_id FROM addon_comments WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL"
     ).bind(id).bind(addon.id).fetch_optional(&state.pool).await?;
@@ -83,7 +83,7 @@ pub async fn remove(State(state): State<AppState>, user: CurrentUser,
     ).bind(id).bind(addon.id).fetch_optional(&state.pool).await?;
     let author = author.ok_or_else(ApiError::not_found)?;
     let rights = user_permissions(&state.pool, &addon, &user).await?;
-    if author != user.id && !user.is_admin() && !rights.owner && !rights.edit_description {
+    if author != user.id && !user.is_admin() && !rights.owner && !rights.admin && !rights.edit_description {
         return Err(forbidden());
     }
     sqlx::query("UPDATE addon_comments SET deleted_at=$3,deleted_by=$4 WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL")
