@@ -70,19 +70,6 @@ async fn addons_go_into_categories_without_subcategories(pool: PgPool) {
     assert_eq!(app.patch("/v1/addons/lucky", Some(&alice), json!({ "category": "warlock" })).await.status, StatusCode::OK);
 }
 
-#[sqlx::test]
-async fn whether_the_app_is_installed_on_my_account(pool: PgPool) {
-    let app = TestApp::new(pool);
-    let alice = app.login(1, "alice").await;
-    assert_eq!(app.get("/v1/me/installation", None).await.status, StatusCode::UNAUTHORIZED);
-    let none = app.get("/v1/me/installation", Some(&alice)).await.json();
-    assert_eq!(none, json!({ "installed": false, "manage_url": null }));
-
-    app.github.data().installations.insert("alice/lucky".into(), 77);
-    let mine = app.get("/v1/me/installation", Some(&alice)).await.json();
-    assert_eq!(mine, json!({ "installed": true, "manage_url": "https://github.com/settings/installations/77" }));
-}
-
 fn addon_zip(entries: &[(&str, &str)]) -> Vec<u8> {
     use std::io::Write;
     let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
@@ -115,6 +102,12 @@ async fn my_repos_and_what_the_form_can_fill_in(pool: PgPool) {
     assert_eq!(names(app.get("/v1/me/repos", Some(&alice)).await.json()), ["alice/LuckyOdds", "alice/TagAddon"], "own account, without repos that already have an addon");
     assert_eq!(names(app.get("/v1/me/repos?q=tag", Some(&alice)).await.json()), ["alice/TagAddon"], "by part of the name");
     assert_eq!(app.get("/v1/me/repos?owner=bob", Some(&alice)).await.status, StatusCode::FORBIDDEN, "only admins search other accounts");
+    // Her public organizations count as her accounts too; their repos still need the App to publish.
+    app.github.add_own_repo(104, "guild/GuildAddon", 500);
+    app.github.data().orgs.insert("alice".into(), vec!["guild".into()]);
+    assert_eq!(app.get("/v1/me/accounts", Some(&alice)).await.json(), json!(["alice", "guild"]));
+    assert_eq!(names(app.get("/v1/me/repos?owner=Guild", Some(&alice)).await.json()), ["guild/GuildAddon"]);
+    assert_eq!(app.get("/v1/me/repos/guild/GuildAddon/suggestion", Some(&alice)).await.status, StatusCode::OK);
     let root = app.login(99, "root").await;
     assert_eq!(names(app.get("/v1/me/repos?owner=bob", Some(&root)).await.json()), ["bob/Other"], "admins add addons of any account");
 

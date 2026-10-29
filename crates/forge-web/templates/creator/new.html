@@ -4,21 +4,6 @@
 <h1>Publish an addon</h1>
 {% if errors.get("form") != "" %}<div class="notice bad" role="alert">{{ errors.get("form") }}</div>{% endif %}
 
-{% match manage_url %}
-{% when Some with (manage) %}
-<section class="notice ok">
-  <strong>1. The SurvivorsForge App is installed on your account.</strong>
-  Missing a repo? <a href="{{ manage }}" rel="noopener">Choose the repos it may read</a>. For a repo of an organization,
-  <a href="{{ install_url }}" rel="noopener">install it there</a>.
-</section>
-{% when None %}
-<section class="panel">
-  <h2>1. Install the SurvivorsForge App on your repo</h2>
-  <p>The App lets the platform read your releases and proves the repo is yours. It only gets read access.</p>
-  <p><a class="button secondary" href="{{ install_url }}" rel="noopener">Install the GitHub App</a></p>
-</section>
-{% endmatch %}
-
 {% match filled %}
 {% when Some with (Ok(from)) %}<div class="notice ok" role="status">Filled in from {{ from }}. Check every field and pick a category before publishing.</div>
 {% when Some with (Err(why)) %}<div class="notice warn" role="alert">{{ form.repo }} could not be read ({{ why }}). Fill in the form by hand.</div>
@@ -27,12 +12,12 @@
 
 <form class="panel" method="post" action="/addons/new" enctype="multipart/form-data">
   <input type="hidden" name="csrf" value="{{ csrf }}">
-  <h2>2. Your repo</h2>
+  <h2>1. Your repo</h2>
   {% include "creator/repo_field.html" %}
   <p class="muted">Type the repo name and pick it from the list to fill in the form from its newest release.</p>
   {% if errors.get("repo") != "" %}<p class="field-error">{{ errors.get("repo") }}</p>{% endif %}
 
-  <h2>3. About the addon</h2>
+  <h2>2. About the addon</h2>
   <label for="name">Name</label>
   <input id="name" name="name" value="{{ form.name }}" maxlength="64" required>
   {% if errors.get("name") != "" %}<p class="field-error">{{ errors.get("name") }}</p>{% endif %}
@@ -69,7 +54,7 @@
   <p class="muted">One per line. Each folder belongs to one addon on the whole platform.</p>
   {% if errors.get("folders") != "" %}<p class="field-error">{{ errors.get("folders") }}</p>{% endif %}
 
-  <h2>4. Description</h2>
+  <h2>3. Description</h2>
   <label for="description_md">Description (Markdown)</label>
   <textarea id="description_md" name="description_md" rows="12" placeholder="## Features&#10;&#10;- ..."
             hx-post="/addons/new/preview" hx-trigger="input changed delay:500ms" hx-target="#preview">{{ form.description_md }}</textarea>
@@ -78,7 +63,7 @@
   <h3>Preview</h3>
   <div id="preview" class="description preview"></div>
 
-  <h2>5. Icon and screenshots</h2>
+  <h2>4. Icon and screenshots</h2>
   <p class="muted">Optional, and you can change them any time later. PNG, JPEG or WebP, at most 5 MB each.</p>
   <label for="icon">Icon (cropped to a 256 px square)</label>
   <input id="icon" type="file" name="icon" accept="image/png,image/jpeg,image/webp">

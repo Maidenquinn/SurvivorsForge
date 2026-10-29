@@ -19,11 +19,38 @@ async fn creator(app: &TestApp, github_id: i64, login: &str, repo_id: i64, repo:
 }
 
 #[sqlx::test]
+async fn repos_of_the_own_account_need_no_app(pool: PgPool) {
+    // GitHub logged her in as this account, so its repos are hers; the owner's id counts, not a name.
+    let app = TestApp::new(pool);
+    let alice = app.login(1, "alice").await;
+    app.github.add_own_repo(20, "alice/lucky", 1);
+    let reply = app.post("/v1/addons", Some(&alice), addon("lucky", "alice/lucky", &["Lucky"])).await;
+    assert_eq!(reply.status, StatusCode::CREATED, "{}", reply.body);
+    assert_eq!(reply.json()["owner"]["login"], "alice");
+
+    app.github.add_own_repo(21, "alice/renamed", 7);
+    let reply = app.post("/v1/addons", Some(&alice), addon("renamed", "alice/renamed", &["Renamed"])).await;
+    assert_eq!(reply.error(), "app_not_installed", "same name, other account");
+
+    // An addon an admin added from her repo: she claims it without the App too.
+    app.github.add_own_repo(22, "alice/orphan", 1);
+    app.post("/v1/addons", Some(&alice), addon("orphan", "alice/orphan", &["Orphan"])).await;
+    sqlx::query("UPDATE addons SET owner_id = NULL, installation_id = NULL WHERE slug = 'orphan'").execute(&app.pool).await.unwrap();
+    let reply = app.post("/v1/addons/orphan/claim", Some(&alice), json!({})).await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+}
+
+#[sqlx::test]
 async fn create_requires_installation_public_repo_and_admin(pool: PgPool) {
     let app = TestApp::new(pool);
     let token = app.login(1, "alice").await;
 
     let reply = app.post("/v1/addons", Some(&token), addon("lucky", "alice/lucky", &["Lucky"])).await;
+    assert_eq!((reply.status, reply.error().as_str()), (StatusCode::UNPROCESSABLE_ENTITY, "repo_not_found"));
+
+    // A repo of another account: the App and admin rights there prove it is hers.
+    app.github.add_own_repo(11, "bob/other", 2);
+    let reply = app.post("/v1/addons", Some(&token), addon("other", "bob/other", &["Other"])).await;
     assert_eq!((reply.status, reply.error().as_str()), (StatusCode::UNPROCESSABLE_ENTITY, "app_not_installed"));
 
     app.github.add_repo(10, "alice/lucky", "someone-else");

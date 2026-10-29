@@ -14,17 +14,6 @@ pub async fn me(user: CurrentUser) -> Json<CurrentUser> {
     Json(user)
 }
 
-/// `GET /v1/me/installation`: whether the App is installed on the user's own account, and where
-/// they choose its repos. The website hides the install step when it is.
-pub async fn installation(State(state): State<AppState>, user: CurrentUser) -> ApiResult<Json<Value>> {
-    let installation = state.github.installation_for_user(&user.login).await.map_err(|e| {
-        tracing::warn!(error = %e, "cannot read the App installation");
-        ApiError::new(StatusCode::BAD_GATEWAY, "github_unavailable", "GitHub cannot be reached right now")
-    })?;
-    let manage_url = installation.map(|id| format!("https://github.com/settings/installations/{id}"));
-    Ok(Json(json!({ "installed": installation.is_some(), "manage_url": manage_url })))
-}
-
 fn github_down(e: crate::github::GitHubError) -> ApiError {
     tracing::warn!(error = %e, "GitHub request failed");
     ApiError::new(StatusCode::BAD_GATEWAY, "github_unavailable", "GitHub cannot be reached right now")
@@ -37,23 +26,36 @@ pub struct RepoSearch {
     q: String,
 }
 
-/// The account whose repos the publish form offers: the user's own; admins may name any.
-fn repo_owner(user: &CurrentUser, wanted: Option<&str>) -> ApiResult<String> {
-    match wanted.map(str::trim).filter(|o| !o.is_empty()) {
-        None => Ok(user.login.clone()),
-        Some(owner) if !owner.eq_ignore_ascii_case(&user.login) && !user.is_admin() => {
-            Err(ApiError::new(StatusCode::FORBIDDEN, "not_your_account", "You can publish repos of your own account only"))
-        }
-        Some(owner) if owner.len() <= 39 && owner.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') => Ok(owner.to_string()),
-        Some(_) => Err(ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "invalid_owner", "Not a GitHub account name")),
+/// The user's own account and the organizations they are a public member of.
+async fn accounts_of(state: &AppState, user: &CurrentUser) -> ApiResult<Vec<String>> {
+    let mut accounts = vec![user.login.clone()];
+    accounts.extend(state.github.user_orgs(&user.login).await.map_err(github_down)?);
+    Ok(accounts)
+}
+
+/// `GET /v1/me/accounts`: the accounts whose repos the user may publish from the form.
+pub async fn accounts(State(state): State<AppState>, user: CurrentUser) -> ApiResult<Json<Value>> {
+    Ok(Json(json!(accounts_of(&state, &user).await?)))
+}
+
+/// The account whose repos the publish form offers: one of the user's accounts; admins may name any.
+async fn repo_owner(state: &AppState, user: &CurrentUser, wanted: Option<&str>) -> ApiResult<String> {
+    let Some(owner) = wanted.map(str::trim).filter(|o| !o.is_empty()) else { return Ok(user.login.clone()) };
+    if owner.len() > 39 || !owner.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
+        return Err(ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "invalid_owner", "Not a GitHub account name"));
     }
+    let mine = owner.eq_ignore_ascii_case(&user.login) || user.is_admin() || accounts_of(state, user).await?.iter().any(|a| a.eq_ignore_ascii_case(owner));
+    if !mine {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "not_your_account", "You can publish repos of your account and your organizations only"));
+    }
+    Ok(owner.to_string())
 }
 
 /// `GET /v1/me/repos?owner=&q=`: up to ten public repos of the account whose name contains `q`,
 /// without the ones that already have an addon. Read from GitHub's public list, so the App need
 /// not be installed yet; publishing still needs it.
 pub async fn repos(State(state): State<AppState>, user: CurrentUser, Query(search): Query<RepoSearch>) -> ApiResult<Json<Value>> {
-    let owner = repo_owner(&user, search.owner.as_deref())?;
+    let owner = repo_owner(&state, &user, search.owner.as_deref()).await?;
     let repos = match state.github.user_repos(&owner).await {
         Ok(repos) => repos,
         Err(GitHubError::NotFound) => Vec::new(),
@@ -76,7 +78,7 @@ pub async fn repos(State(state): State<AppState>, user: CurrentUser, Query(searc
 /// `GET /v1/me/repos/{owner}/{repo}/suggestion`: the publish form filled in from the newest
 /// release with a zip, else the newest tag, all read from public GitHub data.
 pub async fn suggestion(State(state): State<AppState>, user: CurrentUser, Path((owner, name)): Path<(String, String)>) -> ApiResult<Json<Value>> {
-    repo_owner(&user, Some(&owner))?;
+    repo_owner(&state, &user, Some(&owner)).await?;
     let repo = match state.github.repo_by_name(None, &format!("{owner}/{name}")).await {
         Ok(repo) if !repo.private => repo,
         Ok(_) | Err(GitHubError::NotFound) => return Err(ApiError::not_found()),

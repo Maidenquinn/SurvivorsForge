@@ -5,6 +5,9 @@ use serde::{Deserialize, Deserializer};
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Owner {
+    /// The account's GitHub id; unlike the login it never changes.
+    #[serde(default)]
+    pub id: i64,
     pub login: String,
 }
 

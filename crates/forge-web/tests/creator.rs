@@ -34,7 +34,7 @@ async fn wizard_happy_path_and_field_errors() {
     let mut web = logged_in(owner()).await;
     let page = web.get("/addons/new").await;
     assert!(page.body.contains(">Unit Frames</option>") && !page.body.contains(">Classes</option>"), "only categories without subcategories");
-    assert!(page.body.contains("https://github.com/apps/survivorsforge-test/installations/new"), "install link");
+    assert!(!page.body.contains("Install the GitHub App"), "repos of the own account need no App");
 
     Mock::given(method("POST"))
         .and(path("/v1/addons"))
@@ -232,22 +232,6 @@ async fn creator_pages_need_login() {
 }
 
 #[tokio::test]
-async fn the_install_step_goes_away_once_the_app_is_installed() {
-    let mut web = logged_in(owner()).await;
-    let page = web.get("/addons/new").await;
-    assert!(page.body.contains("Install the GitHub App"), "no answer from the API: show the step");
-
-    Mock::given(method("GET"))
-        .and(path("/v1/me/installation"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "installed": true, "manage_url": "https://github.com/settings/installations/77" })))
-        .mount(&web.api)
-        .await;
-    let page = web.get("/addons/new").await;
-    assert!(!page.body.contains(">Install the GitHub App<"), "{}", page.body);
-    assert!(page.body.contains("https://github.com/settings/installations/77"), "where to give it more repos");
-}
-
-#[tokio::test]
 async fn my_repos_fill_in_the_form() {
     let mut web = logged_in(owner()).await;
     Mock::given(method("GET"))
@@ -268,8 +252,8 @@ async fn my_repos_fill_in_the_form() {
     assert!(page.body.contains(r#"<span class="repo-owner">alice</span>"#) && page.body.contains(r#"name="repo_name""#), "{}", page.body);
     assert!(!page.body.contains(r#"<input name="repo_owner""#), "no owner field for creators");
 
-    // Typing asks for matching public repos; even a forged owner searches the visitor's own.
-    let found = web.get("/addons/new/repos?repo_owner=bob&repo_name=luck").await;
+    // Typing asks for matching public repos of the chosen account.
+    let found = web.get("/addons/new/repos?repo_owner=alice&repo_name=luck").await;
     assert!(found.body.contains("alice/LuckyOdds") && found.body.contains("Odds"), "{}", found.body);
     let picked = web.get("/addons/new/repo?repo=alice/LuckyOdds").await;
     assert!(picked.body.contains(r#"value="LuckyOdds""#) && picked.body.contains(r#"href="/addons/new?repo=alice/LuckyOdds""#), "{}", picked.body);
@@ -281,7 +265,7 @@ async fn my_repos_fill_in_the_form() {
         assert!(filled.body.contains(text), "missing {text}");
     }
 
-    // The repo the API gets is always the visitor's account plus the typed name.
+    // The repo the API gets is the chosen account plus the typed name; the API checks the account.
     Mock::given(method("POST"))
         .and(path("/v1/addons"))
         .and(body_partial_json(json!({ "repo": "alice/LuckyOdds" })))
@@ -289,12 +273,23 @@ async fn my_repos_fill_in_the_form() {
         .expect(1)
         .mount(&web.api)
         .await;
-    let fields = [("repo_owner", "bob"), ("repo_name", "LuckyOdds"), ("slug", "luckyodds"), ("name", "Lucky"), ("category", "Miscellaneous"), ("source_type", "release"), ("folders", "LuckyOdds")];
+    let fields = [("repo_owner", "alice"), ("repo_name", "LuckyOdds"), ("slug", "luckyodds"), ("name", "Lucky"), ("category", "Miscellaneous"), ("source_type", "release"), ("folders", "LuckyOdds")];
     web.post_multipart("/addons/new", &fields, &[]).await;
 
     let broken = web.get("/addons/new?repo=alice/Other").await;
     assert_eq!(broken.status, StatusCode::OK);
     assert!(broken.body.contains("could not be read"), "the form stays usable: {}", broken.body);
+}
+
+#[tokio::test]
+async fn creators_pick_their_account_or_organization() {
+    let mut web = logged_in(owner()).await;
+    get_json(&web, "/v1/me/accounts", json!(["alice", "guild"])).await;
+    let page = web.get("/addons/new").await;    for text in [r#"<select name="repo_owner""#, r#"<option value="alice" selected>alice</option>"#, r#"<option value="guild">guild</option>"#, "need the App and your admin rights"] {
+        assert!(page.body.contains(text), "missing {text}: {}", page.body);
+    }
+    assert!(!page.body.contains("Install the SurvivorsForge App on your repo"), "no install step any more");
+    assert!(page.body.contains("<h2>1. Your repo</h2>"));
 }
 
 #[tokio::test]

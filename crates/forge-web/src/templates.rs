@@ -274,8 +274,6 @@ pub struct NewAddonPage {
     pub user: Option<Visitor>,
     pub csrf: String,
     pub install_url: String,
-    /// Where the visitor picks the repos of their App installation; `None` when it is not installed.
-    pub manage_url: Option<String>,
     pub repo: RepoField,
     /// What the form was filled in from, or why it could not be.
     pub filled: Option<Result<String, String>>,
@@ -291,6 +289,10 @@ pub struct RepoField {
     pub owner: String,
     pub name: String,
     pub editable: bool,
+    /// The creator's account and public organizations to choose from (admins type any).
+    pub accounts: Vec<String>,
+    /// Where to install the App, which repos of an organization need.
+    pub install_url: String,
     pub page: String,
     /// Picked from the suggestions: offer to fill in the form from it.
     pub picked: bool,

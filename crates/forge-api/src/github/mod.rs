@@ -14,7 +14,7 @@ use reqwest::StatusCode;
 use reqwest::header::{ACCEPT, ETAG, HeaderMap, IF_NONE_MATCH, USER_AGENT};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use types::{Installation, InstallationToken, Permission, Release, Repo, Tag, User};
+use types::{Installation, InstallationToken, Owner, Permission, Release, Repo, Tag, User};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GitHubError {
@@ -67,10 +67,10 @@ pub type GitHubResult<T> = Result<T, GitHubError>;
 pub trait GitHubApi: Send + Sync {
     /// The installation of the App on `owner/name`; `None` when the App is not installed there.
     async fn installation_for_repo(&self, full_name: &str) -> GitHubResult<Option<i64>>;
-    /// The installation of the App on the personal account `login`; `None` when there is none.
-    async fn installation_for_user(&self, login: &str) -> GitHubResult<Option<i64>>;
     /// The public repos of an account, newest push first; no App installation needed.
     async fn user_repos(&self, login: &str) -> GitHubResult<Vec<Repo>>;
+    /// The organizations the user is a public member of.
+    async fn user_orgs(&self, login: &str) -> GitHubResult<Vec<String>>;
     async fn repo(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo>;
     async fn repo_by_name(&self, installation: Option<i64>, full_name: &str) -> GitHubResult<Repo>;
     /// `admin`, `maintain`, `write`, `triage`, `read` or `none`.
@@ -280,14 +280,9 @@ impl GitHubApi for GitHubClient {
         Ok(optional(installation)?.map(|i| i.id))
     }
 
-    async fn installation_for_user(&self, login: &str) -> GitHubResult<Option<i64>> {
-        let url = format!("{}/users/{login}/installation", self.api_url);
-        let response = self.request(self.http.get(&url), &self.app_jwt()?).send().await.map_err(network)?;
-        let installation: GitHubResult<Installation> = match check(response).await {
-            Ok(response) => parse(response).await,
-            Err(e) => Err(e),
-        };
-        Ok(optional(installation)?.map(|i| i.id))
+    async fn user_orgs(&self, login: &str) -> GitHubResult<Vec<String>> {
+        let orgs: Vec<Owner> = self.get_json(None, &format!("/users/{login}/orgs?per_page=100")).await?;
+        Ok(orgs.into_iter().map(|o| o.login).collect())
     }
 
     async fn user_repos(&self, login: &str) -> GitHubResult<Vec<Repo>> {

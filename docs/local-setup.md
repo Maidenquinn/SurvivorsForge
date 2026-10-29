@@ -39,8 +39,10 @@ After saving, from the App's settings page:
 - **URL name** (the end of `github.com/apps/<name>`) → `GITHUB_APP_SLUG`
 - **Private key** (*Generate a private key*, a `.pem` file is downloaded) → step 2
 
-To try publishing your own addon later, install the App on a repo of yours that has a release
-with an addon zip (*Install App* in the App's settings).
+To try publishing your own addon later, use a public repo of your account that has a release
+with an addon zip. Repos of your own account need no App; installing it (*Install App* in the
+App's settings) brings new releases at once instead of with the daily poll. Repos of an
+organization need the App and your admin rights there.
 
 ## 2. Configure
 

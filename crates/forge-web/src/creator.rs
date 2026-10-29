@@ -163,19 +163,14 @@ pub struct NewAddonForm {
     pub description_md: String,
 }
 
-/// Where the visitor manages the App on their account, if it is installed there. Unknown (GitHub
-/// down) counts as not installed, so the install step stays.
-async fn app_manage_url(state: &AppState, token: &str) -> Option<String> {
-    let answer = state.api.get("/v1/me/installation", Some(token)).await.ok()?;
-    answer["manage_url"].as_str().map(str::to_string)
-}
-
 /// The repo input of the publish forms; `admin` on the admin form, where the account is editable.
 pub fn repo_field(owner: &str, name: &str, admin: bool, picked: bool) -> RepoField {
     RepoField {
         owner: owner.into(),
         name: name.into(),
         editable: admin,
+        accounts: Vec::new(),
+        install_url: String::new(),
         page: if admin { "admin".into() } else { String::new() },
         picked,
         suggestions: Vec::new(),
@@ -195,15 +190,28 @@ pub struct RepoQuery {
     page: String,
 }
 
-/// The account a visitor may search and publish: their own, any for an admin on the admin form.
-fn account_of(user: &Visitor, page: &str, wanted: &str) -> String {
-    if page == "admin" && user.admin { wanted.trim().to_string() } else { user.login.clone() }
+/// The repo field of a creator: their account and public organizations to choose from. When GitHub
+/// cannot tell the organizations, their own account stays.
+async fn creator_field(state: &AppState, token: &str, user: &Visitor, owner: &str, name: &str, picked: bool) -> RepoField {
+    let mut field = repo_field(if owner.is_empty() { &user.login } else { owner }, name, false, picked);
+    field.accounts = match state.api.get("/v1/me/accounts", Some(token)).await {
+        Ok(list) => list.as_array().into_iter().flatten().map(s).collect(),
+        Err(_) => vec![user.login.clone()],
+    };
+    field.install_url = state.install_url();
+    field
+}
+
+/// The account to search: the chosen one, else the visitor's own; the API checks it is theirs.
+fn account_of(user: &Visitor, wanted: &str) -> String {
+    let wanted = wanted.trim();
+    if wanted.is_empty() { user.login.clone() } else { wanted.to_string() }
 }
 
 /// `GET /addons/new/repos` (htmx): the public repos of the account matching the typed name.
 pub async fn repo_suggestions(State(state): State<AppState>, jar: PrivateCookieJar, Query(q): Query<RepoQuery>) -> WebResult<Html<String>> {
     let (user, token) = me(&state, &jar).await?;
-    let owner = account_of(&user, &q.page, &q.repo_owner);
+    let owner = account_of(&user, &q.repo_owner);
     let mut list = repo_field(&owner, "", q.page == "admin", false);
     if !owner.is_empty() {
         let query = reqwest::Url::parse_with_params("http://x/", &[("owner", owner.as_str()), ("q", q.repo_name.trim())])
@@ -222,10 +230,14 @@ pub async fn repo_suggestions(State(state): State<AppState>, jar: PrivateCookieJ
 
 /// `GET /addons/new/repo?repo=owner/name` (htmx): the repo field with a picked suggestion.
 pub async fn repo_pick(State(state): State<AppState>, jar: PrivateCookieJar, Query(q): Query<RepoQuery>) -> WebResult<Html<String>> {
-    let (user, _) = me(&state, &jar).await?;
+    let (user, token) = me(&state, &jar).await?;
     let (owner, name) = q.repo.split_once('/').unwrap_or(("", q.repo.as_str()));
-    let admin = q.page == "admin" && user.admin;
-    Ok(render(&RepoFieldFragment { repo: repo_field(&account_of(&user, &q.page, owner), name, admin, true) }))
+    let repo = if q.page == "admin" && user.admin {
+        repo_field(owner, name, true, true)
+    } else {
+        creator_field(&state, &token, &user, owner, name, true).await
+    };
+    Ok(render(&RepoFieldFragment { repo }))
 }
 
 #[derive(Deserialize)]
@@ -263,7 +275,6 @@ pub async fn new_addon(
     Query(query): Query<NewAddonQuery>,
 ) -> WebResult<Html<String>> {
     let (user, token) = me(&state, &jar).await?;
-    let manage_url = app_manage_url(&state, &token).await;
     let (form, filled) = match query.repo.as_deref().map(str::trim).filter(|r| r.split('/').count() == 2) {
         Some(repo) => {
             let (form, filled) = filled_in(&state, &token, repo).await;
@@ -271,12 +282,12 @@ pub async fn new_addon(
         }
         None => (NewAddonForm { source_type: "release".into(), ..Default::default() }, None),
     };
-    let field = repo_field(&user.login, form.repo.rsplit('/').next().unwrap_or_default(), false, false);
+    let (owner, name) = form.repo.split_once('/').unwrap_or_default();
+    let field = creator_field(&state, &token, &user, owner, name, false).await;
     Ok(render(&NewAddonPage {
         user: Some(user),
         csrf: csrf.0,
         install_url: state.install_url(),
-        manage_url,
         repo: field,
         filled,
         categories: categories(&state).await?,
@@ -317,9 +328,9 @@ pub async fn create_addon(
 ) -> WebResult<Response> {
     let (user, token) = me(&state, &jar).await?;
     let (mut form, images, complete) = read_new_addon(multipart).await;
-    // Creators publish repos of their own account, whatever the form sends as owner.
+    // The chosen account and the typed name; the API proves the account is the visitor's.
     if !form.repo_name.trim().is_empty() {
-        form.repo = format!("{}/{}", user.login, form.repo_name.trim());
+        form.repo = format!("{}/{}", account_of(&user, &form.repo_owner), form.repo_name.trim());
     }
     let body = json!({
         "repo": form.repo.trim(), "slug": form.slug.trim(), "name": form.name.trim(), "summary": form.summary.trim(),
@@ -356,13 +367,12 @@ pub async fn create_addon(
                 let note = "Nothing was published. Choose the images again.";
                 errors.0.entry("form".into()).and_modify(|m| *m = format!("{m} {note}")).or_insert_with(|| note.into());
             }
-            let manage_url = app_manage_url(&state, &token).await;
-            let field = repo_field(&user.login, form.repo.rsplit('/').next().unwrap_or_default(), false, false);
+            let (owner, name) = form.repo.split_once('/').unwrap_or_default();
+            let field = creator_field(&state, &token, &user, owner, name, false).await;
             let page = NewAddonPage {
                 user: Some(user),
                 csrf: csrf.0,
                 install_url: state.install_url(),
-                manage_url,
                 repo: field,
                 filled: None,
                 categories: categories(&state).await?,

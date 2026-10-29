@@ -268,6 +268,7 @@ input.narrow { width: 6em; flex: none; }
 /* Repo field of the publish forms: the account, a slash, the name; suggestions below it */
 .repo-input { display: flex; align-items: center; gap: 8px; }
 .repo-input input { flex: 1; width: auto; min-width: 0; }
+.repo-input select { flex: none; width: auto; max-width: 45%; }
 .repo-owner { color: var(--gold-bright); }
 .repo-slash { color: var(--muted); }
 .suggestions { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
