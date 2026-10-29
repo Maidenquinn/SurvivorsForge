@@ -1,1 +1,8 @@
 /target
+
+# Secrets and local runtime data of the platform (never commit these)
+.env
+.env.*
+!.env.example
+*.pem
+/data/
