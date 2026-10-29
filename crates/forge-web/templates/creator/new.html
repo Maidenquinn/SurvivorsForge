@@ -18,7 +18,7 @@
   {% if errors.get("repo") != "" %}<p class="field-error">{{ errors.get("repo") }}</p>{% endif %}
 
   <h2><span data-l10n-en="2. About the addon" data-l10n-fr="2. Informations sur l'AddOn">2. About the addon</span></h2>
-  <label for="name"><span data-l10n-en="Name" data-l10n-fr="Nom">Name</span></label>
+  <label for="name"><span data-i18n="name">Name</span></label>
   <input id="name" name="name" value="{{ form.name }}" maxlength="64" required>
   {% if errors.get("name") != "" %}<p class="field-error">{{ errors.get("name") }}</p>{% endif %}
 
@@ -32,7 +32,7 @@
   <p class="muted"><span data-l10n-en="One sentence, shown in lists and search results." data-l10n-fr="Une phrase affichée dans les listes et les résultats de recherche.">One sentence, shown in lists and search results.</span></p>
   {% if errors.get("summary") != "" %}<p class="field-error">{{ errors.get("summary") }}</p>{% endif %}
 
-  <label for="category"><span data-l10n-en="Category" data-l10n-fr="Catégorie">Category</span></label>
+  <label for="category"><span data-i18n="category">Category</span></label>
   <select id="category" name="category">
     {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(form.category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
   </select>

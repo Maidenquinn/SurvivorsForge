@@ -28,7 +28,7 @@
           <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="back" value="/me/addons">
           <button type="submit"><span data-l10n-en="Claim it" data-l10n-fr="Revendiquer">Claim it</span></button>
         </form>
-      {% else %}<a href="/addons/{{ r.slug }}/edit"><span data-l10n-en="Edit" data-l10n-fr="Modifier">Edit</span></a>{% endif %}</td>
+      {% else %}<a href="/addons/{{ r.slug }}/edit"><span data-i18n="edit">Edit</span></a>{% endif %}</td>
     </tr>
   {% endfor %}
   </tbody>

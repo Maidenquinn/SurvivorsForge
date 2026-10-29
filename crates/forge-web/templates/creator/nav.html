@@ -3,9 +3,9 @@
   {% if perms.owner || perms.edit_description %}<a href="/addons/{{ slug }}/edit">Details</a>{% endif %}
   {% if perms.edit_images %}<a href="/addons/{{ slug }}/images">Images</a>{% endif %}
   {% if perms.owner %}
-    <a href="/addons/{{ slug }}/members">Contributors</a>
-    <a href="/addons/{{ slug }}/dependencies">Dependencies</a>
-    <a href="/addons/{{ slug }}/versions">Versions</a>
-    <a href="/addons/{{ slug }}/delete" class="danger-link">Delete</a>
+    <a href="/addons/{{ slug }}/members" data-i18n="contributors">Contributors</a>
+    <a href="/addons/{{ slug }}/dependencies" data-i18n="needs">Dependencies</a>
+    <a href="/addons/{{ slug }}/versions" data-i18n="versions">Versions</a>
+    <a href="/addons/{{ slug }}/delete" class="danger-link" data-i18n="delete">Delete</a>
   {% endif %}
 </nav>
