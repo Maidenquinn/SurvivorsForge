@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Comments - {{ name }}{% endblock %}
 {% block content %}
-<main class="issues-shell addon-comments">
+<div class="issues-shell addon-comments" data-dynamic-comments aria-live="polite">
   <p class="back"><a href="/addons/{{ slug }}">← {{ name }}</a></p>
   <div class="issues-heading"><div><h1 data-i18n="comments">Community comments</h1><p class="muted">Discuss this addon with its creator and community.</p></div></div>
   {% if user.is_some() %}
@@ -32,5 +32,5 @@
     {% else %}<p class="panel muted">No comments yet. Start the discussion!</p>{% endfor %}
   </section>
   {% if let Some(id) = next %}<p><a class="button secondary" href="/addons/{{ slug }}/comments?before={{ id }}">Older comments →</a></p>{% endif %}
-</main>
-{% endblock %}
+</div>
+{% endblock %>
