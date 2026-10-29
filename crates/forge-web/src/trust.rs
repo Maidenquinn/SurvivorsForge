@@ -24,18 +24,18 @@ pub fn notice(trust: &str, verified_author: bool, source_missing: bool) -> Notic
         };
     }
     match trust {
-        "verified" => Notice { class: "ok", badge: "Verified", text: "Verified by an admin.", downloadable: true, confirm: false },
+        "verified" => Notice { class: "ok", badge: "Verified", text: "An admin checked this exact file by hand.", downloadable: true, confirm: false },
         "scanned" if verified_author => Notice {
             class: "",
             badge: "Verified author",
-            text: "Verified author, this version was checked automatically.",
+            text: "An admin verified an earlier version of this author; this one was checked automatically.",
             downloadable: true,
             confirm: false,
         },
         "scanned" => Notice {
             class: "",
             badge: "Checked",
-            text: "Checked automatically, nothing found. Not verified by hand.",
+            text: "The automatic check found nothing. No admin has looked at it by hand.",
             downloadable: true,
             confirm: false,
         },
@@ -57,7 +57,7 @@ pub fn notice(trust: &str, verified_author: bool, source_missing: bool) -> Notic
         _ => Notice {
             class: "warn",
             badge: "Not checked",
-            text: "Not checked automatically yet. Install it at your own risk.",
+            text: "The automatic check has not run yet. Install it at your own risk.",
             downloadable: true,
             confirm: true,
         },

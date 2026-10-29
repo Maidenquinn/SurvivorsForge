@@ -161,10 +161,10 @@ async fn the_repo_owner_may_claim_an_unclaimed_addon() {
 #[tokio::test]
 async fn trust_notice_per_level() {
     let cases = [
-        ("unscanned", "available", "Not checked automatically yet", true),
+        ("unscanned", "available", "The automatic check has not run yet", true),
         ("flagged", "available", "found something suspicious", true),
-        ("scanned", "available", "Checked automatically, nothing found", true),
-        ("verified", "available", "Verified by an admin", true),
+        ("scanned", "available", "The automatic check found nothing", true),
+        ("verified", "available", "An admin checked this exact file by hand", true),
         ("blocked", "available", "An admin blocked this version", false),
         ("source_changed", "available", "was changed after it was checked", false),
         ("scanned", "missing", "no longer available on GitHub", false),
@@ -173,6 +173,10 @@ async fn trust_notice_per_level() {
         let mut web = with_addon(trust, source).await;
         let page = web.get("/addons/lucky").await;
         assert!(page.body.contains(text), "{trust}/{source}: missing {text}");
+        // The text explains the badge instead of repeating it ("Verified. Verified by ...").
+        let notice = page.body.split("<strong>").nth(1).unwrap_or_default();
+        let (badge, rest) = notice.split_once(".</strong>").unwrap_or_default();
+        assert!(!rest.trim_start().starts_with(badge), "{trust}: the text repeats {badge}");
         assert_eq!(page.body.contains("Download from GitHub"), download, "{trust}/{source}");
     }
     let mut web = with_addon("flagged", "available").await;
