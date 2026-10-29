@@ -131,9 +131,9 @@ pub fn router(state: AppState) -> Router {
         .route("/login", get(login))
         .route("/auth/callback", get(callback))
         .route("/logout", post(logout))
-        .route("/static/htmx.min.js", get(|| async { asset("text/javascript", include_str!("../static/htmx.min.js")) }))
-        .route("/static/app.css", get(|| async { asset("text/css", include_str!("../static/app.css")) }))
-        .route("/static/view.js", get(|| async { asset("text/javascript", include_str!("../static/view.js")) }))
+        .route("/static/htmx.min.js", get(|| async { asset("text/javascript", HTMX_JS) }))
+        .route("/static/app.css", get(|| async { asset("text/css", APP_CSS) }))
+        .route("/static/view.js", get(|| async { asset("text/javascript", VIEW_JS) }))
         // The launcher's fonts (SIL OFL, licenses next to them in ui/fonts).
         // The launcher's icon, as tab icon and home screen icon.
         .route("/static/icon.png", get(|| async { binary("image/png", include_bytes!("../../../assets/icon.png")) }))
@@ -162,6 +162,20 @@ fn binary(content_type: &'static str, body: &'static [u8]) -> Response {
 
 fn font(body: &'static [u8]) -> Response {
     ([(header::CONTENT_TYPE, "font/ttf"), (header::CACHE_CONTROL, "public, max-age=604800, immutable")], body).into_response()
+}
+
+const HTMX_JS: &str = include_str!("../static/htmx.min.js");
+const APP_CSS: &str = include_str!("../static/app.css");
+const VIEW_JS: &str = include_str!("../static/view.js");
+
+/// Goes into the links to the stylesheet and scripts (`?v=`) and changes with their content, so a
+/// deploy reaches browsers that still cache the old files.
+pub fn asset_version() -> &'static str {
+    static VERSION: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+        let hash = sha2::Sha256::new().chain_update(HTMX_JS).chain_update(APP_CSS).chain_update(VIEW_JS).finalize();
+        hash[..6].iter().map(|b| format!("{b:02x}")).collect()
+    });
+    &VERSION
 }
 
 fn asset(content_type: &'static str, body: &'static str) -> Response {

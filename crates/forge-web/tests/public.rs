@@ -275,10 +275,23 @@ async fn card_lists_switch_between_tiles_and_a_list() {
     for page in ["/addons", "/packs"] {
         let body = web.get(page).await.body;
         assert!(body.contains(r#"data-set-view="list""#) && body.contains(r#"data-set-view="tiles""#), "{page}: {body}");
-        assert!(body.contains(r#"<script src="/static/view.js"></script>"#), "{page}: before the page is drawn");
+        assert!(body.contains(r#"<script src="/static/view.js?v="#), "{page}: before the page is drawn");
     }
     let script = web.get("/static/view.js").await;
     assert!(script.headers["content-type"].to_str().unwrap().starts_with("text/javascript") && script.body.contains("localStorage"));
+}
+
+#[tokio::test]
+async fn a_deploy_reaches_browsers_that_cached_the_old_files() {
+    // The files are cached for a day, so their links carry a version that changes with their content.
+    let mut web = TestWeb::new().await;
+    let body = web.get("/").await.body;
+    let version = body.split(r#"href="/static/app.css?v="#).nth(1).and_then(|r| r.split('"').next()).expect("versioned stylesheet").to_string();
+    assert!(version.len() >= 8 && version.chars().all(|c| c.is_ascii_hexdigit()), "{version}");
+    for file in ["view.js", "htmx.min.js"] {
+        assert!(body.contains(&format!(r#"src="/static/{file}?v={version}""#)), "{file}");
+    }
+    assert!(web.get(&format!("/static/app.css?v={version}")).await.body.contains("--gold"));
 }
 
 #[tokio::test]
