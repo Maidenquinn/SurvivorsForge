@@ -52,7 +52,7 @@ pub async fn show(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
             .map(|p|p["owner"]==true || p["admin"]==true || p["edit_description"]==true).unwrap_or(false)
     } else {false};
     let comments = i["comments"].as_array().into_iter().flatten().map(|c| IssueComment {
-        author:s(&c["author"]), body:s(&c["body"])
+        id:c["id"].as_i64().unwrap_or(0), can_edit:false, author:s(&c["author"]), body:s(&c["body"])
     }).collect();
     Ok(render(&IssuePage { user, csrf:csrf.0, slug, name:s(&a["name"]), id,
         title:s(&i["title"]), body:s(&i["body"]), kind:s(&i["kind"]), status:s(&i["status"]),
@@ -71,5 +71,35 @@ pub async fn status(State(state): State<AppState>, jar: PrivateCookieJar,
     state.api.call(reqwest::Method::PATCH,
         &format!("/v1/addons/{}/issues/{id}",segment(&slug)),Some(&token),
         Some(&json!({"status":form.status}))).await?;
+    Ok(Redirect::to(&format!("/addons/{}?tab=issues&issue={id}#issue-detail",segment(&slug))))
+}
+
+// Moderation and author editing actions.
+#[derive(Deserialize)]
+pub struct EditIssueForm { title: String, body: String, kind: String }
+pub async fn edit(State(state): State<AppState>, jar: PrivateCookieJar, Path((slug,id)): Path<(String,i64)>,
+    Form(form): Form<EditIssueForm>) -> WebResult<Redirect> {
+    let (_,token)=visitor(&state,&jar).await?.ok_or(WebError::LoginRequired)?;
+    state.api.call(reqwest::Method::PATCH,&format!("/v1/addons/{}/issues/{id}/edit",segment(&slug)),Some(&token),
+        Some(&json!({"title":form.title,"body":form.body,"kind":form.kind}))).await?;
+    Ok(Redirect::to(&format!("/addons/{}?tab=issues&issue={id}#issue-detail",segment(&slug))))
+}
+pub async fn delete(State(state): State<AppState>, jar: PrivateCookieJar, Path((slug,id)): Path<(String,i64)>)
+    -> WebResult<Redirect> {
+    let (_,token)=visitor(&state,&jar).await?.ok_or(WebError::LoginRequired)?;
+    state.api.call(reqwest::Method::DELETE,&format!("/v1/addons/{}/issues/{id}",segment(&slug)),Some(&token),None).await?;
+    Ok(Redirect::to(&format!("/addons/{}?tab=issues",segment(&slug))))
+}
+pub async fn edit_comment(State(state): State<AppState>, jar: PrivateCookieJar, Path((slug,id,cid)): Path<(String,i64,i64)>,
+    Form(form): Form<CommentForm>) -> WebResult<Redirect> {
+    let (_,token)=visitor(&state,&jar).await?.ok_or(WebError::LoginRequired)?;
+    state.api.call(reqwest::Method::PATCH,&format!("/v1/addons/{}/issues/{id}/comments/{cid}",segment(&slug)),Some(&token),
+        Some(&json!({"body":form.body}))).await?;
+    Ok(Redirect::to(&format!("/addons/{}?tab=issues&issue={id}#issue-detail",segment(&slug))))
+}
+pub async fn delete_comment(State(state): State<AppState>, jar: PrivateCookieJar, Path((slug,id,cid)): Path<(String,i64,i64)>)
+    -> WebResult<Redirect> {
+    let (_,token)=visitor(&state,&jar).await?.ok_or(WebError::LoginRequired)?;
+    state.api.call(reqwest::Method::DELETE,&format!("/v1/addons/{}/issues/{id}/comments/{cid}",segment(&slug)),Some(&token),None).await?;
     Ok(Redirect::to(&format!("/addons/{}?tab=issues&issue={id}#issue-detail",segment(&slug))))
 }
