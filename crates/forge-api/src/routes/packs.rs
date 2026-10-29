@@ -226,11 +226,18 @@ const PER_PAGE: i64 = 20;
 pub struct ListQuery {
     #[serde(default)]
     page: Option<i64>,
+    /// Part of the pack's name or of the name of an addon in it.
+    #[serde(default)]
+    q: Option<String>,
 }
 
 /// `GET /v1/packs?page=`: the listed packs that can be downloaded, newest first.
 pub async fn list(State(state): State<AppState>, axum::extract::Query(query): axum::extract::Query<ListQuery>) -> ApiResult<Json<Value>> {
     let page = query.page.unwrap_or(1).max(1);
+    // A LIKE pattern of the search text; its own % and _ count literally.
+    let pattern = query.q.as_deref().map(str::trim).filter(|q| !q.is_empty()).map(|q| {
+        format!("%{}%", q.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"))
+    });
     let list: Value = sqlx::query_scalar(
         "WITH open AS (
              SELECT p.id, p.public_id, p.name, p.created_at, u.login::text AS creator
@@ -240,6 +247,9 @@ pub async fn list(State(state): State<AppState>, axum::extract::Query(query): ax
                  JOIN versions v ON v.id = pv.version_id JOIN addons a ON a.id = v.addon_id
                  JOIN version_trust t ON t.version_id = v.id
                  WHERE pv.pack_id = p.id AND NOT (a.deleted_at IS NULL AND v.sha256 IS NOT NULL AND t.trust = ANY($1)))
+               AND ($4::text IS NULL OR p.name ILIKE $4 OR EXISTS (
+                   SELECT 1 FROM pack_versions pv JOIN versions v ON v.id = pv.version_id JOIN addons a ON a.id = v.addon_id
+                   WHERE pv.pack_id = p.id AND a.name ILIKE $4))
          )
          SELECT json_build_object(
              'total', (SELECT count(*) FROM open), 'page', $2::bigint, 'per_page', $3::bigint,
@@ -253,6 +263,7 @@ pub async fn list(State(state): State<AppState>, axum::extract::Query(query): ax
     .bind(PACKABLE)
     .bind(page)
     .bind(PER_PAGE)
+    .bind(pattern)
     .fetch_one(&state.pool)
     .await?;
     Ok(Json(list))

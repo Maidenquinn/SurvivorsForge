@@ -129,6 +129,23 @@ async fn the_public_pack_list() {
 }
 
 #[tokio::test]
+async fn packs_can_be_searched() {
+    let mut web = TestWeb::new().await;
+    Mock::given(method("GET"))
+        .and(path("/v1/packs"))
+        .and(wiremock::matchers::query_param("q", "lucky"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "total": 41, "page": 1, "per_page": 20, "packs": [
+            { "id": "AbCdE12345", "name": "My UI", "created_at": "2026-05-01T10:00:00Z", "created_by": "alice", "addons": ["Lucky"] }
+        ] })))
+        .mount(&web.api)
+        .await;
+    let page = web.get("/packs?q=lucky").await;
+    for text in [r#"<form class="search" method="get" action="/packs""#, r#"name="q" value="lucky""#, "My UI", r#"href="/packs?q=lucky&#38;page=2""#] {
+        assert!(page.body.contains(text), "missing {text}: {}", page.body);
+    }
+}
+
+#[tokio::test]
 async fn packs_can_be_listed_when_created() {
     let mut web = logged_in().await;
     assert!(web.get("/packs/new").await.body.contains(r#"name="listed""#));

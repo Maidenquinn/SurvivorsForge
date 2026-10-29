@@ -650,8 +650,11 @@ pub struct PacksPage {
     pub user: Option<Visitor>,
     pub csrf: String,
     pub rows: Vec<PackListRow>,
+    pub total: i64,
     pub prev: Option<String>,
     pub next: Option<String>,
+    /// The search text.
+    pub q: String,
 }
 
 #[derive(Template)]

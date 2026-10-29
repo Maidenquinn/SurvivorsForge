@@ -84,7 +84,16 @@ pub async fn create_pack(State(state): State<AppState>, jar: PrivateCookieJar, E
 pub async fn packs(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, RawQuery(raw): RawQuery) -> WebResult<Html<String>> {
     let user = visitor(&state, &jar).await?.map(|(v, _)| v);
     let page: i64 = values(raw.as_deref(), "page").pop().and_then(|p| p.parse().ok()).unwrap_or(1).max(1);
-    let list = state.api.get(&format!("/v1/packs?page={page}"), None).await?;
+    let q = values(raw.as_deref(), "q").pop().unwrap_or_default().trim().to_string();
+    // The search and a page as a query string, for the API and the pager.
+    let query = |page: i64| {
+        let mut pairs = vec![("page", page.to_string())];
+        if !q.is_empty() {
+            pairs.insert(0, ("q", q.clone()));
+        }
+        reqwest::Url::parse_with_params("http://x/", &pairs).map(|u| u.query().unwrap_or_default().to_string()).unwrap_or_default()
+    };
+    let list = state.api.get(&format!("/v1/packs?{}", query(page)), None).await?;
     let rows = list["packs"]
         .as_array()
         .into_iter()
@@ -103,8 +112,10 @@ pub async fn packs(State(state): State<AppState>, jar: PrivateCookieJar, Extensi
         user,
         csrf: csrf.0,
         rows,
-        prev: (page > 1).then(|| format!("/packs?page={}", page - 1)),
-        next: (page * per_page < total).then(|| format!("/packs?page={}", page + 1)),
+        total,
+        prev: (page > 1).then(|| format!("/packs?{}", query(page - 1))),
+        next: (page * per_page < total).then(|| format!("/packs?{}", query(page + 1))),
+        q,
     }))
 }
 
