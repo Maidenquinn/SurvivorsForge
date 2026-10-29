@@ -1,6 +1,7 @@
 //! Logic shared by the SurvivorsForge launcher, API, website and scanner. No GUI dependencies.
 
 pub mod archive;
+pub mod compat;
 pub mod markdown;
 pub mod registry;
 pub mod toc;

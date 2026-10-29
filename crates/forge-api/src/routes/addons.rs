@@ -6,11 +6,11 @@ use crate::auth::CurrentUser;
 use crate::error::{ApiError, ApiResult};
 use crate::github::GitHubError;
 use axum::Json;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
-use serde_json::Value;
+use serde_json::{Value, json};
 use sqlx::{PgPool, Postgres, Transaction};
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -216,9 +216,22 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser, Json(body)
     Ok((StatusCode::CREATED, Json(addon_view(&state, id).await?)))
 }
 
-pub async fn show(State(state): State<AppState>, Path(slug): Path<String>) -> ApiResult<Json<Value>> {
+pub async fn show(
+    State(state): State<AppState>,
+    Path(slug): Path<String>,
+    Query(query): Query<super::versions::GameQuery>,
+) -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
-    Ok(Json(addon_view(&state, addon.id).await?))
+    let mut view = addon_view(&state, addon.id).await?;
+    if let Some(game) = super::versions::game_of(&state, &query).await? {
+        let compatible: Option<bool> = sqlx::query_scalar("SELECT game_compatible(relevant_version($1), $2)")
+            .bind(addon.id)
+            .bind(game)
+            .fetch_one(&state.pool)
+            .await?;
+        view["compatible"] = json!(compatible);
+    }
+    Ok(Json(view))
 }
 
 #[derive(Deserialize, Default)]

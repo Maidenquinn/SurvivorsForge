@@ -152,8 +152,12 @@ async fn store(
             None => {
                 let id: i64 = sqlx::query_scalar(
                     "INSERT INTO versions (addon_id, github_release_id, tag, name, prerelease, published_at, asset_id, asset_name,
-                                           asset_url, asset_size, github_digest, download_count, created_at)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id",
+                                           asset_url, asset_size, github_digest, download_count, created_at, game_min_id, game_max_id)
+                     SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, prev.game_min_id, prev.game_max_id
+                     FROM (SELECT NULL) one
+                     LEFT JOIN LATERAL (SELECT game_min_id, game_max_id FROM versions WHERE addon_id = $1
+                                        ORDER BY published_at DESC, id DESC LIMIT 1) prev ON true
+                     RETURNING id",
                 )
                 .bind(addon.id)
                 .bind(v.release_id)

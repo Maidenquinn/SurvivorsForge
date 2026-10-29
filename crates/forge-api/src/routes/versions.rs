@@ -1,29 +1,45 @@
 //! `/v1/addons/{slug}/versions`: the version history, newest first, including versions gone from GitHub.
 
 use super::addons::load_addon;
+use super::game_versions::game_version_id;
 use crate::app::AppState;
-use crate::error::ApiResult;
+use crate::error::{ApiError, ApiResult};
 use axum::Json;
-use crate::error::ApiError;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
+use serde::Deserialize;
 use serde_json::Value;
 
-pub async fn list(
-    State(state): State<AppState>,
-    Path(slug): Path<String>,
-) -> ApiResult<Json<Value>> {
+#[derive(Deserialize)]
+pub struct GameQuery {
+    pub game: Option<String>,
+}
+
+/// The id of `?game=`, if given.
+pub async fn game_of(state: &AppState, query: &GameQuery) -> ApiResult<Option<i32>> {
+    match &query.game {
+        Some(name) => Ok(Some(game_version_id(&state.pool, name).await?)),
+        None => Ok(None),
+    }
+}
+
+pub async fn list(State(state): State<AppState>, Path(slug): Path<String>, Query(query): Query<GameQuery>) -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
+    let game = game_of(&state, &query).await?;
     let versions: Value = sqlx::query_scalar(
         "SELECT coalesce(json_agg(json_build_object(
                     'id', v.id, 'tag', tag, 'name', name, 'prerelease', prerelease, 'published_at', published_at,
                     'asset_name', asset_name, 'asset_url', asset_url, 'size', asset_size, 'sha256', sha256,
                     'downloads', download_count, 'scan_status', scan_status, 'source', source_status,
                     'deleted_on_github', deleted_on_github_at IS NOT NULL,
-                    'trust', t.trust, 'findings', json_build_object('critical', t.critical, 'warn', t.warn, 'info', t.info))
+                    'trust', t.trust, 'findings', json_build_object('critical', t.critical, 'warn', t.warn, 'info', t.info),
+                    'game_min', (SELECT name FROM game_versions WHERE id = v.game_min_id),
+                    'game_max', (SELECT name FROM game_versions WHERE id = v.game_max_id),
+                    'compatible', CASE WHEN $2::int IS NULL THEN NULL ELSE game_compatible(v.id, $2) END)
                 ORDER BY published_at DESC, v.id DESC), '[]')
          FROM versions v JOIN version_trust t ON t.version_id = v.id WHERE v.addon_id = $1",
     )
     .bind(addon.id)
+    .bind(game)
     .fetch_one(&state.pool)
     .await?;
     Ok(Json(versions))

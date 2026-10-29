@@ -40,6 +40,13 @@ pub fn router(state: AppState) -> Router {
         )
         .route("/v1/addons/{slug}/versions", get(routes::versions::list))
         .route("/v1/addons/{slug}/versions/{tag}/findings", get(routes::versions::findings))
+        .route("/v1/addons/{slug}/versions/{tag}", axum::routing::patch(routes::game_versions::set_range))
+        .route("/v1/game-versions", get(routes::game_versions::list))
+        .route("/v1/admin/game-versions", post(routes::game_versions::create))
+        .route(
+            "/v1/admin/game-versions/{id}",
+            axum::routing::patch(routes::game_versions::update).delete(routes::game_versions::delete),
+        )
         .route("/v1/github/webhook", post(routes::webhooks::webhook))
         .route(
             "/v1/admin/versions/{id}/verification",
