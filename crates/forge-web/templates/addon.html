@@ -153,10 +153,10 @@
 <section class="addon-tab-section">
   <h2>Gallery</h2>
   {% if !shots.is_empty() %}
-<section class="shots" aria-label="Screenshots">
+<section class="shots" aria-label="Screenshots" data-gallery>
   {% for shot in shots %}
   <figure>
-    <a href="{{ shot.url }}"><img src="{{ shot.url }}" alt="{% if shot.caption != "" %}{{ shot.caption }}{% else %}Screenshot {{ loop.index }} of {{ name }}{% endif %}" width="{{ shot.width }}" height="{{ shot.height }}" loading="lazy"></a>
+    <a href="{{ shot.url }}" data-gallery-link><img src="{{ shot.url }}" alt="{% if shot.caption != "" %}{{ shot.caption }}{% else %}Screenshot {{ loop.index }} of {{ name }}{% endif %}" width="{{ shot.width }}" height="{{ shot.height }}" loading="lazy"></a>
     {% if shot.caption != "" %}<figcaption>{{ shot.caption }}</figcaption>{% endif %}
   </figure>
   {% endfor %}
@@ -165,6 +165,13 @@
 
 
   {% if shots.is_empty() %}<p class="muted">No screenshots uploaded yet.</p>{% endif %}
+  {% if !shots.is_empty() %}
+  <dialog class="gallery-lightbox" id="gallery-lightbox" aria-label="Screenshot viewer">
+    <div class="gallery-lightbox-actions"><button type="button" data-gallery-prev aria-label="Previous screenshot">←</button><span data-gallery-count></span><button type="button" data-gallery-next aria-label="Next screenshot">→</button><button type="button" data-gallery-close aria-label="Close gallery">✕</button></div>
+    <img alt="Selected addon screenshot" data-gallery-image>
+    <p data-gallery-caption></p>
+  </dialog>
+  {% endif %}
 </section>
 {% else if tab == "versions" %}
 <section class="addon-tab-section">
