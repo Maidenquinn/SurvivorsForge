@@ -9,6 +9,7 @@ pub mod csrf;
 pub mod error;
 pub mod packs;
 pub mod public;
+pub mod issues;
 pub mod rate_limit;
 pub mod session;
 pub mod templates;
