@@ -6,7 +6,7 @@
 {% include "admin/flash.html" %}
 <section class="panel">
   <h2 data-i18n="admin_owner">Owner</h2>
-  <p>{% if owner != "" %}{{ owner }}{% else %}Nobody yet (the author can claim it){% endif %}</p>
+  <p>{% if owner != "" %}{{ owner }}{% else %}<span data-i18n="admin_nobody_owner">Nobody yet (the author can claim it)</span>{% endif %}</p>
   <form method="post" action="/admin/addons/{{ slug }}/owner" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <label for="new-owner" data-i18n="admin_new_owner">New owner (GitHub login of someone who logged in here)</label>
@@ -23,9 +23,9 @@
   <div class="member">
     <strong><a href="/addons/{{ slug }}/versions/{{ v.tag }}">{{ v.tag }}</a></strong>
     <span class="muted">{{ v.published }}</span>
-    <span class="badge {% if v.trust == "verified" %}ok{% else if v.trust == "flagged" || v.trust == "blocked" %}bad{% endif %}">{{ v.trust }}</span>
-    {% if v.critical > 0 %}<span class="muted">{{ v.critical }} critical</span>{% endif %}
-    {% if v.warn > 0 %}<span class="muted">{{ v.warn }} warn</span>{% endif %}
+    <span class="badge {% if v.trust == "verified" %}ok{% else if v.trust == "flagged" || v.trust == "blocked" %}bad{% endif %}" data-i18n-enum="trust" data-i18n-value="{{ v.trust }}">{{ v.trust }}</span>
+    {% if v.critical > 0 %}<span class="muted">{{ v.critical }} <span data-i18n="security_critical">critical</span></span>{% endif %}
+    {% if v.warn > 0 %}<span class="muted">{{ v.warn }} <span data-i18n="security_warning">warning</span></span>{% endif %}
     {% if v.trust == "blocked" %}
       {% let action = "unblock" %}{% let label = "Unblock" %}{% let class = "secondary" %}
       {% include "admin/version_action.html" %}
@@ -47,7 +47,7 @@
 <section class="panel">
   <h2 data-i18n="admin_block">Block</h2>
   {% if blocked %}
-  <p><span class="badge bad">Blocked</span> {{ block_reason }}</p>
+  <p><span class="badge bad" data-i18n="admin_blocked">Blocked</span> {{ block_reason }}</p>
   <form method="post" action="/admin/addons/{{ slug }}/unblock" class="admin-actions">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <label for="unblock-note" data-i18n="admin_note">Note</label><input id="unblock-note" name="note" required>
