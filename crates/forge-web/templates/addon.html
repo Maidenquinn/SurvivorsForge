@@ -80,7 +80,7 @@
     <div id="addon-issues-list">
     {% for issue in issues %}
       <article class="issue-row" data-status="{{ issue.status }}" data-search="{{ issue.title }} {{ issue.author }} {{ issue.kind }}">
-        <span class="issue-state" aria-hidden="true">{% if issue.status == "open" %}◉{% else if issue.status == "in_progress" %}◷{% else %}✓{% endif %}</span>
+        <span class="issue-state issue-state-{{ issue.status }}" aria-label="{{ issue.status }}">{% if issue.status == "open" %}○{% else if issue.status == "acknowledged" %}◉{% else if issue.status == "in_progress" %}◷{% else if issue.status == "resolved" %}✓{% else %}⊘{% endif %}</span>
         <div class="issue-row-content">
           <a class="issue-row-title" href="/addons/{{ slug }}?tab=issues&amp;issue={{ issue.id }}#issue-detail">{{ issue.title }}</a>
           <div class="issue-row-meta">#{{ issue.id }} · {{ issue.author }} <span class="badge">{{ issue.kind }}</span> <span class="badge">{{ issue.status }}</span></div>
@@ -100,39 +100,45 @@
       </div>
       <a class="button secondary" href="/addons/{{ slug }}?tab=issues">Close details</a>
     </div>
-    <article class="issue-message">
-      <header class="issue-message-head"><strong>{{ issue.author }}</strong> <span class="muted">reported</span></header>
-      <div class="issue-message-body">{{ issue.body }}</div>
-    </article>
-    {% if issue.can_edit %}
-    <details class="panel issues-compose"><summary>Edit issue</summary>
-      <form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/edit">
+    <article class="issue-message issue-editable" data-inline-editor>
+      <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ issue.author|truncate(1) }}</span><strong>{{ issue.author }}</strong> <span class="muted">opened this issue</span>
+        <span class="issue-action-spacer"></span>
+        {% if issue.can_edit %}<button class="issue-action" type="button" data-edit-toggle aria-label="Edit issue">Edit</button>{% endif %}
+        {% if issue.can_delete %}<form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/delete" data-confirm-delete="Delete this issue? This cannot be undone."><input type="hidden" name="csrf" value="{{ csrf }}"><button class="issue-action issue-danger" type="submit">Delete</button></form>{% endif %}
+      </header>
+      <div data-edit-view class="issue-message-body">{{ issue.body }}</div>
+      {% if issue.can_edit %}
+      <form data-edit-form hidden class="issue-inline-form" method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/edit">
         <input type="hidden" name="csrf" value="{{ csrf }}">
         <label>Title <input name="title" required minlength="3" maxlength="160" value="{{ issue.title }}"></label>
         <label>Category <select name="kind"><option value="{{ issue.kind }}">{{ issue.kind }}</option><option value="bug">Bug</option><option value="feature">Feature</option><option value="question">Question</option></select></label>
-        <label>Description <textarea name="body" required maxlength="10000">{{ issue.body }}</textarea></label>
-        <button type="submit">Save changes</button>
+        <label>Description <textarea name="body" required maxlength="10000" rows="6">{{ issue.body }}</textarea></label>
+        <div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel>Cancel</button><button type="submit">Save changes</button></div>
       </form>
-    </details>
-    {% endif %}
-    {% if issue.can_delete %}
-    <form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/delete" data-confirm-delete="Delete this issue? This cannot be undone.">
-      <input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="secondary">Delete issue</button>
-    </form>
-    {% endif %}
+      {% endif %}
+    </article>
     {% if !issue.events.is_empty() %}
     <div class="panel issue-history"><h3>Activity</h3>
       {% for event in issue.events %}
-      <p><strong>{{ event.actor }}</strong> · {{ event.action }} {% if !event.new_value.is_empty() %}→ {{ event.new_value }}{% endif %}</p>
+      <p class="issue-event"><span class="issue-event-dot">•</span><strong>{{ event.actor }}</strong>
+      {% if event.action == "status" %}changed status from <strong>{{ event.old_value }}</strong> to <strong>{{ event.new_value }}</strong>
+      {% else if event.action == "issue_edited" %}updated the issue description
+      {% else if event.action == "comment_edited" %}edited a comment
+      {% else if event.action == "comment_deleted" %}removed a comment
+      {% else if event.action == "issue_deleted" %}deleted the issue
+      {% else %}updated the issue{% endif %}</p>
       {% endfor %}
     </div>
     {% endif %}
     <h3>Discussion ({{ issue.comments.len() }})</h3>
     {% for comment in issue.comments %}
-    <article class="issue-message">
-      <header class="issue-message-head"><strong>{{ comment.author }}</strong> <span class="muted">commented</span></header>
-      <div class="issue-message-body">{{ comment.body }}</div>
-      {% if comment.can_edit %}<details class="issue-comment-edit"><summary>Edit comment</summary><form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/edit"><input type="hidden" name="csrf" value="{{ csrf }}"><textarea name="body" required maxlength="10000">{{ comment.body }}</textarea><button type="submit">Save</button></form></details><form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="secondary">Delete comment</button></form>{% endif %}
+    <article class="issue-message issue-editable" data-inline-editor>
+      <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ comment.author|truncate(1) }}</span><strong>{{ comment.author }}</strong><span class="muted">commented</span><span class="issue-action-spacer"></span>
+      {% if comment.can_edit %}<button type="button" class="issue-action" data-edit-toggle>Edit</button>
+      <form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="issue-action issue-danger">Delete</button></form>{% endif %}
+      </header>
+      <div class="issue-message-body" data-edit-view>{{ comment.body }}</div>
+      {% if comment.can_edit %}<form class="issue-inline-form" data-edit-form hidden method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/edit"><input type="hidden" name="csrf" value="{{ csrf }}"><textarea name="body" required maxlength="10000" rows="4">{{ comment.body }}</textarea><div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel>Cancel</button><button type="submit">Save comment</button></div></form>{% endif %}
     </article>
     {% endfor %}
     {% if user.is_some() %}
@@ -160,7 +166,7 @@
   </section>
   {% endif %}
   {% if user.is_some() %}
-  <details class="panel issues-compose" id="new-issue">
+  <details class="panel issues-compose" id="new-issue" data-new-issue>
     <summary>+ Report an issue or suggest an improvement</summary>
     <form method="post" action="/addons/{{ slug }}/issues">
       <input type="hidden" name="csrf" value="{{ csrf }}">
