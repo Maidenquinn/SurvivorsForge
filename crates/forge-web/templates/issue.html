@@ -4,7 +4,7 @@
 <div class="issues-shell">
   <p class="issues-back"><a href="/addons/{{ slug }}/issues">← <span data-i18n="issue_back_for">Issues for</span> {{ name }}</a></p>
   <div class="issue-detail-heading"><h1>{{ title }} <span class="issue-number">#{{ id }}</span></h1>
-    <p class="issue-byline"><span class="badge">{{ status }}</span> <strong>{{ author }}</strong> <span data-i18n="issue_opened_this">opened this</span> {{ kind }} <span data-i18n="issue_report_tag">report</span></p>
+    <p class="issue-byline"><span class="badge" data-i18n-enum="issue_status" data-i18n-value="{{ status }}">{{ status }}</span> <strong>{{ author }}</strong> <span data-i18n="issue_opened_this">opened this</span> <span data-i18n-enum="issue_kind" data-i18n-value="{{ kind }}">{{ kind }}</span> <span data-i18n="issue_report_tag">report</span></p>
   </div>
   <div class="issue-detail-layout">
     <div class="issue-conversation">
@@ -28,8 +28,8 @@
       </form>
       {% else %}<p class="notice"><a href="/login" data-i18n="login">Log in with GitHub</a> <span data-i18n="issue_to_join">to join the discussion.</span></p>{% endif %}
     </div>
-    <aside class="issue-sidebar" aria-label="Issue information" data-i18n-aria-label="issue_tracker">
-      <section class="panel"><h2 data-i18n="creator_details">Details</h2><p class="muted" data-i18n="status">Status</p><p><span class="badge">{{ status }}</span></p><p class="muted" data-i18n="category">Category</p><p><span class="badge">{{ kind }}</span></p></section>
+    <aside class="issue-sidebar" aria-label="Issue information" data-i18n-aria-label="issue_information">
+      <section class="panel"><h2 data-i18n="creator_details">Details</h2><p class="muted" data-i18n="status">Status</p><p><span class="badge">{{ status }}</span></p><p class="muted" data-i18n="category">Category</p><p><span class="badge" data-i18n-enum="issue_kind" data-i18n-value="{{ kind }}">{{ kind }}</span></p></section>
       {% if can_manage %}
       <section class="panel"><h2 data-i18n="issue_manage">Manage issue</h2>
         <form method="post" action="/addons/{{ slug }}/issues/{{ id }}/status">
