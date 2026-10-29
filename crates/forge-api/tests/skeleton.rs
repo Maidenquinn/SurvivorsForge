@@ -99,3 +99,16 @@ async fn forwarded_for_ignored_from_untrusted_peer() {
     assert_eq!(hit(&app, "2.2.2.2").await, StatusCode::OK);
     assert_eq!(hit(&app, "3.3.3.3").await, StatusCode::TOO_MANY_REQUESTS);
 }
+
+#[tokio::test]
+async fn requests_of_the_website_are_not_counted_again() {
+    // The website limits each visitor itself, and one of its pages asks the API several times.
+    let mut config = Config::for_tests("postgres://unused");
+    config.rate_limit_per_minute = 2;
+    config.website_ip = Some("10.0.0.3".parse().unwrap());
+    let routes = Router::new().route("/x", get(|| async { "ok" }));
+    let app = with_layers(routes, &config).layer(MockConnectInfo(SocketAddr::from(([10, 0, 0, 3], 4000))));
+    for _ in 0..5 {
+        assert_eq!(hit(&app, "1.1.1.1").await, StatusCode::OK);
+    }
+}

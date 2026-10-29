@@ -1,6 +1,7 @@
 //! Per-IP request limit with a fixed one-minute window.
 
 use crate::error::ApiError;
+use axum::extract::connect_info::MockConnectInfo;
 use axum::extract::{ConnectInfo, Request, State};
 use axum::http::StatusCode;
 use axum::middleware::Next;
@@ -11,12 +12,19 @@ use std::time::Instant;
 
 pub use forge_core::rate_limit::RateLimiter;
 
-pub async fn middleware(State(limiter): State<Arc<RateLimiter>>, request: Request, next: Next) -> Response {
+/// The limiter and the website's address, whose requests pass uncounted: the website limits each
+/// visitor itself, and one of its pages asks the API several times.
+pub async fn middleware(State((limiter, website)): State<(Arc<RateLimiter>, Option<IpAddr>)>, request: Request, next: Next) -> Response {
+    // Tests set the peer with `MockConnectInfo`.
     let peer = request
         .extensions()
         .get::<ConnectInfo<SocketAddr>>()
         .map(|c| c.0.ip())
+        .or_else(|| request.extensions().get::<MockConnectInfo<SocketAddr>>().map(|c| c.0.ip()))
         .unwrap_or(IpAddr::from([0, 0, 0, 0]));
+    if Some(peer) == website {
+        return next.run(request).await;
+    }
     let forwarded = request.headers().get("x-forwarded-for").and_then(|v| v.to_str().ok());
     let ip = limiter.client_ip(peer, forwarded);
     if !limiter.allow(ip, Instant::now()) {

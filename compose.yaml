@@ -20,6 +20,8 @@ x-api: &api
     GITHUB_APP_PRIVATE_KEY_FILE: /run/secrets/github-app.pem
     # Fixed addresses of Caddy and the website on the edge network; their X-Forwarded-For is trusted.
     TRUSTED_PROXIES: ${FORGE_CADDY_IP:-10.213.17.10},${FORGE_WEB_IP:-10.213.17.11}
+    # The website limits each visitor itself; the API does not count its requests again.
+    WEBSITE_IP: ${FORGE_WEB_IP:-10.213.17.11}
   secrets:
     - github-app.pem
   depends_on:

@@ -13,6 +13,8 @@ pub struct Config {
     /// Seconds public answers stay in the API's cache; 0 turns it off.
     pub cache_seconds: u64,
     pub trusted_proxies: Vec<IpAddr>,
+    /// The website's address: it limits each visitor itself, so the API does not count its requests.
+    pub website_ip: Option<IpAddr>,
     pub github_api_url: String,
     pub github_app_id: String,
     /// PEM text; `\n` escapes allowed. Read by `github::app_auth::load_private_key`.
@@ -68,6 +70,7 @@ impl Config {
         "RATE_LIMIT_PER_MINUTE",
         "CACHE_SECONDS",
         "TRUSTED_PROXIES",
+        "WEBSITE_IP",
         "GITHUB_API_URL",
         "GITHUB_APP_ID",
         "GITHUB_APP_PRIVATE_KEY",
@@ -119,6 +122,7 @@ impl Config {
             trusted_proxies: list(&proxies)
                 .map(|p| p.parse().map_err(|_| invalid("TRUSTED_PROXIES", p)))
                 .collect::<Result<_, _>>()?,
+            website_ip: get("WEBSITE_IP").map(|ip| ip.parse().map_err(|_| invalid("WEBSITE_IP", ip))).transpose()?,
             github_api_url: parse("GITHUB_API_URL", "https://api.github.com")?.trim_end_matches('/').to_string(),
             github_app_id: required("GITHUB_APP_ID")?,
             github_app_private_key: get("GITHUB_APP_PRIVATE_KEY").map(str::to_string),
@@ -159,6 +163,7 @@ impl Config {
             // Off: tests change the database directly and read it right back.
             cache_seconds: 0,
             trusted_proxies: Vec::new(),
+            website_ip: None,
             github_api_url: "http://github.test".into(),
             github_app_id: "1".into(),
             github_app_private_key: None,

@@ -117,7 +117,7 @@ pub fn with_layers(routes: Router, config: &Config) -> Router {
     routes
         .layer(CatchPanicLayer::custom(|_| ApiError::internal().into_response()))
         .layer(middleware::from_fn_with_state(cache, cache::middleware))
-        .layer(middleware::from_fn_with_state(limiter, rate_limit::middleware))
+        .layer(middleware::from_fn_with_state((limiter, config.website_ip), rate_limit::middleware))
         .layer(SetResponseHeaderLayer::if_not_present(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff")))
         .layer(SetResponseHeaderLayer::if_not_present(header::CACHE_CONTROL, HeaderValue::from_static("no-store")))
 }
