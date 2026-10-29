@@ -44,10 +44,10 @@
   <noscript><button type="submit" data-i18n="search">Search</button></noscript>
 </form>
 
-<p id="result-status" class="sr-only" role="status">{{ total }} addon{% if total != 1 %}s{% endif %}</p>
+<p id="result-status" class="sr-only" role="status">{{ total }} <span data-i18n="addons">AddOns</span></p>
 <div id="results" class="list">
   <div class="result-bar">
-  <p class="muted">{{ total }} addon{% if total != 1 %}s{% endif %}{% if category != "" %} in {{ category }} (<a href="/addons">all categories</a>){% endif %}</p>
+  <p class="muted">{{ total }} <span data-i18n="addons">AddOns</span>{% if category != "" %} <span data-i18n="catalog_in">in</span> <span data-category-label="{{ category }}">{{ category }}</span> (<a href="/addons" data-i18n="all_categories">all categories</a>){% endif %}</p>
     {% include "view_toggle.html" %}
   </div>
   {% if cards.is_empty() %}
