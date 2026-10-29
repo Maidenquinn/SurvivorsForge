@@ -500,3 +500,13 @@ async fn the_home_page_leads_with_the_launcher() {
     assert!(launcher < browse, "the launcher comes first");
     assert!(page.contains("Windows · Linux &amp; Steam Deck") || page.contains("Windows · Linux &#38; Steam Deck"), "{page}");
 }
+
+#[tokio::test]
+async fn browser_players_find_the_packs() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/addons", json!({ "total": 0, "addons": [] })).await;
+    let page = web.get("/").await.body;
+    for text in ["Playing in the browser?", r#"href="/packs/new">Build an addon pack</a>"#, r#"href="/packs">Browse packs</a>"#] {
+        assert!(page.contains(text), "missing {text}: {page}");
+    }
+}
