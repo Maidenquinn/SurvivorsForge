@@ -46,7 +46,7 @@
 
   <label for="asset_pattern"><span data-i18n="creator_zip_name">Release zip name</span></label>
   <input id="asset_pattern" name="asset_pattern" value="{{ form.asset_pattern }}" placeholder="LuckyOdds-v*.zip">
-  <p class="muted">For releases only. <code>*</code> stands for the version.</p>
+  <p class="muted" data-i18n="creator_release_hint">For releases only. * represents the version.</p>
   {% if errors.get("asset_pattern") != "" %}<p class="field-error">{{ errors.get("asset_pattern") }}</p>{% endif %}
 
   <label for="folders"><span data-i18n="creator_folders">Addon folders in the zip</span></label>
@@ -59,7 +59,7 @@
   <textarea id="description_md" name="description_md" rows="12" placeholder="## Features&#10;&#10;- ..."
             hx-post="/addons/new/preview" hx-trigger="input changed delay:500ms" hx-target="#preview">{{ form.description_md }}</textarea>
   {% if errors.get("description") != "" %}<p class="field-error">{{ errors.get("description") }}</p>{% endif %}
-  <p class="muted"><code># Heading</code> (with a space), <code>**bold**</code>, <code>*italic*</code>, <code>- list</code>, <code>[link](https://...)</code>. Every line break is kept.</p>
+  <p class="muted" data-i18n="creator_markdown_guide">Formatting: # heading, **bold**, *italic*, - list, [link](https://...). Line breaks are preserved.</p>
   <h3><span data-i18n="creator_preview">Preview</span></h3>
   <div id="preview" class="description preview"></div>
 
