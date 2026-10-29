@@ -162,14 +162,26 @@
     tabs.forEach(function (tab) { tab.addEventListener("click", function () { filter = tab.dataset.inlineFilter; refresh(); }); });
     if (search) search.addEventListener("input", refresh);
     root.querySelectorAll("[data-open-new-issue]").forEach(function (link) {
-      link.addEventListener("click", function () {
+      link.addEventListener("click", function (event) {
+        event.preventDefault();
         var details = root.querySelector("#new-issue");
-        if (details) details.open = true;
+        if (details) { details.open = true; details.scrollIntoView({behavior:"smooth",block:"center"}); var input=details.querySelector('input[name="title"]'); if(input) input.focus({preventScroll:true}); }
       });
     });
     refresh();
   }
   document.addEventListener("DOMContentLoaded", setup);
+  document.addEventListener("click", function(event) {
+    var toggle=event.target.closest("[data-edit-toggle], [data-edit-cancel]");
+    if(!toggle) return;
+    var container=toggle.closest("[data-inline-editor]");
+    if(!container) return;
+    var form=container.querySelector("[data-edit-form]"), view=container.querySelector("[data-edit-view]");
+    if(!form || !view) return;
+    var editing=toggle.hasAttribute("data-edit-toggle");
+    form.hidden=!editing; view.hidden=editing;
+    if(editing) {var field=form.querySelector("textarea"); if(field)field.focus();}
+  });
   document.addEventListener("click", function (event) {
     var link = event.target.closest("[data-dynamic-issues] a[href]");
     if (!link || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
