@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% block title %}{{ name }} {{ row.tag }} - SurvivorsForge{% endblock %}
 {% block content %}
-<p><a href="/addons/{{ slug }}/versions">All versions of {{ name }}</a></p>
+<p><a href="/addons/{{ slug }}/versions"><span data-i18n="pub_all_versions_of">All versions of</span> {{ name }}</a></p>
 <h1>{{ name }} {{ row.tag }}</h1>
 <section class="panel download">
   <div class="notice {{ row.notice.class }}" role="status"><strong>{{ row.notice.badge }}.</strong> {{ row.notice.text }}</div>
-  <p>Published {{ row.published }}{% if row.prerelease %}, pre-release{% endif %}{% if row.deleted %}, removed on GitHub{% endif %}</p>
-  <p>Game version: {{ row.game }}{% if user.is_some() %} · <a href="/addons/{{ slug }}/versions/{{ row.tag }}/edit">Set game versions</a> (owners){% endif %}</p>
-  <p>SHA-256: <code>{{ row.sha256 }}</code></p>
+  <p><span data-i18n="pub_published">Published</span> {{ row.published }}{% if row.prerelease %}, pre-release{% endif %}{% if row.deleted %}, removed on GitHub{% endif %}</p>
+  <p><span data-i18n="pub_game_version">Game version</span>: {{ row.game }}{% if user.is_some() %} · <a href="/addons/{{ slug }}/versions/{{ row.tag }}/edit" data-i18n="pub_set_game_versions" data-i18n="pub_set_game_versions">Set game versions</a> <span data-i18n="pub_owners">(owners)</span>{% endif %}</p>
+  <p><span data-i18n="pub_sha256">SHA-256</span>: <code>{{ row.sha256 }}</code></p>
   {% if row.notice.downloadable && !row.deleted %}<p><a class="button{% if row.notice.confirm %} danger{% endif %}" href="{{ href }}" data-i18n="download_github">Download from GitHub</a></p>{% endif %}
 </section>
 {% if !findings.is_empty() %}
 <section class="panel">
-  <h2>Findings</h2>
+  <h2 data-i18n="pub_findings" data-i18n="pub_findings">Findings</h2>
   <ul class="findings">
     {% for f in findings %}
     <li><span class="badge {% if f.severity == "critical" %}bad{% else %}warn{% endif %}">{{ f.severity }}</span> <code>{{ f.place }}</code> {{ f.message }} <span class="muted">({{ f.rule }})</span>{% if f.snippet != "" %}<pre>{{ f.snippet }}</pre>{% endif %}</li>

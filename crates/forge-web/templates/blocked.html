@@ -3,7 +3,7 @@
 {% block content %}
 <section class="panel">
   <h1>{{ name }}</h1>
-  <div class="notice bad" role="status"><strong>Blocked.</strong> An admin blocked this addon. It cannot be downloaded here.</div>
-  {% if reason != "" %}<p>Reason: {{ reason }}</p>{% endif %}
+  <div class="notice bad" role="status"><strong data-i18n="pub_blocked">Blocked.</strong> An admin blocked this addon. It cannot be downloaded here.</div>
+  {% if reason != "" %}<p><span data-i18n="pub_reason">Reason:</span> {{ reason }}</p>{% endif %}
 </section>
 {% endblock %}
