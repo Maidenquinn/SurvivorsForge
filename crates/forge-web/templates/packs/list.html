@@ -9,9 +9,9 @@
 <p class="muted"><span data-l10n-en="Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show." data-l10n-fr="Plusieurs AddOns réunis dans un fichier ZIP pour la version navigateur du jeu. Ces packs sont partagés par leurs créateurs.">Several addons in one zip, for the browser version of the game. These are the packs their authors chose to show.</span></p>
 <form class="search" method="get" action="/packs" role="search"
       hx-get="/packs" hx-trigger="input changed delay:300ms from:input, search" hx-target="#results" hx-select="#results" hx-push-url="true" hx-indicator="#results" hx-select-oob="#result-status" hx-swap="innerHTML scroll:top">
-  <label for="q"><span data-l10n-en="Search" data-l10n-fr="Rechercher">Search</span></label>
+  <label for="q"><span data-i18n="search">Search</span></label>
   <input id="q" type="search" name="q" value="{{ q }}" placeholder="Pack name or an addon in it" autocomplete="off">
-  <noscript><button type="submit"><span data-l10n-en="Search" data-l10n-fr="Rechercher">Search</span></button></noscript>
+  <noscript><button type="submit"><span data-i18n="search">Search</span></button></noscript>
 </form>
 
 <p id="result-status" class="sr-only" role="status">{{ total }} pack{% if total != 1 %}s{% endif %}</p>
@@ -34,8 +34,8 @@
   </div>
   {% endif %}
   <nav class="pager">
-    {% if let Some(p) = prev %}<a href="{{ p }}"><span data-l10n-en="Previous" data-l10n-fr="Précédent">Previous</span></a>{% endif %}
-    {% if let Some(n) = next %}<a href="{{ n }}"><span data-l10n-en="Next" data-l10n-fr="Suivant">Next</span></a>{% endif %}
+    {% if let Some(p) = prev %}<a href="{{ p }}"><span data-i18n="previous">Previous</span></a>{% endif %}
+    {% if let Some(n) = next %}<a href="{{ n }}"><span data-i18n="next">Next</span></a>{% endif %}
   </nav>
 </div>
 {% endblock %}

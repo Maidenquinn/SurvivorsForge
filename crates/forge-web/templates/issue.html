@@ -24,24 +24,24 @@
         <input type="hidden" name="csrf" value="{{ csrf }}">
         <label for="issue-reply-body">Join the discussion</label>
         <textarea id="issue-reply-body" name="body" required maxlength="10000" rows="5" placeholder="Write a constructive reply…"></textarea>
-        <div class="issues-form-footer"><span class="muted">Be respectful and stay on topic.</span><button type="submit">Post comment</button></div>
+        <div class="issues-form-footer"><span class="muted">Be respectful and stay on topic.</span><button type="submit" data-i18n="post">Post comment</button></div>
       </form>
-      {% else %}<p class="notice"><a href="/login">Log in with GitHub</a> to join the discussion.</p>{% endif %}
+      {% else %}<p class="notice"><a href="/login" data-i18n="login">Log in with GitHub</a> to join the discussion.</p>{% endif %}
     </div>
     <aside class="issue-sidebar" aria-label="Issue information">
-      <section class="panel"><h2>Details</h2><p class="muted">Status</p><p><span class="badge">{{ status }}</span></p><p class="muted">Category</p><p><span class="badge">{{ kind }}</span></p></section>
+      <section class="panel"><h2>Details</h2><p class="muted" data-i18n="status">Status</p><p><span class="badge">{{ status }}</span></p><p class="muted" data-i18n="category">Category</p><p><span class="badge">{{ kind }}</span></p></section>
       {% if can_manage %}
       <section class="panel"><h2>Manage issue</h2>
         <form method="post" action="/addons/{{ slug }}/issues/{{ id }}/status">
           <input type="hidden" name="csrf" value="{{ csrf }}">
           <label for="issue-status">Change status</label>
           <select id="issue-status" name="status">
-            <option value="open" {% if status == "open" %}selected{% endif %}>Open</option>
-            <option value="in_progress" {% if status == "in_progress" %}selected{% endif %}>In progress</option>
-            <option value="resolved" {% if status == "resolved" %}selected{% endif %}>Resolved</option>
-            <option value="closed" {% if status == "closed" %}selected{% endif %}>Closed</option>
+            <option value="open" {% if status == "open" %}selected{% endif %} data-i18n="open">Open</option>
+            <option value="in_progress" {% if status == "in_progress" %}selected{% endif %} data-i18n="in_progress">In progress</option>
+            <option value="resolved" {% if status == "resolved" %}selected{% endif %} data-i18n="resolved">Resolved</option>
+            <option value="closed" {% if status == "closed" %}selected{% endif %} data-i18n="closed">Closed</option>
           </select>
-          <button type="submit">Update status</button>
+          <button type="submit" data-i18n="update_status">Update status</button>
         </form>
       </section>
       {% endif %}
