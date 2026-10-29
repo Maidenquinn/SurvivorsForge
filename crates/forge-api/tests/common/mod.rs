@@ -19,6 +19,7 @@ pub const RETURN_TO: &str = "https://web.test/auth/callback";
 
 pub struct TestApp {
     pub router: Router,
+    pub app_state: AppState,
     pub pool: PgPool,
     pub github: Arc<FakeGitHub>,
     pub now: Arc<Mutex<DateTime<Utc>>>,
@@ -39,7 +40,12 @@ impl TestApp {
             Arc::new(move || *now.lock().unwrap())
         };
         let state = AppState { pool: pool.clone(), config: Arc::new(config), github: github.clone(), clock };
-        TestApp { router: router(state), pool, github, now }
+        TestApp { router: router(state.clone()), app_state: state, pool, github, now }
+    }
+
+    /// The state the router runs with, for calling jobs and services directly.
+    pub fn state(&self) -> AppState {
+        self.app_state.clone()
     }
 
     pub fn advance(&self, by: chrono::Duration) {

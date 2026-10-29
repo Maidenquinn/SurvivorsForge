@@ -25,6 +25,8 @@ pub struct Config {
     pub admin_github_ids: Vec<i64>,
     /// Public base URL of uploaded images, e.g. `https://forge.example.com/img`.
     pub public_image_url: String,
+    /// Secret of the GitHub App webhook, checked against `X-Hub-Signature-256`.
+    pub github_webhook_secret: String,
 }
 
 #[derive(Debug, PartialEq)]
@@ -55,6 +57,7 @@ impl Config {
         "AUTH_RETURN_URLS",
         "ADMIN_GITHUB_IDS",
         "PUBLIC_IMAGE_URL",
+        "GITHUB_WEBHOOK_SECRET",
     ];
 
     pub fn from_env() -> Result<Config, ConfigError> {
@@ -92,6 +95,7 @@ impl Config {
                 .map(|id| id.parse().map_err(|_| invalid("ADMIN_GITHUB_IDS", id)))
                 .collect::<Result<_, _>>()?,
             public_image_url: required("PUBLIC_IMAGE_URL")?.trim_end_matches('/').to_string(),
+            github_webhook_secret: required("GITHUB_WEBHOOK_SECRET")?,
         })
     }
 
@@ -114,6 +118,7 @@ impl Config {
             auth_return_urls: vec!["https://web.test/auth/callback".into()],
             admin_github_ids: Vec::new(),
             public_image_url: "https://web.test/img".into(),
+            github_webhook_secret: "webhook-secret".into(),
         }
     }
 }
@@ -138,14 +143,15 @@ mod tests {
         ("GITHUB_CLIENT_ID", "c"),
         ("GITHUB_CLIENT_SECRET", "s"),
         ("PUBLIC_IMAGE_URL", "https://web.example.com/img"),
+        ("GITHUB_WEBHOOK_SECRET", "w"),
     ];
 
     #[test]
     fn missing_database_url_names_variable() {
-        let err = Config::from_map(&env(&[("PUBLIC_API_URL", "https://a"), ("GITHUB_APP_ID", "1"), ("GITHUB_CLIENT_ID", "c"), ("GITHUB_CLIENT_SECRET", "s"), ("PUBLIC_IMAGE_URL", "https://i")])).unwrap_err();
+        let err = Config::from_map(&env(&[("PUBLIC_API_URL", "https://a"), ("GITHUB_APP_ID", "1"), ("GITHUB_CLIENT_ID", "c"), ("GITHUB_CLIENT_SECRET", "s"), ("PUBLIC_IMAGE_URL", "https://i"), ("GITHUB_WEBHOOK_SECRET", "w")])).unwrap_err();
         assert!(err.0.contains("DATABASE_URL"), "{}", err.0);
         let err =
-            Config::from_map(&env(&[("DATABASE_URL", "postgres://x"), ("PUBLIC_API_URL", " "), ("GITHUB_APP_ID", "1"), ("GITHUB_CLIENT_ID", "c"), ("GITHUB_CLIENT_SECRET", "s"), ("PUBLIC_IMAGE_URL", "https://i")])).unwrap_err();
+            Config::from_map(&env(&[("DATABASE_URL", "postgres://x"), ("PUBLIC_API_URL", " "), ("GITHUB_APP_ID", "1"), ("GITHUB_CLIENT_ID", "c"), ("GITHUB_CLIENT_SECRET", "s"), ("PUBLIC_IMAGE_URL", "https://i"), ("GITHUB_WEBHOOK_SECRET", "w")])).unwrap_err();
         assert!(err.0.contains("PUBLIC_API_URL"), "{}", err.0);
     }
 

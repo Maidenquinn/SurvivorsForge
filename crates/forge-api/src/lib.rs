@@ -9,6 +9,7 @@ pub mod github;
 pub mod jobs;
 pub mod rate_limit;
 pub mod routes;
+pub mod sync;
 pub mod worker;
 
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");

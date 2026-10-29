@@ -3,3 +3,5 @@
 pub mod addons;
 pub mod me;
 pub mod members;
+pub mod versions;
+pub mod webhooks;

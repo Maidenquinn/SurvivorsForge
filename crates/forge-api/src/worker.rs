@@ -1,6 +1,8 @@
 //! `forge-api worker`: takes jobs from the queue and runs the handler of their kind.
 
+use crate::app::AppState;
 use crate::jobs::{self, Job};
+use crate::sync;
 use chrono::{Duration, Utc};
 use sqlx::PgPool;
 use std::collections::HashMap;
@@ -19,6 +21,25 @@ const IDLE: std::time::Duration = std::time::Duration::from_secs(2);
 pub struct Worker {
     handlers: HashMap<&'static str, Handler>,
     periodic: Vec<(&'static str, Duration)>,
+}
+
+/// The worker of the platform: every job kind and every periodic job.
+pub fn platform(state: AppState) -> Worker {
+    let sync_state = state.clone();
+    let poll_state = state;
+    Worker::default()
+        .handle(sync::SYNC_ADDON, move |job| {
+            let state = sync_state.clone();
+            async move {
+                let addon_id = job.payload["addon_id"].as_i64().ok_or("payload without addon_id")?;
+                sync::sync_addon(&state, addon_id).await
+            }
+        })
+        .handle(sync::POLL_RELEASES, move |_| {
+            let state = poll_state.clone();
+            async move { sync::poll_releases(&state).await }
+        })
+        .every(sync::POLL_RELEASES, Duration::days(1))
 }
 
 impl Worker {

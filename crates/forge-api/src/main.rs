@@ -3,7 +3,7 @@ use forge_api::app::{AppState, router};
 use forge_api::config::Config;
 use forge_api::github::app_auth::load_private_key;
 use forge_api::github::{GitHubClient, OAuthApp};
-use forge_api::worker::Worker;
+use forge_api::worker;
 use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
 use std::process::ExitCode;
@@ -38,17 +38,7 @@ async fn main() -> ExitCode {
     };
     let result = match command.as_str() {
         "migrate" => MIGRATOR.run(&pool).await.map_err(|e| e.to_string()),
-        "worker" => {
-            let shutdown = CancellationToken::new();
-            let token = shutdown.clone();
-            tokio::spawn(async move {
-                shutdown_signal().await;
-                token.cancel();
-            });
-            tracing::info!("forge-api worker started");
-            Worker::default().run(&pool, shutdown).await;
-            Ok(())
-        }
+        "worker" => work(config, pool).await,
         _ => serve(config, pool).await,
     };
     match result {
@@ -60,12 +50,8 @@ async fn main() -> ExitCode {
     }
 }
 
-async fn serve(config: Config, pool: sqlx::PgPool) -> Result<(), String> {
-    if config.migrate_on_start {
-        MIGRATOR.run(&pool).await.map_err(|e| e.to_string())?;
-    }
-    let listener = tokio::net::TcpListener::bind(config.bind_addr).await.map_err(|e| e.to_string())?;
-    tracing::info!(addr = %config.bind_addr, "forge-api listening");
+/// The shared state of `serve` and `worker`, with the real GitHub client.
+fn build_state(config: Config, pool: sqlx::PgPool) -> Result<AppState, String> {
     let key = load_private_key(config.github_app_private_key.as_deref(), config.github_app_private_key_file.as_deref())?;
     let oauth = OAuthApp {
         oauth_url: config.github_oauth_url.clone(),
@@ -73,8 +59,30 @@ async fn serve(config: Config, pool: sqlx::PgPool) -> Result<(), String> {
         client_secret: config.github_client_secret.clone(),
     };
     let github = GitHubClient::new(&config.github_api_url, &config.github_app_id, key, Arc::new(chrono::Utc::now)).with_oauth(oauth);
-    let state = AppState { pool, config: Arc::new(config), github: Arc::new(github), clock: Arc::new(chrono::Utc::now) };
-    let app = router(state);
+    Ok(AppState { pool, config: Arc::new(config), github: Arc::new(github), clock: Arc::new(chrono::Utc::now) })
+}
+
+async fn work(config: Config, pool: sqlx::PgPool) -> Result<(), String> {
+    let state = build_state(config, pool.clone())?;
+    let shutdown = CancellationToken::new();
+    let token = shutdown.clone();
+    tokio::spawn(async move {
+        shutdown_signal().await;
+        token.cancel();
+    });
+    tracing::info!("forge-api worker started");
+    worker::platform(state).run(&pool, shutdown).await;
+    Ok(())
+}
+
+async fn serve(config: Config, pool: sqlx::PgPool) -> Result<(), String> {
+    if config.migrate_on_start {
+        MIGRATOR.run(&pool).await.map_err(|e| e.to_string())?;
+    }
+    let bind_addr = config.bind_addr;
+    let app = router(build_state(config, pool)?);
+    let listener = tokio::net::TcpListener::bind(bind_addr).await.map_err(|e| e.to_string())?;
+    tracing::info!(addr = %bind_addr, "forge-api listening");
     axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
         .await
