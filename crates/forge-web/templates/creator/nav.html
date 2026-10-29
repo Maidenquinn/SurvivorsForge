@@ -1,6 +1,6 @@
-<nav class="subnav" aria-label="Edit addon">
-  <a href="/addons/{{ slug }}">View page</a>
-  {% if perms.owner || perms.edit_description %}<a href="/addons/{{ slug }}/edit">Details</a>{% endif %}
+<nav class="subnav" aria-label="Edit addon" data-i18n-aria-label="creator_edit_addon">
+  <a href="/addons/{{ slug }}" data-i18n="creator_view_page">View page</a>
+  {% if perms.owner || perms.edit_description %}<a href="/addons/{{ slug }}/edit" data-i18n="creator_details">Details</a>{% endif %}
   {% if perms.edit_images %}<a href="/addons/{{ slug }}/images">Images</a>{% endif %}
   {% if perms.owner %}
     <a href="/addons/{{ slug }}/members" data-i18n="contributors">Contributors</a>

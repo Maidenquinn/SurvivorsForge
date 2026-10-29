@@ -7,23 +7,23 @@
 
 <form class="panel" method="post" action="/addons/{{ slug }}/dependencies">
   <input type="hidden" name="csrf" value="{{ csrf }}">
-  <h2>Add a dependency</h2>
-  <label for="dependency">Addon address</label>
+  <h2 data-i18n="creator_add_dependency">Add a dependency</h2>
+  <label for="dependency" data-i18n="creator_addon_address">Addon address</label>
   <input id="dependency" name="dependency" required placeholder="ace-lib">
-  <p class="muted">The part after /addons/ in the other addon's link.</p>
-  <label class="check"><input type="checkbox" name="required" value="1" checked> Required (the launcher installs it too)</label>
-  <p><button type="submit">Add</button></p>
+  <p class="muted" data-i18n="creator_dependency_hint">The part after /addons/ in the other addon's link.</p>
+  <label class="check"><input type="checkbox" name="required" value="1" checked> <span data-i18n="creator_required">Required (the launcher installs it too)</span></label>
+  <p><button type="submit" data-i18n="action_add">Add</button></p>
 </form>
 
 <section class="panel">
-  <h2>Current dependencies</h2>
-  {% if deps.is_empty() %}<p class="muted">None.</p>{% endif %}
+  <h2 data-i18n="creator_current_dependencies">Current dependencies</h2>
+  {% if deps.is_empty() %}<p class="muted" data-i18n="creator_none">None.</p>{% endif %}
   <ul>
   {% for (dep, name, required) in deps %}
     <li><a href="/addons/{{ dep }}">{{ name }}</a> {% if *required %}(required){% else %}(optional){% endif %}
       <form method="post" action="/addons/{{ slug }}/dependencies" class="inline">
         <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="remove" value="{{ dep }}">
-        <button type="submit" class="link">Remove</button>
+        <button type="submit" class="link" data-i18n="creator_remove">Remove</button>
       </form>
     </li>
   {% endfor %}
