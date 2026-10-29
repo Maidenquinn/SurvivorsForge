@@ -95,6 +95,21 @@ async fn deleted_release_kept_in_history(pool: PgPool) {
 }
 
 #[sqlx::test]
+async fn versions_newest_first_when_they_share_a_date(pool: PgPool) {
+    // Tags have no date of their own: one sync gives them all the same. GitHub lists newest first.
+    let app = TestApp::new(pool);
+    app.publish(1, "alice", "lucky").await;
+    let id = addon_id(&app, "lucky").await;
+    let at = chrono::Utc::now();
+    let dated = |id: i64, tag: &str| Release { published_at: Some(at), ..release(id, tag, &[(id * 10, &format!("lucky-{tag}.zip"))]) };
+    app.github.data().releases.insert(100, vec![dated(3, "v1.10.0"), dated(2, "v1.2.0"), dated(1, "v1.0.0")]);
+    sync_addon(&app.state(), id).await.unwrap();
+    let listed = app.get("/v1/addons/lucky/versions", None).await.json();
+    let tags: Vec<&str> = listed.as_array().unwrap().iter().map(|v| v["tag"].as_str().unwrap()).collect();
+    assert_eq!(tags, ["v1.10.0", "v1.2.0", "v1.0.0"]);
+}
+
+#[sqlx::test]
 async fn poll_finds_missed_release(pool: PgPool) {
     let app = TestApp::new(pool);
     app.publish(1, "alice", "lucky").await;
