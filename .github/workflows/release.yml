@@ -140,10 +140,16 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
+        # A final release lists everything since the previous final one (v0.3.2...v0.4.0), not just
+        # since its last release candidate; a candidate lists what changed since the tag before it.
         run: |
-          prerelease=()
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease=(--prerelease); fi
-          gh release create "$GITHUB_REF_NAME" assets/* "${prerelease[@]}" \
+          options=()
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            options=(--prerelease)
+          elif previous=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null); then
+            options=(--notes-start-tag "$previous")
+          fi
+          gh release create "$GITHUB_REF_NAME" assets/* "${options[@]}" \
             --repo "$GITHUB_REPOSITORY" \
             --title "SurvivorsForge ${{ needs.version.outputs.version }}" \
             --generate-notes
