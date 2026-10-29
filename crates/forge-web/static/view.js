@@ -180,6 +180,7 @@
   });
   document.addEventListener("submit", function (event) {
     var form = event.target.closest("[data-dynamic-issues] form");
+    if (form && form.dataset.confirmDelete && !window.confirm(form.dataset.confirmDelete)) { event.preventDefault(); return; }
     if (!form || event.defaultPrevented || !form.matches('form[action*="/issues"]')) return;
     event.preventDefault();
     var submit = form.querySelector('[type="submit"]');
