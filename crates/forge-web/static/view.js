@@ -481,9 +481,8 @@ document.addEventListener("DOMContentLoaded", function () {
     var old = root();
     if (!old) return;
     var inline = old.classList.contains('addon-tab-section');
-    var requestedUrl = url;
     // A browser Back action may supersede an in-flight request.
-    if (busy && !options) {
+    if (busy && !options && !controller?.mutation) {
       if (controller) controller.abort();
       busy = false;
     }
@@ -492,6 +491,7 @@ document.addEventListener("DOMContentLoaded", function () {
     busy = true;
     controller = new AbortController();
     var current = controller;
+    current.mutation = !!options;
     old.setAttribute("aria-busy", "true");
     try {
       var response = await fetch(url, Object.assign({
@@ -524,7 +524,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // POST redirects to the canonical feed. Do not add mutation URLs to history.
       if (push && !options) history.pushState({comments: true}, "", response.url);
       else if (options && !inline && new URL(response.url).origin === location.origin) history.replaceState({comments: true}, "", response.url);
-      var heading = next.querySelector("h1");
+      var heading = next.querySelector("h1, h2");
       if (heading) {
         heading.setAttribute("tabindex", "-1");
         heading.focus({preventScroll: true});
@@ -535,7 +535,11 @@ document.addEventListener("DOMContentLoaded", function () {
         errorMessage(old, "comment_update_error", "Could not update comments. Check your connection and try again.");
       }
     } finally {
-      if (requestId === sequence) old.removeAttribute("aria-busy");
+      if (requestId === sequence) {
+        old.removeAttribute("aria-busy");
+        var active = root();
+        if (active) active.setAttribute("aria-busy", "false");
+      }
       if (controller === current) {
         busy = false;
         controller = null;
