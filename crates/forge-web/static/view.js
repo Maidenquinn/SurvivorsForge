@@ -93,3 +93,40 @@
   document.addEventListener("htmx:responseError", failed);
   document.addEventListener("htmx:sendError", failed);
 })();
+
+/* Issues V2: filtering and disclosure without inline scripts (CSP safe). */
+document.addEventListener("DOMContentLoaded", function () {
+  var list = document.getElementById("addon-issues-list");
+  if (!list) return;
+  var rows = Array.from(list.querySelectorAll(".issue-row"));
+  var tabs = Array.from(document.querySelectorAll("[data-inline-filter]"));
+  var search = document.getElementById("addon-issues-search");
+  var empty = document.getElementById("addon-issues-empty");
+  var filter = "open";
+  function refresh() {
+    var query = (search && search.value || "").trim().toLowerCase();
+    var visible = 0;
+    rows.forEach(function (row) {
+      var status = row.dataset.status;
+      var matched = filter === "all" || (filter === "open" ? status === "open" || status === "in_progress" : status === "closed" || status === "resolved");
+      var show = matched && (row.dataset.search || "").toLowerCase().includes(query);
+      row.hidden = !show;
+      if (show) visible++;
+    });
+    if (empty) empty.hidden = visible > 0 || rows.length === 0;
+    tabs.forEach(function (tab) {
+      var active = tab.dataset.inlineFilter === filter;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-pressed", String(active));
+    });
+  }
+  tabs.forEach(function (tab) { tab.addEventListener("click", function () { filter = tab.dataset.inlineFilter; refresh(); }); });
+  if (search) search.addEventListener("input", refresh);
+  refresh();
+  document.querySelectorAll("[data-open-new-issue]").forEach(function (link) {
+    link.addEventListener("click", function () {
+      var details = document.getElementById("new-issue");
+      if (details) details.open = true;
+    });
+  });
+});
