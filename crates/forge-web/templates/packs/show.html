@@ -31,7 +31,7 @@
           <td><a href="/addons/{{ e.slug }}">{{ e.name }}</a></td>
           <td>{{ e.tag }}</td>
           <td class="check">{% if e.available %}<span class="badge {{ e.notice.class }}">{{ e.notice.badge }}</span>{% else %}<span class="badge bad">Unavailable</span>{% endif %}</td>
-          <td class="muted">{{ e.folders }}</td>
+          <td>{{ e.folders }}</td>
         </tr>
         {% endfor %}
       </tbody>

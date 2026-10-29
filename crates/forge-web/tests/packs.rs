@@ -79,6 +79,7 @@ async fn the_pack_page_is_public_and_shows_the_content_and_the_link() {
     }
     assert!(!page.body.contains("Packed on the first download"), "already built");
     assert!(page.body.contains("29 October 2026"), "date in words");
+    assert!(page.body.contains("<td>Lucky, LuckyLib</td>"), "the folders read as content, not muted");
 
     let mut new = pack(true);
     new["file"] = json!({ "status": "none", "size": null, "error": null });
