@@ -199,6 +199,12 @@ pre { background: var(--field); border: 1px solid var(--line); border-radius: va
 .danger-link:hover { color: var(--bad); }
 label.check { display: flex; align-items: center; gap: 8px; color: var(--text); }
 label.check input { width: auto; min-height: 0; accent-color: var(--gold); }
+fieldset.picker { border: 1px solid var(--line); border-radius: var(--radius); margin: 16px 0 0; padding: 4px 12px; }
+fieldset.picker legend { color: var(--gold); padding: 0 6px; }
+label.pick { flex-wrap: wrap; margin: 0; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+label.pick:last-child { border-bottom: none; }
+.pick-name { color: var(--gold); }
+input[readonly] { color: var(--gold-bright); }
 .member { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .member form { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0; }
 .preview { border: 1px dashed var(--outline); border-radius: var(--radius); padding: 12px; min-height: 48px; background: var(--field); }

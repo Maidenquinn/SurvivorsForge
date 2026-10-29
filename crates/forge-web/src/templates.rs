@@ -450,3 +450,57 @@ pub struct AdminAuditPage {
     pub prev: Option<String>,
     pub next: Option<String>,
 }
+
+/// An addon in the pack picker: its current version.
+pub struct PackChoice {
+    pub slug: String,
+    pub name: String,
+    pub tag: String,
+    /// Empty when the release size is unknown (source zips).
+    pub size: String,
+    pub notice: Notice,
+    pub checked: bool,
+}
+
+#[derive(Template)]
+#[template(path = "packs/new.html")]
+pub struct NewPackPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub name: String,
+    pub choices: Vec<PackChoice>,
+    pub error: Option<String>,
+}
+
+pub struct PackEntry {
+    pub slug: String,
+    pub name: String,
+    pub tag: String,
+    pub available: bool,
+    pub notice: Notice,
+    pub folders: String,
+}
+
+#[derive(Template)]
+#[template(path = "packs/show.html")]
+pub struct PackPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub id: String,
+    /// The full address to share.
+    pub link: String,
+    pub name: String,
+    pub created_by: String,
+    pub created: String,
+    pub available: bool,
+    pub size: Option<String>,
+    pub entries: Vec<PackEntry>,
+}
+
+#[derive(Template)]
+#[template(path = "packs/building.html")]
+pub struct PackBuildingPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub id: String,
+}

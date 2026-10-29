@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Building the pack - SurvivorsForge{% endblock %}
+{% block head %}<meta name="robots" content="noindex"><meta http-equiv="refresh" content="3">{% endblock %}
+{% block content %}
+<h1>Building the pack</h1>
+<section class="panel" role="status">
+  <p>The addons are being fetched and packed. This page checks again every few seconds and the download starts on its own.</p>
+  <p class="muted">Big packs take up to a minute.</p>
+  <p><a href="/packs/{{ id }}">Back to the pack</a></p>
+</section>
+{% endblock %}

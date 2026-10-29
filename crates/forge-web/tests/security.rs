@@ -26,6 +26,7 @@ const PROTECTED: &[&str] = &[
     "/admin/addons/lucky",
     "/admin/audit",
     "/admin/list/categories",
+    "/packs/new",
 ];
 
 #[tokio::test]

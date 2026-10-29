@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Build an addon pack - SurvivorsForge{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<h1>Build an addon pack</h1>
+<p>Pick the addons you play with. You get one zip with all of them and a link to share. Upload the zip in the browser version of the game.</p>
+{% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
+
+<form class="panel" method="post" action="/packs/new">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label for="name">Name of the pack (optional)</label>
+  <input id="name" name="name" value="{{ name }}" maxlength="80" placeholder="My UI">
+
+  <fieldset class="picker">
+    <legend>Addons</legend>
+    {% if choices.is_empty() %}
+      <p class="muted">No addon can go into a pack yet. Packs take checked versions only.</p>
+    {% endif %}
+    {% for c in choices %}
+    <label class="check pick">
+      <input type="checkbox" name="addon" value="{{ c.slug }}" {% if c.checked %}checked{% endif %}>
+      <span class="pick-name">{{ c.name }}</span>
+      <span class="muted">{{ c.tag }}{% if c.size != "" %} · {{ c.size }}{% endif %}</span>
+      <span class="badge {{ c.notice.class }}">{{ c.notice.badge }}</span>
+    </label>
+    {% endfor %}
+  </fieldset>
+  <p class="muted">Only checked versions go into a pack. Flagged or unchecked ones are not listed.</p>
+  <p><button type="submit">Create the pack</button></p>
+</form>
+{% endblock %}

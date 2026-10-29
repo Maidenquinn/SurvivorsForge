@@ -34,6 +34,8 @@ impl ApiError {
 #[derive(Clone)]
 pub struct ApiClient {
     http: reqwest::Client,
+    /// Same settings, but hands redirects back instead of following them.
+    no_redirect: reqwest::Client,
     base: String,
 }
 
@@ -49,8 +51,10 @@ fn forwarded(request: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
 
 impl ApiClient {
     pub fn new(base: &str) -> ApiClient {
+        let builder = || reqwest::Client::builder().timeout(std::time::Duration::from_secs(30));
         ApiClient {
-            http: reqwest::Client::builder().timeout(std::time::Duration::from_secs(30)).build().expect("HTTP client"),
+            http: builder().build().expect("HTTP client"),
+            no_redirect: builder().redirect(reqwest::redirect::Policy::none()).build().expect("HTTP client"),
             base: base.trim_end_matches('/').to_string(),
         }
     }
@@ -83,6 +87,25 @@ impl ApiClient {
             });
         }
         Ok(json)
+    }
+
+    /// A GET whose answer may be a redirect: `Err(location)` for one, else the JSON body.
+    pub async fn get_or_redirect(&self, path: &str) -> ApiResult<Result<Value, String>> {
+        let response = forwarded(self.no_redirect.get(format!("{}{path}", self.base))).send().await.map_err(|e| ApiError::Down(e.to_string()))?;
+        if response.status().is_redirection() {
+            let location = response.headers().get("location").and_then(|v| v.to_str().ok()).unwrap_or("/");
+            return Ok(Err(location.to_string()));
+        }
+        let status = response.status();
+        let json: Value = response.json().await.unwrap_or(Value::Null);
+        if !status.is_success() {
+            return Err(ApiError::Api {
+                status: status.as_u16(),
+                code: json["error"].as_str().unwrap_or("error").to_string(),
+                message: json["message"].as_str().unwrap_or("Something went wrong").to_string(),
+            });
+        }
+        Ok(Ok(json))
     }
 
     pub async fn get(&self, path: &str, token: Option<&str>) -> ApiResult<Value> {

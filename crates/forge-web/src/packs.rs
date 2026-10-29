@@ -1,0 +1,129 @@
+//! Addon packs: pick several addons, get one zip and a link to share. For players of the browser
+//! version, who upload a zip of addons into the game.
+
+use crate::api_client::ApiError;
+use crate::app::{AppState, visitor};
+use crate::csrf::CsrfToken;
+use crate::error::{WebError, WebResult};
+use crate::templates::{NewPackPage, PackBuildingPage, PackChoice, PackEntry, PackPage, render};
+use crate::trust::notice;
+use axum::extract::{Path, RawQuery, State};
+use axum::response::{Html, IntoResponse, Redirect, Response};
+use axum::Extension;
+use axum_extra::extract::PrivateCookieJar;
+use serde_json::{Value, json};
+
+/// Trust levels the API puts into packs (`forge_api::routes::packs::PACKABLE`).
+const PACKABLE: &[&str] = &["scanned", "verified"];
+
+fn s(v: &Value) -> String {
+    v.as_str().unwrap_or_default().to_string()
+}
+
+fn megabytes(bytes: i64) -> String {
+    format!("{:.1} MB", bytes as f64 / 1_000_000.0)
+}
+
+/// Every addon whose current version can go into a pack, ticked when in `picked`.
+async fn choices(state: &AppState, picked: &[String]) -> WebResult<Vec<PackChoice>> {
+    let registry = state.api.get("/v1/registry", None).await?;
+    let mut choices: Vec<PackChoice> = registry["addons"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|a| PACKABLE.contains(&a["latest"]["trust"].as_str().unwrap_or_default()) && a["latest"]["sha256"].is_string())
+        .map(|a| {
+            let slug = s(&a["id"]);
+            PackChoice {
+                checked: picked.iter().any(|p| p.eq_ignore_ascii_case(&slug)),
+                name: s(&a["name"]),
+                tag: s(&a["latest"]["tag"]),
+                size: a["latest"]["size"].as_i64().map(megabytes).unwrap_or_default(),
+                notice: notice(a["latest"]["trust"].as_str().unwrap_or_default(), a["verified_author"] == true, false),
+                slug,
+            }
+        })
+        .collect();
+    choices.sort_by_key(|c| c.name.to_lowercase());
+    Ok(choices)
+}
+
+/// Every value of `field` in a query string or form body.
+fn values(raw: Option<&str>, field: &str) -> Vec<String> {
+    raw.and_then(|q| reqwest::Url::parse(&format!("http://x/?{q}")).ok())
+        .map(|u| u.query_pairs().filter(|(k, _)| k == field).map(|(_, v)| v.into_owned()).collect())
+        .unwrap_or_default()
+}
+
+/// `GET /packs/new?addon=a&addon=b`: the picker, with the given addons ticked.
+pub async fn new_pack(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, RawQuery(raw): RawQuery) -> WebResult<Html<String>> {
+    let (user, _) = visitor(&state, &jar).await?.ok_or(WebError::LoginRequired)?;
+    let choices = choices(&state, &values(raw.as_deref(), "addon")).await?;
+    Ok(render(&NewPackPage { user: Some(user), csrf: csrf.0, name: String::new(), choices, error: None }))
+}
+
+/// `POST /packs/new`: the ticked boxes arrive as repeated `addon` fields.
+pub async fn create_pack(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, body: String) -> WebResult<Response> {
+    let (user, token) = visitor(&state, &jar).await?.ok_or(WebError::LoginRequired)?;
+    let picked = values(Some(&body), "addon");
+    let name = values(Some(&body), "name").pop().unwrap_or_default();
+    let addons: Vec<Value> = picked.iter().map(|slug| json!({ "slug": slug })).collect();
+    match state.api.post("/v1/packs", Some(&token), &json!({ "name": name.trim(), "addons": addons })).await {
+        Ok(created) => Ok(Redirect::to(&format!("/packs/{}", s(&created["id"]))).into_response()),
+        Err(ApiError::Api { status, message, .. }) if status == 422 || status == 429 => {
+            let choices = choices(&state, &picked).await?;
+            let page = NewPackPage { user: Some(user), csrf: csrf.0, name, choices, error: Some(message) };
+            Ok((axum::http::StatusCode::from_u16(status).unwrap_or(axum::http::StatusCode::BAD_REQUEST), render(&page)).into_response())
+        }
+        Err(e) => Err(e.into()),
+    }
+}
+
+/// Pack ids are 10 letters and digits; anything else never reaches the API.
+fn valid_id(id: &str) -> WebResult<()> {
+    if id.len() == 10 && id.bytes().all(|b| b.is_ascii_alphanumeric()) { Ok(()) } else { Err(WebError::NotFound) }
+}
+
+/// `GET /packs/{id}`: what is in the pack, the link to share and the download.
+pub async fn pack(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(id): Path<String>) -> WebResult<Html<String>> {
+    valid_id(&id)?;
+    let user = visitor(&state, &jar).await?.map(|(v, _)| v);
+    let p = state.api.get(&format!("/v1/packs/{id}"), None).await?;
+    let entries = p["addons"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|a| PackEntry {
+            slug: s(&a["slug"]),
+            name: s(&a["name"]),
+            tag: s(&a["tag"]),
+            available: a["available"] == true,
+            notice: notice(a["trust"].as_str().unwrap_or_default(), false, false),
+            folders: a["folders"].as_array().into_iter().flatten().map(s).collect::<Vec<_>>().join(", "),
+        })
+        .collect();
+    Ok(render(&PackPage {
+        user,
+        csrf: csrf.0,
+        link: format!("{}/packs/{id}", state.config.public_web_url),
+        name: s(&p["name"]),
+        created_by: s(&p["created_by"]),
+        created: s(&p["created_at"]).chars().take(10).collect(),
+        available: p["available"] == true,
+        size: p["file"]["size"].as_i64().map(megabytes),
+        entries,
+        id,
+    }))
+}
+
+/// `GET /packs/{id}/download`: to the zip when it is built, else a page that asks again.
+pub async fn download(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(id): Path<String>) -> WebResult<Response> {
+    valid_id(&id)?;
+    match state.api.get_or_redirect(&format!("/v1/packs/{id}/download")).await? {
+        Err(location) => Ok(Redirect::to(&location).into_response()),
+        Ok(_) => {
+            let user = visitor(&state, &jar).await?.map(|(v, _)| v);
+            Ok(render(&PackBuildingPage { user, csrf: csrf.0, id }).into_response())
+        }
+    }
+}

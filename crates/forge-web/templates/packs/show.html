@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{% if name != "" %}{{ name }}{% else %}Addon pack{% endif %} - SurvivorsForge{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<h1>{% if name != "" %}{{ name }}{% else %}Addon pack{% endif %}</h1>
+<p class="muted">{{ entries.len() }} addon{% if entries.len() != 1 %}s{% endif %}{% if created_by != "" %} · by {{ created_by }}{% endif %} · {{ created }}</p>
+
+<section class="panel download">
+  {% if available %}
+    <p><a class="button" href="/packs/{{ id }}/download">Download the pack{% if let Some(s) = size %} ({{ s }}){% endif %}</a></p>
+    <p class="muted">One zip, every addon in its own folder. Upload it in the browser version of the game.</p>
+  {% else %}
+    <div class="notice bad" role="alert">An addon of this pack is no longer available, so the pack cannot be downloaded. Build a new one.</div>
+  {% endif %}
+  <label for="link">Link to share</label>
+  <input id="link" value="{{ link }}" readonly>
+</section>
+
+<section class="panel">
+  <h2>In this pack</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Addon</th><th>Version</th><th>Check</th><th>Folders</th></tr></thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td><a href="/addons/{{ e.slug }}">{{ e.name }}</a></td>
+          <td>{{ e.tag }}</td>
+          <td>{% if e.available %}<span class="badge {{ e.notice.class }}">{{ e.notice.badge }}</span>{% else %}<span class="badge bad">Unavailable</span>{% endif %}</td>
+          <td class="muted">{{ e.folders }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+<p><a href="/packs/new{% for e in entries %}{% if loop.first %}?{% else %}&amp;{% endif %}addon={{ e.slug }}{% endfor %}">Build your own pack from this one</a></p>
+{% endblock %}

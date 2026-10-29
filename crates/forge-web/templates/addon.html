@@ -33,7 +33,7 @@
     {% if l.row.notice.downloadable %}
       <p><a class="button{% if l.row.notice.confirm %} danger{% endif %}" href="{{ l.href }}">Download from GitHub</a></p>
     {% endif %}
-    <p><a href="/addons/{{ slug }}/versions">All versions</a></p>
+    <p><a href="/addons/{{ slug }}/versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} · <a href="/packs/new?addon={{ slug }}">Put into an addon pack</a>{% endif %}</p>
   {% when None %}
     <p>No release yet.</p>
   {% endmatch %}

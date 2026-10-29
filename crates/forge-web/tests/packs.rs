@@ -1,0 +1,111 @@
+mod common;
+
+use axum::http::StatusCode;
+use common::{TestWeb, me};
+use serde_json::json;
+use wiremock::matchers::{body_partial_json, method, path};
+use wiremock::{Mock, ResponseTemplate};
+
+fn registry() -> serde_json::Value {
+    let addon = |id: &str, name: &str, trust: &str, sha: Option<&str>| {
+        json!({ "id": id, "name": name, "author": "a", "repo": "o/r", "folders": [name], "source": { "type": "tag" }, "verified_author": false,
+                "latest": { "tag": "v1", "asset_url": "https://github.com/x.zip", "sha256": sha, "size": 2_500_000, "trust": trust, "findings": { "critical": 0, "warn": 0 } } })
+    };
+    json!({ "schema": 1, "addons": [
+        addon("lucky", "Lucky", "scanned", Some("abc")),
+        addon("bad", "Bad", "flagged", Some("abc")),
+        addon("odd", "Odd", "verified", None),
+        addon("aether", "Aether", "verified", Some("abc")),
+    ] })
+}
+
+async fn logged_in() -> TestWeb {
+    let mut web = TestWeb::new().await;
+    web.login_as("tok", me("alice", "user")).await;
+    Mock::given(method("GET")).and(path("/v1/registry")).respond_with(ResponseTemplate::new(200).set_body_json(registry())).mount(&web.api).await;
+    web
+}
+
+#[tokio::test]
+async fn picker_lists_only_packable_addons_and_ticks_the_given_ones() {
+    let mut web = logged_in().await;
+    let page = web.get("/packs/new?addon=lucky").await;
+    assert_eq!(page.status, StatusCode::OK, "{}", page.body);
+    assert!(page.body.contains(r#"value="lucky" checked"#), "{}", page.body);
+    assert!(page.body.contains(r#"value="aether" >"#) || page.body.contains(r#"value="aether">"#));
+    assert!(!page.body.contains(r#"value="bad""#), "flagged is not offered");
+    assert!(!page.body.contains(r#"value="odd""#), "no hash, not offered");
+    assert!(page.body.contains("2.5 MB"));
+    assert!(page.body.find("Aether").unwrap() < page.body.find("Lucky").unwrap(), "sorted by name");
+}
+
+#[tokio::test]
+async fn creating_redirects_to_the_pack_and_errors_keep_the_choice() {
+    let mut web = logged_in().await;
+    Mock::given(method("POST"))
+        .and(path("/v1/packs"))
+        .and(body_partial_json(json!({ "name": "Mine", "addons": [{ "slug": "lucky" }, { "slug": "aether" }] })))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({ "id": "AbCdE12345" })))
+        .mount(&web.api)
+        .await;
+    let page = web.post_form("/packs/new", &[("name", "Mine"), ("addon", "lucky"), ("addon", "aether")]).await;
+    assert_eq!((page.status, page.location()), (StatusCode::SEE_OTHER, "/packs/AbCdE12345"));
+
+    Mock::given(method("POST"))
+        .and(path("/v1/packs"))
+        .respond_with(ResponseTemplate::new(429).set_body_json(json!({ "error": "pack_limit", "message": "At most 10 new packs an hour, try again later" })))
+        .mount(&web.api)
+        .await;
+    let page = web.post_form("/packs/new", &[("name", "Other"), ("addon", "lucky")]).await;
+    assert_eq!(page.status, StatusCode::TOO_MANY_REQUESTS);
+    assert!(page.body.contains("At most 10 new packs an hour"));
+    assert!(page.body.contains(r#"value="lucky" checked"#) && page.body.contains(r#"value="Other""#));
+}
+
+fn pack(available: bool) -> serde_json::Value {
+    json!({ "id": "AbCdE12345", "name": "My UI", "created_at": "2026-10-29T10:00:00Z", "created_by": "alice", "available": available,
+            "addons": [{ "slug": "lucky", "name": "Lucky", "tag": "v1", "trust": "scanned", "available": available, "folders": ["Lucky", "LuckyLib"] }],
+            "file": { "status": "ready", "size": 3_100_000, "error": null } })
+}
+
+#[tokio::test]
+async fn the_pack_page_is_public_and_shows_the_content_and_the_link() {
+    let mut web = TestWeb::new().await;
+    Mock::given(method("GET")).and(path("/v1/packs/AbCdE12345")).respond_with(ResponseTemplate::new(200).set_body_json(pack(true))).mount(&web.api).await;
+    let page = web.get("/packs/AbCdE12345").await;
+    assert_eq!(page.status, StatusCode::OK, "{}", page.body);
+    for text in ["My UI", "by alice", "Lucky", "v1", "Lucky, LuckyLib", "https://web.test/packs/AbCdE12345", "Download the pack (3.1 MB)"] {
+        assert!(page.body.contains(text), "{text}");
+    }
+    assert_eq!(web.get("/packs/not-an-id").await.status, StatusCode::NOT_FOUND);
+    assert_eq!(web.get("/packs/AbCdE12345%2F..").await.status, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn an_unavailable_pack_offers_no_download() {
+    let mut web = TestWeb::new().await;
+    Mock::given(method("GET")).and(path("/v1/packs/AbCdE12345")).respond_with(ResponseTemplate::new(200).set_body_json(pack(false))).mount(&web.api).await;
+    let page = web.get("/packs/AbCdE12345").await;
+    assert!(page.body.contains("no longer available") && !page.body.contains("Download the pack"));
+}
+
+#[tokio::test]
+async fn download_follows_the_api_or_waits_for_the_build() {
+    let mut web = TestWeb::new().await;
+    Mock::given(method("GET"))
+        .and(path("/v1/packs/AbCdE12345/download"))
+        .respond_with(ResponseTemplate::new(303).insert_header("location", "https://web.test/packs-files/abc.zip"))
+        .mount(&web.api)
+        .await;
+    let ready = web.get("/packs/AbCdE12345/download").await;
+    assert_eq!((ready.status, ready.location()), (StatusCode::SEE_OTHER, "https://web.test/packs-files/abc.zip"));
+
+    Mock::given(method("GET"))
+        .and(path("/v1/packs/Building12/download"))
+        .respond_with(ResponseTemplate::new(202).set_body_json(json!({ "status": "building" })))
+        .mount(&web.api)
+        .await;
+    let building = web.get("/packs/Building12/download").await;
+    assert_eq!(building.status, StatusCode::OK);
+    assert!(building.body.contains(r#"http-equiv="refresh""#) && building.body.contains("Building the pack"));
+}
