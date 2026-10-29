@@ -54,7 +54,7 @@
         </div>
       </div>
       <p>{{ c.summary }}</p>
-      <p><span class="badge {{ c.notice.class }}">{{ c.notice.badge }}</span> <span class="muted">{{ c.downloads }} downloads</span></p>
+      <p><span class="badge {{ c.notice.class }}">{{ c.notice.badge }}</span> <span class="muted">{% match c.downloads %}{% when Some with (n) %}{{ n }} downloads{% when None %}Updated {{ c.updated }}{% endmatch %}</span></p>
     </article>
     {% endfor %}
   </div>

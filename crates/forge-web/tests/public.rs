@@ -74,6 +74,19 @@ async fn list_renders_items_without_js() {
     assert!(web.get("/addons?q=nothing").await.body.contains("No addon matches"));
 }
 
+#[tokio::test]
+async fn addons_without_a_download_count_show_their_last_update() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/categories", categories()).await;
+    mock(&web, "/v1/addons", json!({ "total": 1, "page": 1, "per_page": 20, "addons": [
+        { "slug": "tagged", "name": "Tagged", "summary": "From tags", "category": "Miscellaneous", "trust": "scanned", "icon_url": null,
+          "owner": null, "author": "bob", "verified_author": false, "downloads": null, "updated_at": "2026-05-01T10:00:00Z" }
+    ] }))
+    .await;
+    let page = web.get("/addons").await;
+    assert!(page.body.contains("Updated 2026-05-01") && !page.body.contains("downloads</span>"), "{}", page.body);
+}
+
 fn categories() -> Value {
     json!([
         { "name": "Classes", "parent": null, "selectable": false, "sort_key": 10 },

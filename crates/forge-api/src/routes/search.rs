@@ -65,9 +65,9 @@ pub async fn list(State(state): State<AppState>, headers: HeaderMap, RawQuery(ra
         None => None,
     };
     let order = match query.sort.as_deref() {
-        Some("downloads") | None if query.q.is_none() => "downloads DESC, a.id DESC",
-        None | Some("relevance") => "rank DESC, downloads DESC, a.id DESC",
-        Some("downloads") => "downloads DESC, a.id DESC",
+        Some("downloads") | None if query.q.is_none() => "downloads DESC NULLS LAST, a.id DESC",
+        None | Some("relevance") => "rank DESC, downloads DESC NULLS LAST, a.id DESC",
+        Some("downloads") => "downloads DESC NULLS LAST, a.id DESC",
         Some("updated") => "updated_at DESC, a.id DESC",
         Some("name") => "lower(a.name), a.id",
         Some(_) => return Err(ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "invalid_sort", "sort is relevance, downloads, updated or name")),
@@ -77,7 +77,9 @@ pub async fn list(State(state): State<AppState>, headers: HeaderMap, RawQuery(ra
         "WITH found AS (
              SELECT a.id, a.slug, a.name, a.summary, a.category, a.owner_id,
                     t.trust,
-                    (SELECT coalesce(sum(download_count), 0) FROM versions WHERE addon_id = a.id)::bigint AS downloads,
+                    -- GitHub counts downloads of release files only; addons from tags have no count.
+                    CASE WHEN a.source_type = 'tag' THEN NULL
+                         ELSE (SELECT coalesce(sum(download_count), 0) FROM versions WHERE addon_id = a.id)::bigint END AS downloads,
                     greatest(a.updated_at, (SELECT max(published_at) FROM versions WHERE addon_id = a.id)) AS updated_at,
                     CASE WHEN $1::text IS NULL THEN 0
                          ELSE coalesce(ts_rank_cd(a.search, to_tsquery('simple', $2)), 0) * 10 + word_similarity($1, a.name) END AS rank

@@ -110,7 +110,8 @@ pub async fn addons(State(state): State<AppState>, jar: PrivateCookieJar, Extens
                 Some(trust) => notice(trust, a["verified_author"] == true, false),
                 None => Notice { class: "", badge: "No release", text: "", downloadable: false, confirm: false },
             },
-            downloads: a["downloads"].as_i64().unwrap_or(0),
+            downloads: a["downloads"].as_i64(),
+            updated: s(&a["updated_at"]).chars().take(10).collect(),
         })
         .collect();
     let page = param("page").and_then(|p| p.parse().ok()).unwrap_or(1i64).max(1);

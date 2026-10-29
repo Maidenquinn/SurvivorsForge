@@ -88,7 +88,10 @@ pub struct Card {
     pub icon_url: Option<String>,
     pub category: String,
     pub notice: Notice,
-    pub downloads: i64,
+    /// `None` for addons from tags: GitHub counts only release downloads.
+    pub downloads: Option<i64>,
+    /// `YYYY-MM-DD`, shown where there is no download count.
+    pub updated: String,
 }
 
 #[derive(Template)]

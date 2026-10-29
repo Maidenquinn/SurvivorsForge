@@ -117,6 +117,20 @@ async fn paging_bounds(pool: PgPool) {
 }
 
 #[sqlx::test]
+async fn tag_addons_have_no_download_count(pool: PgPool) {
+    // GitHub counts downloads of release files only; a tag's zip has no counter.
+    let app = catalog(pool).await;
+    addon(&app, 4, "tagged", "Tagged", "From tags", "", "Miscellaneous").await;
+    sqlx::query("UPDATE addons SET source_type = 'tag', asset_pattern = NULL WHERE slug = 'tagged'").execute(&app.pool).await.unwrap();
+    version(&app, "tagged", 0, true).await;
+    let item = &app.get("/v1/addons?q=tagged", None).await.json()["addons"][0];
+    assert_eq!(item["downloads"], Value::Null, "{item}");
+    for query in ["", "sort=downloads"] {
+        assert_eq!(slugs(&app, query).await.last().map(String::as_str), Some("tagged"), "after every counted addon ({query})");
+    }
+}
+
+#[sqlx::test]
 async fn list_item_shape(pool: PgPool) {
     let app = catalog(pool).await;
     let page = app.get("/v1/addons?q=luckyodds", None).await.json();
