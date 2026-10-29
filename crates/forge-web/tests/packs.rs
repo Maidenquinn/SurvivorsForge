@@ -77,6 +77,14 @@ async fn the_pack_page_is_public_and_shows_the_content_and_the_link() {
     for text in ["My UI", "by alice", "Lucky", "v1", "Lucky, LuckyLib", "https://web.test/packs/AbCdE12345", "Download the pack (3.1 MB)", r#"data-copy="link""#] {
         assert!(page.body.contains(text), "{text}");
     }
+    assert!(!page.body.contains("Packed on the first download"), "already built");
+
+    let mut new = pack(true);
+    new["file"] = json!({ "status": "none", "size": null, "error": null });
+    Mock::given(method("GET")).and(path("/v1/packs/NotBuilt12")).respond_with(ResponseTemplate::new(200).set_body_json(new)).mount(&web.api).await;
+    let page = web.get("/packs/NotBuilt12").await;
+    assert!(page.body.contains("Packed on the first download"), "says the first download waits");
+
     assert_eq!(web.get("/packs/not-an-id").await.status, StatusCode::NOT_FOUND);
     assert_eq!(web.get("/packs/AbCdE12345%2F..").await.status, StatusCode::NOT_FOUND);
 }
