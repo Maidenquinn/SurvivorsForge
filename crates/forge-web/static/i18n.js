@@ -6073,7 +6073,7 @@
       issue_kind: {bug:"bug_report", feature:"feature_request", question:"question"},
       role: {
         owner:"role_owner", editor:"role_editor", contributor:"role_contributor",
-        claimable:"my_unclaimed"
+        claimable:"my_unclaimed", admin:"admin", user:"role_user"
       },
       trust: {
         "Verified":"verified", "Verified author":"trust_verified_author",
