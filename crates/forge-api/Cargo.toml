@@ -1,0 +1,23 @@
+[package]
+name = "forge-api"
+version = "0.1.0"
+edition = "2024"
+description = "Backend API and worker of the SurvivorsForge platform"
+license = "AGPL-3.0-or-later"
+publish = false
+
+[dependencies]
+forge-core = { path = "../forge-core" }
+axum = "0.8"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "time"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["catch-panic", "set-header"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate", "chrono", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+http-body-util = "0.1"
