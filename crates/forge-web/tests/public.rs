@@ -558,3 +558,11 @@ async fn the_home_page_describes_itself_to_search_engines() {
     let page = web.get("/").await.body;
     assert!(page.contains(r#"<meta name="description" content="Addons for Azeroth Survivors, checked for harmful code."#), "{page}");
 }
+
+#[tokio::test]
+async fn the_home_title_fits_a_phone() {
+    // Short enough for one line between the gold rules; the game's name follows below.
+    let mut web = TestWeb::new().await;
+    let page = web.get("/").await.body;
+    assert!(page.contains("<h1>Addons, checked</h1>") && page.contains("<p class=\"lead\">For Azeroth Survivors."), "{page}");
+}
