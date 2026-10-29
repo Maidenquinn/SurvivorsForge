@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Add an addon - Admin - SurvivorsForge{% endblock %}
 {% block content %}
-<p><a href="/admin"><span data-l10n-en="Admin" data-l10n-fr="Administration">Admin</span></a></p>
+<p><a href="/admin"><span data-i18n="admin">Admin</span></a></p>
 <h1><span data-l10n-en="Add an addon of someone else" data-l10n-fr="Ajouter l'AddOn d'un autre auteur">Add an addon of someone else</span></h1>
 <p class="muted"><span data-l10n-en="Like an entry of the old verified list: no GitHub App needed. Nobody owns it until its author logs in and claims it." data-l10n-fr="Comme dans l'ancienne liste vérifiée : aucune application GitHub requise. L'auteur pourra revendiquer l'AddOn après connexion.">Like an entry of the old verified list: no GitHub App needed. Nobody owns it until its author logs in and claims it.</span></p>
 {% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
@@ -15,13 +15,13 @@
   {% include "creator/repo_field.html" %}
   <label for="author_name"><span data-l10n-en="Author name" data-l10n-fr="Nom de l'auteur">Author name</span></label>
   <input id="author_name" name="author_name" value="{{ form.author_name }}" required>
-  <label for="name"><span data-l10n-en="Name" data-l10n-fr="Nom">Name</span></label>
+  <label for="name"><span data-i18n="name">Name</span></label>
   <input id="name" name="name" value="{{ form.base.name }}" required>
   <label for="slug"><span data-l10n-en="Address on this site" data-l10n-fr="Identifiant sur le site">Address on this site</span></label>
   <input id="slug" name="slug" value="{{ form.base.slug }}" required>
   <label for="summary"><span data-l10n-en="One line about it" data-l10n-fr="Description courte">One line about it</span></label>
   <input id="summary" name="summary" value="{{ form.base.summary }}" maxlength="200">
-  <label for="category"><span data-l10n-en="Category" data-l10n-fr="Catégorie">Category</span></label>
+  <label for="category"><span data-i18n="category">Category</span></label>
   <select id="category" name="category">
     {% for c in categories %}<option value="{{ c.name }}" {% if c.name.eq_ignore_ascii_case(form.base.category) %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
   </select>
