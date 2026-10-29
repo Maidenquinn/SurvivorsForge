@@ -5820,6 +5820,10 @@
       var key = el.getAttribute("data-i18n-placeholder");
       el.setAttribute("placeholder", translations[locale][key] || translations.en[key] || "");
     });
+    document.querySelectorAll("[data-i18n-alt]").forEach(function (el) {
+      var key = el.getAttribute("data-i18n-alt");
+      el.setAttribute("alt", translations[locale][key] || translations.en[key] || "");
+    });
     document.querySelectorAll("[data-i18n-confirm]").forEach(function (el) {
       var key = el.getAttribute("data-i18n-confirm");
       el.setAttribute("data-confirm-delete", translations[locale][key] || translations.en[key] || "");
