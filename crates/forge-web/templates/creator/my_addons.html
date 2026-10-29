@@ -2,31 +2,31 @@
 {% block title %}My addons - SurvivorsForge{% endblock %}
 {% block content %}
 <div class="title-row">
-  <h1><span data-l10n-en="My addons" data-l10n-fr="Mes AddOns">My addons</span></h1>
-  <a class="button" href="/addons/new"><span data-l10n-en="Publish an addon" data-l10n-fr="Publier un AddOn">Publish an addon</span></a>
+  <h1><span data-i18n="my_title">My addons</span></h1>
+  <a class="button" href="/addons/new"><span data-i18n="my_publish">Publish an addon</span></a>
 </div>
 {% if let Some(m) = msg %}<div class="notice ok" role="status">{{ m }}</div>{% endif %}
 {% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
 {% if rows.is_empty() %}
 <section class="panel">
-  <p><span data-l10n-en="You have no addons here yet. Publish one from your GitHub repo, or ask an owner to add you as a contributor." data-l10n-fr="Vous n'avez pas encore d'AddOn. Publiez-en un depuis GitHub ou demandez à son propriétaire de vous ajouter.">You have no addons here yet. Publish one from your GitHub repo, or ask an owner to add you as a contributor.</span></p>
+  <p><span data-i18n="my_empty">You have no addons here yet. Publish one from your GitHub repo, or ask an owner to add you as a contributor.</span></p>
 </section>
 {% else %}
 <div class="table-wrap list">
 <table>
-  <thead><tr><th><span data-l10n-en="Addon" data-l10n-fr="AddOn">Addon</span></th><th><span data-l10n-en="Your role" data-l10n-fr="Votre rôle">Your role</span></th><th><span data-l10n-en="Newest version" data-l10n-fr="Dernière version">Newest version</span></th><th></th></tr></thead>
+  <thead><tr><th><span data-i18n="my_addon">Addon</span></th><th><span data-i18n="my_role">Your role</span></th><th><span data-i18n="my_latest_version">Newest version</span></th><th></th></tr></thead>
   <tbody>
   {% for r in rows %}
     <tr>
       <td><a href="/addons/{{ r.slug }}">{{ r.name }}</a>
-        {% if r.blocked %} <span class="badge bad"><span data-l10n-en="Blocked" data-l10n-fr="Bloqué">Blocked</span></span>{% endif %}
-        {% if r.locked %} <span class="badge warn"><span data-l10n-en="Repo not reachable" data-l10n-fr="Dépôt inaccessible">Repo not reachable</span></span>{% endif %}</td>
+        {% if r.blocked %} <span class="badge bad"><span data-i18n="admin_blocked">Blocked</span></span>{% endif %}
+        {% if r.locked %} <span class="badge warn"><span data-i18n="my_repo_unreachable">Repo not reachable</span></span>{% endif %}</td>
       <td>{% if r.role == "claimable" %}not claimed yet{% else %}{{ r.role }}{% endif %}</td>
-      <td>{% if r.has_version %}<span class="badge {{ r.notice.class }}">{{ r.notice.badge }}</span>{% if r.findings > 0 %} {{ r.findings }} finding{% if r.findings != 1 %}s{% endif %}{% endif %}{% else %}<span class="muted"><span data-l10n-en="No release yet" data-l10n-fr="Aucune version publiée">No release yet</span></span>{% endif %}</td>
+      <td>{% if r.has_version %}<span class="badge {{ r.notice.class }}">{{ r.notice.badge }}</span>{% if r.findings > 0 %} {{ r.findings }} finding{% if r.findings != 1 %}s{% endif %}{% endif %}{% else %}<span class="muted"><span data-i18n="no_release">No release yet</span></span>{% endif %}</td>
       <td>{% if r.role == "claimable" %}
         <form method="post" action="/addons/{{ r.slug }}/claim" class="inline">
           <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="back" value="/me/addons">
-          <button type="submit"><span data-l10n-en="Claim it" data-l10n-fr="Revendiquer">Claim it</span></button>
+          <button type="submit"><span data-i18n="my_claim">Claim it</span></button>
         </form>
       {% else %}<a href="/addons/{{ r.slug }}/edit"><span data-i18n="edit">Edit</span></a>{% endif %}</td>
     </tr>

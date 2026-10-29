@@ -30,7 +30,7 @@
     <option value="release" {% if form.base.source_type == "release" %}selected{% endif %} data-i18n="source_release_zip">A zip attached to each release</option>
     <option value="tag" {% if form.base.source_type == "tag" %}selected{% endif %} data-i18n="source_tag_zip">The source zip of each tag</option>
   </select>
-  <label for="asset_pattern"><span data-l10n-en="Release zip name" data-l10n-fr="Nom de l'archive ZIP">Release zip name</span></label>
+  <label for="asset_pattern"><span data-i18n="creator_zip_name">Release zip name</span></label>
   <input id="asset_pattern" name="asset_pattern" value="{{ form.base.asset_pattern }}">
   <label for="folders"><span data-i18n="admin_folders_lines">Addon folders, one per line</span></label>
   <textarea id="folders" name="folders" rows="3" required>{{ form.base.folders }}</textarea>
