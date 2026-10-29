@@ -61,6 +61,18 @@ pub fn router(state: AppState) -> Router {
             "/v1/admin/versions/{id}/verification",
             post(routes::admin_verify::verify).delete(routes::admin_verify::unverify),
         )
+        .route("/v1/reports", post(routes::reports::create))
+        .route("/v1/admin/reports", get(routes::reports::queue))
+        .route("/v1/admin/reports/{id}/resolve", post(routes::reports::resolve))
+        .route(
+            "/v1/admin/addons/{slug}/block",
+            post(routes::admin_moderation::block_addon).delete(routes::admin_moderation::unblock_addon),
+        )
+        .route(
+            "/v1/admin/versions/{id}/block",
+            post(routes::admin_moderation::block_version).delete(routes::admin_moderation::unblock_version),
+        )
+        .route("/v1/admin/users/{github_id}/ban", post(routes::admin_moderation::ban).delete(routes::admin_moderation::unban))
         .route("/v1/admin/versions/{id}/accept-source", post(routes::admin_verify::accept_source))
         .route("/v1/addons/{slug}/members", get(routes::members::list).post(routes::members::add))
         .route(

@@ -28,10 +28,11 @@ pub struct AddonRow {
     pub summary: String,
     pub description_md: String,
     pub blocked_at: Option<DateTime<Utc>>,
+    pub block_reason: Option<String>,
 }
 
 const ADDON_COLUMNS: &str = "id, slug::text AS slug, name, owner_id, repo_id, repo_full_name, installation_id, source_type,
-    asset_pattern, category::text AS category, summary, description_md, blocked_at";
+    asset_pattern, category::text AS category, summary, description_md, blocked_at, block_reason";
 
 /// The addon behind `slug`, unless it is deleted.
 pub async fn load_addon(pool: &PgPool, slug: &str) -> ApiResult<AddonRow> {
@@ -235,6 +236,10 @@ pub async fn show(
     Query(query): Query<super::versions::GameQuery>,
 ) -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
+    if addon.blocked_at.is_some() {
+        // A blocked addon shows nothing but the fact and the reason.
+        return Ok(Json(json!({ "slug": addon.slug, "name": addon.name, "blocked": true, "block_reason": addon.block_reason })));
+    }
     let mut view = addon_view(&state, addon.id).await?;
     if let Some(game) = super::versions::game_of(&state, &query).await? {
         let compatible: Option<bool> = sqlx::query_scalar("SELECT game_compatible(relevant_version($1), $2)")
