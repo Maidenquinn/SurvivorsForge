@@ -488,3 +488,27 @@ button.suggestion:hover { border-color: var(--outline-hover); background: var(--
 .issue-row-arrow { opacity:.55; }
 .issue-row:hover .issue-row-arrow { opacity:1; }
 @media(max-width:600px) { .issue-message-head { gap:5px; } .issue-action { padding:7px; } }
+
+/* True fullscreen gallery: browser Fullscreen API, not only a larger dialog. */
+.gallery-lightbox:fullscreen {
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  padding: 16px 24px;
+  background: #090705;
+  display: flex;
+  flex-direction: column;
+}
+.gallery-lightbox:fullscreen [data-gallery-image] {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  min-height: 0;
+  flex: 1 1 auto;
+  object-fit: contain;
+}
+.gallery-lightbox:fullscreen [data-gallery-caption] { flex: 0 0 auto; }
