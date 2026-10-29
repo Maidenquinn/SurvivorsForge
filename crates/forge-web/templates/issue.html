@@ -2,39 +2,39 @@
 {% block title %}#{{ id }} {{ title }} - {{ name }}{% endblock %}
 {% block content %}
 <div class="issues-shell">
-  <p class="issues-back"><a href="/addons/{{ slug }}/issues">← Issues for {{ name }}</a></p>
+  <p class="issues-back"><a href="/addons/{{ slug }}/issues">← <span data-i18n="issue_back_for">Issues for</span> {{ name }}</a></p>
   <div class="issue-detail-heading"><h1>{{ title }} <span class="issue-number">#{{ id }}</span></h1>
-    <p class="issue-byline"><span class="badge">{{ status }}</span> <strong>{{ author }}</strong> opened this {{ kind }} report</p>
+    <p class="issue-byline"><span class="badge">{{ status }}</span> <strong>{{ author }}</strong> <span data-i18n="issue_opened_this">opened this</span> {{ kind }} <span data-i18n="issue_report_tag">report</span></p>
   </div>
   <div class="issue-detail-layout">
     <div class="issue-conversation">
       <article class="issue-message">
-        <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ author }}</span><strong>{{ author }}</strong><span class="muted">reported</span></header>
+        <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ author }}</span><strong>{{ author }}</strong><span class="muted" data-i18n="issue_reported">reported</span></header>
         <div class="issue-message-body">{{ body }}</div>
       </article>
-      <h2 class="issue-discussion-title">Discussion <span class="muted">({{ comments.len() }})</span></h2>
+      <h2 class="issue-discussion-title"><span data-i18n="issue_discussion">Discussion</span> <span class="muted">({{ comments.len() }})</span></h2>
       {% for comment in comments %}
       <article class="issue-message">
-        <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ comment.author }}</span><strong>{{ comment.author }}</strong><span class="muted">commented</span></header>
+        <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ comment.author }}</span><strong>{{ comment.author }}</strong><span class="muted" data-i18n="issue_commented">commented</span></header>
         <div class="issue-message-body">{{ comment.body }}</div>
       </article>
       {% endfor %}
       {% if user.is_some() %}
       <form method="post" action="/addons/{{ slug }}/issues/{{ id }}/comments" class="panel issue-reply">
         <input type="hidden" name="csrf" value="{{ csrf }}">
-        <label for="issue-reply-body">Join the discussion</label>
-        <textarea id="issue-reply-body" name="body" required maxlength="10000" rows="5" placeholder="Write a constructive reply…"></textarea>
-        <div class="issues-form-footer"><span class="muted">Be respectful and stay on topic.</span><button type="submit" data-i18n="post">Post comment</button></div>
+        <label for="issue-reply-body" data-i18n="issue_join">Join the discussion</label>
+        <textarea id="issue-reply-body" name="body" required maxlength="10000" rows="5" placeholder="Write a constructive reply…" data-i18n-placeholder="reply_placeholder"></textarea>
+        <div class="issues-form-footer"><span class="muted" data-i18n="issue_respect">Be respectful and stay on topic.</span><button type="submit" data-i18n="post">Post comment</button></div>
       </form>
-      {% else %}<p class="notice"><a href="/login" data-i18n="login">Log in with GitHub</a> to join the discussion.</p>{% endif %}
+      {% else %}<p class="notice"><a href="/login" data-i18n="login">Log in with GitHub</a> <span data-i18n="issue_to_join">to join the discussion.</span></p>{% endif %}
     </div>
-    <aside class="issue-sidebar" aria-label="Issue information">
-      <section class="panel"><h2>Details</h2><p class="muted" data-i18n="status">Status</p><p><span class="badge">{{ status }}</span></p><p class="muted" data-i18n="category">Category</p><p><span class="badge">{{ kind }}</span></p></section>
+    <aside class="issue-sidebar" aria-label="Issue information" data-i18n-aria-label="issue_tracker">
+      <section class="panel"><h2 data-i18n="creator_details">Details</h2><p class="muted" data-i18n="status">Status</p><p><span class="badge">{{ status }}</span></p><p class="muted" data-i18n="category">Category</p><p><span class="badge">{{ kind }}</span></p></section>
       {% if can_manage %}
-      <section class="panel"><h2>Manage issue</h2>
+      <section class="panel"><h2 data-i18n="issue_manage">Manage issue</h2>
         <form method="post" action="/addons/{{ slug }}/issues/{{ id }}/status">
           <input type="hidden" name="csrf" value="{{ csrf }}">
-          <label for="issue-status">Change status</label>
+          <label for="issue-status" data-i18n="issue_change_status">Change status</label>
           <select id="issue-status" name="status">
             <option value="open" {% if status == "open" %}selected{% endif %} data-i18n="open">Open</option>
             <option value="in_progress" {% if status == "in_progress" %}selected{% endif %} data-i18n="in_progress">In progress</option>
