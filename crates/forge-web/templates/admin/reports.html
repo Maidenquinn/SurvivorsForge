@@ -9,7 +9,7 @@
 {% for r in rows %}
 <section class="panel">
   <h2>{{ r.reason }}: <a href="/addons/{{ r.addon }}">{{ r.addon }}</a> <span class="muted">({{ r.target }})</span></h2>
-  <p class="muted">by {{ r.reporter }}, {{ r.created }}</p>
+  <p class="muted"><span data-i18n="pack_by">by</span> {{ r.reporter }}, {{ r.created }}</p>
   {% if r.text != "" %}<p>{{ r.text }}</p>{% endif %}
   <p><a href="/admin/addons/{{ r.addon }}"><span data-i18n="admin_block_handover">Block or hand over the addon</span></a></p>
   <form method="post" action="/admin/reports/{{ r.id }}/resolve" class="admin-actions">
