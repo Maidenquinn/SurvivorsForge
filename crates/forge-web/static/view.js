@@ -107,6 +107,7 @@
     try {
       var response = await fetch(url, Object.assign({credentials: "same-origin", headers: {"Accept": "text/html"}}, options || {}));
       if (!response.ok) throw new Error("Request failed (" + response.status + ")");
+      if (options && options.method === "POST" && !response.redirected) throw new Error("The update was not confirmed by the server");
       var doc = new DOMParser().parseFromString(await response.text(), "text/html");
       var next = doc.querySelector("[data-dynamic-issues]");
       if (!next) {
@@ -147,7 +148,7 @@
       var query = (search && search.value || "").trim().toLowerCase(), count = 0;
       rows.forEach(function (row) {
         var status = row.dataset.status;
-        var match = filter === "all" || (filter === "open" ? status === "open" || status === "in_progress" : status === "closed" || status === "resolved");
+        var match = filter === "all" || (filter === "open" ? status === "open" || status === "acknowledged" || status === "in_progress" : status === "closed" || status === "resolved");
         row.hidden = !(match && (row.dataset.search || "").toLowerCase().includes(query));
         if (!row.hidden) count++;
       });
