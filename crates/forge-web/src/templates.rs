@@ -174,8 +174,13 @@ pub struct LatestBlock {
     pub findings: Vec<FindingRow>,
 }
 
+pub struct IssueEvent { pub action: String, pub actor: String, pub old_value: String, pub new_value: String }
+
 pub struct InlineIssue {
     pub id: i64,
+    pub can_edit: bool,
+    pub can_delete: bool,
+    pub events: Vec<IssueEvent>,
     pub title: String,
     pub body: String,
     pub kind: String,
@@ -713,6 +718,8 @@ pub struct IssueItem {
     pub author: String,
 }
 pub struct IssueComment {
+    pub id: i64,
+    pub can_edit: bool,
     pub author: String,
     pub body: String,
 }
