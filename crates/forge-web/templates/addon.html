@@ -12,7 +12,7 @@
   {% if let Some(icon) = icon_url %}<img class="icon big" src="{{ icon }}" alt="" width="96" height="96">{% endif %}
   <div>
     <h1>{{ name }}</h1>
-    <p class="muted">by {{ author }}{% if !claimed && user.is_some() %} (not claimed on this site yet){% endif %} · <a href="/addons?category={{ category|urlencode }}">{{ category }}</a> · <a href="https://github.com/{{ repo }}" rel="external noopener">GitHub</a>{% if let Some(u) = user %}{% if u.admin %} · <a href="/admin/addons/{{ slug }}"><span data-i18n="addon_manage_admin">Manage as admin</span></a>{% endif %}{% endif %}</p>
+    <p class="muted"><span data-i18n="pub_by">by</span> {{ author }}{% if !claimed && user.is_some() %} (<span data-i18n="my_not_claimed">not claimed on this site yet</span>){% endif %} · <a href="/addons?category={{ category|urlencode }}" data-category-label="{{ category }}">{{ category }}</a> · <a href="https://github.com/{{ repo }}" rel="external noopener">GitHub</a>{% if let Some(u) = user %}{% if u.admin %} · <a href="/admin/addons/{{ slug }}"><span data-i18n="addon_manage_admin">Manage as admin</span></a>{% endif %}{% endif %}</p>
     <p>{{ summary }}</p>
   </div>
 </header>
@@ -20,16 +20,16 @@
 {% if can_claim %}
 <form class="notice ok admin-actions" method="post" action="/addons/{{ slug }}/claim">
   <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="back" value="/addons/{{ slug }}">
-  <p>This addon comes from your repo {{ repo }} and has no owner here yet. Claiming checks on GitHub that you are an admin of the repo and that the <a href="{{ install_url }}" rel="noopener">SurvivorsForge App</a> is installed on it.</p>
-  <button type="submit">Claim it</button>
+  <p><span data-i18n="addon_claim_prefix">This AddOn comes from your repository</span> {{ repo }} <span data-i18n="addon_claim_middle">and has no owner here yet. GitHub checks your administrator access and that the</span> <a href="{{ install_url }}" rel="noopener">SurvivorsForge App</a> <span data-i18n="addon_claim_installed">is installed on it.</span></p>
+  <button type="submit" data-i18n="my_claim">Claim it</button>
 </form>
 {% endif %}
 
 <section class="panel download">
   {% match latest %}
   {% when Some with (l) %}
-    <h2>Version {% if l.row.tag_short != l.row.tag %}<span title="{{ l.row.tag }}">{{ l.row.tag_short }}</span>{% else %}{{ l.row.tag }}{% endif %}</h2>
-    {% if l.row.published != "" %}<p class="muted">Published {{ l.row.published }}{% if let Some(n) = l.row.downloads %} · {{ n }} downloads{% endif %}</p>{% endif %}
+    <h2><span data-i18n="pub_version">Version</span> {% if l.row.tag_short != l.row.tag %}<span title="{{ l.row.tag }}">{{ l.row.tag_short }}</span>{% else %}{{ l.row.tag }}{% endif %}</h2>
+    {% if l.row.published != "" %}<p class="muted"><span data-i18n="pub_published">Published</span> {{ l.row.published }}{% if let Some(n) = l.row.downloads %} · {{ n }} <span data-i18n="pub_downloads">downloads</span>{% endif %}</p>{% endif %}
     <div class="notice {{ l.row.notice.class }}" role="status">
       <strong>{{ l.row.notice.badge }}.</strong> {{ l.row.notice.text }}
     </div>
@@ -41,13 +41,13 @@
         {% endfor %}
       </ul>
     {% endif %}
-    <p class="muted">Game version: {{ l.row.game }}</p>
+    <p class="muted"><span data-i18n="addon_check_game">Game version:</span> {{ l.row.game }}</p>
     {% if l.row.notice.downloadable %}
       <div class="actions">
         <a class="button large" href="survivorsforge://addon/{{ slug }}" data-launcher data-i18n="install_launcher">Install with the launcher</a>
         <a class="button secondary{% if l.row.notice.confirm %} danger{% endif %}" href="{{ l.href }}"{% if !l.row.notice.confirm %} rel="external noopener"{% endif %} data-i18n="download_github">Download from GitHub</a>
       </div>
-      <p class="muted" data-launcher-missing>The launcher installs it, its libraries and every update. No launcher yet? <a href="https://rezondes.github.io/SurvivorsForge/">Get SurvivorsForge</a>, free for Windows, Linux and Steam Deck.</p>
+      <p class="muted" data-launcher-missing><span data-i18n="addon_launcher_explain">The launcher installs this AddOn, its libraries and updates. No launcher yet?</span> <a href="https://rezondes.github.io/SurvivorsForge/" data-i18n="get_launcher">Get SurvivorsForge</a>, <span data-i18n="addon_launcher_free">free for Windows, Linux and Steam Deck.</span></p>
       <p class="muted">Without the launcher: unzip the download into the game's <code>AddOns</code> folder.</p>
     {% endif %}
     <p><a href="/addons/{{ slug }}/versions" data-i18n="all_versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} · <a href="/packs/new?addon={{ slug }}"><span data-i18n="addon_add_to_pack">Put into an addon pack</span></a>{% endif %}</p>
@@ -75,7 +75,7 @@
       <div class="issues-tabs" role="group" aria-label="Filter issues" data-i18n-aria-label="filter_issues">
         <button type="button" class="secondary active" data-inline-filter="open" aria-pressed="true" data-i18n="open">Open</button>
         <button type="button" class="secondary" data-inline-filter="closed" aria-pressed="false" data-i18n="closed">Closed</button>
-        <button type="button" class="secondary" data-inline-filter="all" aria-pressed="false">All ({{ issues.len() }})</button>
+        <button type="button" class="secondary" data-inline-filter="all" aria-pressed="false"><span data-i18n="issue_all">All</span> ({{ issues.len() }})</button>
       </div>
       <label class="issues-search"><span class="sr-only" data-i18n="search_issues">Search issues</span><input type="search" id="addon-issues-search" placeholder="Search by title or author" data-i18n-placeholder="issue_search_placeholder"></label>
     </div>
@@ -103,7 +103,7 @@
       <a class="button secondary" href="/addons/{{ slug }}?tab=issues" data-i18n="close_details">Close details</a>
     </div>
     <article class="issue-message issue-editable" data-inline-editor>
-      <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ issue.author|truncate(1) }}</span><strong>{{ issue.author }}</strong> <span class="muted">opened this issue</span>
+      <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ issue.author|truncate(1) }}</span><strong>{{ issue.author }}</strong> <span class="muted" data-i18n="issue_reported">opened this issue</span>
         <span class="issue-action-spacer"></span>
         {% if issue.can_edit %}<button class="issue-action" type="button" data-edit-toggle aria-label="Edit issue" data-i18n="edit">Edit</button>{% endif %}
         {% if issue.can_delete %}<form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/delete" data-confirm-delete="Delete this issue? This cannot be undone." data-i18n-confirm="confirm_delete_issue"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="issue-action issue-danger" type="submit" data-i18n="delete">Delete</button></form>{% endif %}
@@ -132,10 +132,10 @@
       {% endfor %}
     </div>
     {% endif %}
-    <h3>Discussion ({{ issue.comments.len() }})</h3>
+    <h3><span data-i18n="issue_discussion">Discussion</span> ({{ issue.comments.len() }})</h3>
     {% for comment in issue.comments %}
     <article class="issue-message issue-editable" data-inline-editor>
-      <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ comment.author|truncate(1) }}</span><strong>{{ comment.author }}</strong><span class="muted">commented</span><span class="issue-action-spacer"></span>
+      <header class="issue-message-head"><span class="issue-avatar" aria-hidden="true">{{ comment.author|truncate(1) }}</span><strong>{{ comment.author }}</strong><span class="muted" data-i18n="issue_commented">commented</span><span class="issue-action-spacer"></span>
       {% if comment.can_edit %}<button type="button" class="issue-action" data-edit-toggle data-i18n="edit">Edit</button>
       <form method="post" action="/addons/{{ slug }}/issues/{{ issue.id }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?" data-i18n-confirm="confirm_delete"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="issue-action issue-danger" data-i18n="delete">Delete</button></form>{% endif %}
       </header>
