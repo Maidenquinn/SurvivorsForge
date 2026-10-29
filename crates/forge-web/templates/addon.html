@@ -12,7 +12,7 @@
   {% if let Some(icon) = icon_url %}<img class="icon big" src="{{ icon }}" alt="" width="96" height="96">{% endif %}
   <div>
     <h1>{{ name }}</h1>
-    <p class="muted">by {{ author }}{% if !claimed && user.is_some() %} (not claimed on this site yet){% endif %} · <a href="/addons?category={{ category|urlencode }}">{{ category }}</a> · <a href="https://github.com/{{ repo }}" rel="external noopener">GitHub</a>{% if let Some(u) = user %}{% if u.admin %} · <a href="/admin/addons/{{ slug }}">Manage as admin</a>{% endif %}{% endif %}</p>
+    <p class="muted">by {{ author }}{% if !claimed && user.is_some() %} (not claimed on this site yet){% endif %} · <a href="/addons?category={{ category|urlencode }}">{{ category }}</a> · <a href="https://github.com/{{ repo }}" rel="external noopener">GitHub</a>{% if let Some(u) = user %}{% if u.admin %} · <a href="/admin/addons/{{ slug }}"><span data-l10n-en="Manage as admin" data-l10n-fr="Gérer comme administrateur">Manage as admin</span></a>{% endif %}{% endif %}</p>
     <p>{{ summary }}</p>
   </div>
 </header>
@@ -34,7 +34,7 @@
       <strong>{{ l.row.notice.badge }}.</strong> {{ l.row.notice.text }}
     </div>
     {% if !l.findings.is_empty() %}
-      <h3>Findings</h3>
+      <h3><span data-l10n-en="Findings" data-l10n-fr="Résultats de l'analyse">Findings</span></h3>
       <ul class="findings">
         {% for f in l.findings %}
         <li><span class="badge {% if f.severity == "critical" %}bad{% else %}warn{% endif %}">{{ f.severity }}</span> <code>{{ f.place }}</code> {{ f.message }}{% if f.snippet != "" %}<pre>{{ f.snippet }}</pre>{% endif %}</li>
@@ -50,7 +50,7 @@
       <p class="muted" data-launcher-missing>The launcher installs it, its libraries and every update. No launcher yet? <a href="https://rezondes.github.io/SurvivorsForge/">Get SurvivorsForge</a>, free for Windows, Linux and Steam Deck.</p>
       <p class="muted">Without the launcher: unzip the download into the game's <code>AddOns</code> folder.</p>
     {% endif %}
-    <p><a href="/addons/{{ slug }}/versions" data-i18n="all_versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} · <a href="/packs/new?addon={{ slug }}">Put into an addon pack</a>{% endif %}</p>
+    <p><a href="/addons/{{ slug }}/versions" data-i18n="all_versions">All versions</a>{% if l.row.notice.downloadable && !l.row.notice.confirm %} · <a href="/packs/new?addon={{ slug }}"><span data-l10n-en="Put into an addon pack" data-l10n-fr="Ajouter à un pack d'AddOns">Put into an addon pack</span></a>{% endif %}</p>
   {% when None %}
     <p>No release yet.</p>
   {% endmatch %}
@@ -249,16 +249,16 @@
   {% else %}
   <div class="table-wrap list">
     <table>
-      <thead><tr><th>Version</th><th>Published</th><th>Safety check</th><th>Game version</th><th>SHA-256</th><th></th></tr></thead>
+      <thead><tr><th>Version</th><th>Published</th><th><span data-l10n-en="Safety check" data-l10n-fr="Contrôle de sécurité">Safety check</span></th><th><span data-l10n-en="Game version" data-l10n-fr="Version du jeu">Game version</span></th><th>SHA-256</th><th></th></tr></thead>
       <tbody>
       {% for (href, r) in version_rows %}
       <tr>
-        <td><a href="/addons/{{ slug }}/versions/{{ r.tag }}">{{ r.tag }}</a>{% if r.prerelease %} <span class="badge">Pre-release</span>{% endif %}{% if r.deleted %} <span class="badge">Removed on GitHub</span>{% endif %}</td>
+        <td><a href="/addons/{{ slug }}/versions/{{ r.tag }}">{{ r.tag }}</a>{% if r.prerelease %} <span class="badge"><span data-l10n-en="Pre-release" data-l10n-fr="Préversion">Pre-release</span></span>{% endif %}{% if r.deleted %} <span class="badge"><span data-l10n-en="Removed on GitHub" data-l10n-fr="Supprimé sur GitHub">Removed on GitHub</span></span>{% endif %}</td>
         <td>{{ r.published }}</td>
         <td><span class="badge {{ r.notice.class }}">{{ r.notice.badge }}</span></td>
         <td>{{ r.game }}</td>
         <td><code>{{ r.sha256|truncate(12) }}</code></td>
-        <td>{% if r.notice.downloadable && !r.deleted %}<a href="{{ href }}">Download</a>{% endif %}</td>
+        <td>{% if r.notice.downloadable && !r.deleted %}<a href="{{ href }}"><span data-l10n-en="Download" data-l10n-fr="Télécharger">Download</span></a>{% endif %}</td>
       </tr>
       {% endfor %}
       </tbody>
