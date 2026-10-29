@@ -131,3 +131,30 @@ pub async fn unban(State(state): State<AppState>, AdminUser(admin): AdminUser, P
         .await?;
     finish(&state, tx, Entry { admin_id: admin.id, action: "unban_user", target_type: "user", target_id: github_id.to_string(), note, details: json!({}) }).await
 }
+
+#[derive(Deserialize)]
+pub struct NewOwner {
+    login: String,
+    #[serde(default)]
+    note: String,
+}
+
+/// Gives an addon to another platform user, e.g. its real author after an import.
+pub async fn transfer_owner(State(state): State<AppState>, AdminUser(admin): AdminUser, Path(slug): Path<String>, Json(body): Json<NewOwner>) -> ApiResult<StatusCode> {
+    let note = note_required(&body.note)?;
+    let user: Option<(i64, i64)> = sqlx::query_as("SELECT id, github_id FROM users WHERE login = $1::citext").bind(body.login.trim()).fetch_optional(&state.pool).await?;
+    let (user_id, github_id) = user.ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "user_not_found", "No platform user with that login"))?;
+    let mut tx = state.pool.begin().await?;
+    let addon: Option<(i64, Option<i64>)> = sqlx::query_as(
+        "UPDATE addons a SET owner_id = $2 FROM (SELECT id, owner_id FROM addons WHERE slug = $1 AND deleted_at IS NULL) old
+         WHERE a.id = old.id RETURNING a.id, old.owner_id",
+    )
+    .bind(&slug)
+    .bind(user_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    let (addon_id, previous) = addon.ok_or_else(ApiError::not_found)?;
+    sqlx::query("DELETE FROM addon_members WHERE addon_id = $1 AND user_id = $2").bind(addon_id).bind(user_id).execute(&mut *tx).await?;
+    let details = json!({ "slug": slug, "new_owner": github_id, "previous_owner_user_id": previous });
+    finish(&state, tx, Entry { admin_id: admin.id, action: "transfer_owner", target_type: "addon", target_id: addon_id.to_string(), note, details }).await
+}

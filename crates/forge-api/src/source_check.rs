@@ -17,7 +17,7 @@ pub const CHECK_SOURCES: &str = "check_sources";
 #[derive(sqlx::FromRow)]
 struct Checked {
     id: i64,
-    installation_id: i64,
+    installation_id: Option<i64>,
     repo_id: i64,
     github_release_id: Option<i64>,
     asset_id: Option<i64>,

@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
-const USAGE: &str = "usage: forge-api <serve|worker|migrate|rescan --all>";
+const USAGE: &str = "usage: forge-api <serve | worker | migrate | rescan --all | import-verified <file> | export-verified [file]>";
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -18,7 +18,7 @@ async fn main() -> ExitCode {
         .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
         .init();
     let command = std::env::args().nth(1).unwrap_or_default();
-    if !matches!(command.as_str(), "serve" | "worker" | "migrate" | "rescan") {
+    if !matches!(command.as_str(), "serve" | "worker" | "migrate" | "rescan" | "import-verified" | "export-verified") {
         eprintln!("{USAGE}");
         return ExitCode::from(2);
     }
@@ -47,6 +47,7 @@ async fn main() -> ExitCode {
             Err(e) => Err(e),
         },
         "rescan" => Err(USAGE.to_string()),
+        "import-verified" | "export-verified" => registry_file(&command, config, pool).await,
         _ => serve(config, pool).await,
     };
     match result {
@@ -68,6 +69,32 @@ fn build_state(config: Config, pool: sqlx::PgPool) -> Result<AppState, String> {
     };
     let github = GitHubClient::new(&config.github_api_url, &config.github_app_id, key, Arc::new(chrono::Utc::now)).with_oauth(oauth);
     Ok(AppState { pool, config: Arc::new(config), github: Arc::new(github), clock: Arc::new(chrono::Utc::now) })
+}
+
+/// `import-verified <file>` adds the entries of a verified.json; `export-verified [file]` writes one.
+async fn registry_file(command: &str, config: Config, pool: sqlx::PgPool) -> Result<(), String> {
+    use forge_api::routes::registry::{Imported, export_verified, import_verified};
+    let path = std::env::args().nth(2);
+    let state = build_state(config, pool)?;
+    if command == "export-verified" {
+        let json = export_verified(&state).await.map_err(|e| e.to_string())?;
+        return match path {
+            Some(path) => std::fs::write(&path, json).map_err(|e| format!("cannot write {path}: {e}")),
+            None => {
+                print!("{json}");
+                Ok(())
+            }
+        };
+    }
+    let path = path.ok_or_else(|| USAGE.to_string())?;
+    let text = std::fs::read_to_string(&path).map_err(|e| format!("cannot read {path}: {e}"))?;
+    for result in import_verified(&state, &text).await? {
+        match result {
+            Imported::Created(id) => println!("created  {id}"),
+            Imported::Skipped(id, why) => println!("skipped  {id}: {why}"),
+        }
+    }
+    Ok(())
 }
 
 async fn work(config: Config, pool: sqlx::PgPool) -> Result<(), String> {

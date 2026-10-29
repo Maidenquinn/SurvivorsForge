@@ -39,6 +39,7 @@ fn release_payload(action: &str) -> Value {
 async fn rejects_missing_or_bad_signature(pool: PgPool) {
     let app = TestApp::new(pool);
     app.publish(1, "alice", "lucky").await;
+    sqlx::query("DELETE FROM jobs").execute(&app.pool).await.unwrap();
     let reply = deliver(&app, "release", "d1", &release_payload("published"), "wrong-secret").await;
     assert_eq!(reply.status, StatusCode::UNAUTHORIZED);
     let request = Request::post("/v1/github/webhook").header("x-github-event", "release").body(Body::from("{}")).unwrap();

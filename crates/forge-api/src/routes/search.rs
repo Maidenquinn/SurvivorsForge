@@ -96,10 +96,11 @@ pub async fn list(State(state): State<AppState>, headers: HeaderMap, RawQuery(ra
                  SELECT json_build_object(
                      'slug', a.slug, 'name', a.name, 'summary', a.summary, 'category', a.category, 'trust', a.trust,
                      'icon_url', (SELECT $8 || '/' || i.file FROM images i WHERE i.addon_id = a.id AND i.kind = 'icon'),
-                     'owner', json_build_object('login', u.login, 'avatar_url', u.avatar_url),
+                     'owner', CASE WHEN u.id IS NULL THEN NULL ELSE json_build_object('login', u.login, 'avatar_url', u.avatar_url) END,
+                     'author', coalesce(u.login::text, (SELECT author_name FROM addons WHERE id = a.id)),
                      'verified_author', EXISTS (SELECT 1 FROM verifications w JOIN versions wv ON wv.id = w.version_id WHERE wv.addon_id = a.id),
                      'downloads', a.downloads, 'updated_at', a.updated_at) AS item
-                 FROM found a JOIN users u ON u.id = a.owner_id
+                 FROM found a LEFT JOIN users u ON u.id = a.owner_id
                  ORDER BY {order}
                  LIMIT $7 OFFSET ($6 - 1) * $7) page), '[]'))"
     );

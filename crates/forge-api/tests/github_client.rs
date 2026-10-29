@@ -54,12 +54,12 @@ async fn installation_token_is_cached_until_near_expiry() {
     let now = Arc::new(Mutex::new(t0()));
     let gh = client(&server, now.clone());
 
-    assert_eq!(gh.repo(1, 5).await.unwrap().full_name, "o/r");
-    gh.repo(1, 5).await.unwrap();
+    assert_eq!(gh.repo(Some(1), 5).await.unwrap().full_name, "o/r");
+    gh.repo(Some(1), 5).await.unwrap();
     assert_eq!(token_calls(&server).await, 1);
 
     *now.lock().unwrap() = t0() + Duration::minutes(56);
-    gh.repo(1, 5).await.unwrap();
+    gh.repo(Some(1), 5).await.unwrap();
     assert_eq!(token_calls(&server).await, 2, "renewed 5 minutes before expiry");
 }
 
@@ -81,8 +81,8 @@ async fn etag_304_returns_cached_body() {
         .mount(&server)
         .await;
     let gh = client(&server, Arc::new(Mutex::new(t0())));
-    let first = gh.repo(1, 5).await.unwrap();
-    let second = gh.repo(1, 5).await.unwrap();
+    let first = gh.repo(Some(1), 5).await.unwrap();
+    let second = gh.repo(Some(1), 5).await.unwrap();
     assert_eq!(first, second);
     let conditional = server.received_requests().await.unwrap().iter().filter(|r| r.headers.contains_key("if-none-match")).count();
     assert_eq!(conditional, 1);
@@ -104,13 +104,13 @@ async fn rate_limit_and_not_found_errors() {
     Mock::given(method("GET")).and(path("/repositories/4")).respond_with(ResponseTemplate::new(403)).mount(&server).await;
     let gh = client(&server, Arc::new(Mutex::new(t0())));
 
-    match gh.repo(1, 1).await {
+    match gh.repo(Some(1), 1).await {
         Err(GitHubError::RateLimited { reset_at }) => assert_eq!(reset_at.unwrap().timestamp(), 1767272400),
         other => panic!("{other:?}"),
     }
-    assert!(matches!(gh.repo(1, 2).await, Err(GitHubError::RateLimited { .. })));
-    assert_eq!(gh.repo(1, 3).await, Err(GitHubError::NotFound));
-    assert_eq!(gh.repo(1, 4).await, Err(GitHubError::Http(403)), "403 with requests left is no rate limit");
+    assert!(matches!(gh.repo(Some(1), 2).await, Err(GitHubError::RateLimited { .. })));
+    assert_eq!(gh.repo(Some(1), 3).await, Err(GitHubError::NotFound));
+    assert_eq!(gh.repo(Some(1), 4).await, Err(GitHubError::Http(403)), "403 with requests left is no rate limit");
 }
 
 #[tokio::test]
@@ -217,4 +217,19 @@ fn download_hosts_are_githubs_over_https() {
     assert!(!forge_api::github::download_allowed("http://github.com/o/r/a.zip", &hosts), "no plain http");
     assert!(!forge_api::github::download_allowed("https://github.com.evil.test/a.zip", &hosts));
     assert!(!forge_api::github::download_allowed("https://evil.test/a.zip", &hosts));
+}
+
+#[tokio::test]
+async fn without_installation_reads_public_api_without_token() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/repos/o/r"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(repo_json()))
+        .mount(&server)
+        .await;
+    let gh = client(&server, Arc::new(Mutex::new(t0())));
+    assert_eq!(gh.repo_by_name(None, "o/r").await.unwrap().id, 5);
+    let requests = server.received_requests().await.unwrap();
+    assert_eq!(requests.len(), 1, "no token request");
+    assert!(!requests[0].headers.contains_key("authorization"));
 }

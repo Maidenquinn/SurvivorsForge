@@ -63,11 +63,11 @@ impl GitHubApi for FakeGitHub {
         Ok(self.call().installations.get(&full_name.to_lowercase()).copied())
     }
 
-    async fn repo(&self, _installation: i64, repo_id: i64) -> GitHubResult<Repo> {
+    async fn repo(&self, _installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo> {
         self.call().repos.get(&repo_id).cloned().ok_or(GitHubError::NotFound)
     }
 
-    async fn repo_by_name(&self, _installation: i64, full_name: &str) -> GitHubResult<Repo> {
+    async fn repo_by_name(&self, _installation: Option<i64>, full_name: &str) -> GitHubResult<Repo> {
         let data = self.call();
         data.repos.values().find(|r| r.full_name.eq_ignore_ascii_case(full_name)).cloned().ok_or(GitHubError::NotFound)
     }
@@ -76,19 +76,19 @@ impl GitHubApi for FakeGitHub {
         Ok(self.call().permissions.get(&(repo_id, login.to_lowercase())).cloned().unwrap_or_else(|| "none".into()))
     }
 
-    async fn user_by_login(&self, _installation: i64, login: &str) -> GitHubResult<Option<User>> {
+    async fn user_by_login(&self, _installation: Option<i64>, login: &str) -> GitHubResult<Option<User>> {
         Ok(self.call().users.get(&login.to_lowercase()).cloned())
     }
 
-    async fn releases(&self, _installation: i64, repo_id: i64) -> GitHubResult<Vec<Release>> {
+    async fn releases(&self, _installation: Option<i64>, repo_id: i64) -> GitHubResult<Vec<Release>> {
         Ok(self.call().releases.get(&repo_id).cloned().unwrap_or_default())
     }
 
-    async fn release(&self, _installation: i64, repo_id: i64, release_id: i64) -> GitHubResult<Option<Release>> {
+    async fn release(&self, _installation: Option<i64>, repo_id: i64, release_id: i64) -> GitHubResult<Option<Release>> {
         Ok(self.call().releases.get(&repo_id).and_then(|rs| rs.iter().find(|r| r.id == release_id).cloned()))
     }
 
-    async fn tags(&self, _installation: i64, repo_id: i64) -> GitHubResult<Vec<Tag>> {
+    async fn tags(&self, _installation: Option<i64>, repo_id: i64) -> GitHubResult<Vec<Tag>> {
         Ok(self.call().tags.get(&repo_id).cloned().unwrap_or_default())
     }
 

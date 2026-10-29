@@ -18,10 +18,11 @@ pub struct AddonRow {
     pub id: i64,
     pub slug: String,
     pub name: String,
-    pub owner_id: i64,
+    pub owner_id: Option<i64>,
     pub repo_id: i64,
     pub repo_full_name: String,
-    pub installation_id: i64,
+    /// `None` while nobody installed the GitHub App on the repo.
+    pub installation_id: Option<i64>,
     pub source_type: String,
     pub asset_pattern: Option<String>,
     pub category: String,
@@ -86,7 +87,7 @@ async fn verify_repo(state: &AppState, user: &CurrentUser, full_name: &str) -> A
         .await
         .map_err(github_error)?
         .ok_or_else(|| unprocessable("app_not_installed", "Install the SurvivorsForge GitHub App on this repo first"))?;
-    let repo = state.github.repo_by_name(installation, full_name).await.map_err(github_error)?;
+    let repo = state.github.repo_by_name(Some(installation), full_name).await.map_err(github_error)?;
     if repo.private {
         return Err(unprocessable("repo_private", "Only public repos can be published"));
     }
@@ -137,7 +138,10 @@ pub async fn addon_view(state: &AppState, id: i64) -> ApiResult<Value> {
              'category', a.category, 'repo', a.repo_full_name, 'source_type', a.source_type,
              'asset_pattern', a.asset_pattern,
              'folders', (SELECT coalesce(json_agg(f.folder ORDER BY f.folder), '[]') FROM addon_folders f WHERE f.addon_id = a.id),
-             'owner', json_build_object('github_id', u.github_id, 'login', u.login, 'avatar_url', u.avatar_url),
+             'owner', CASE WHEN u.id IS NULL THEN NULL
+                           ELSE json_build_object('github_id', u.github_id, 'login', u.login, 'avatar_url', u.avatar_url) END,
+             'author', coalesce(u.login::text, a.author_name),
+             'claimed', a.owner_id IS NOT NULL,
              'contributors', (SELECT coalesce(json_agg(json_build_object('login', mu.login, 'avatar_url', mu.avatar_url) ORDER BY mu.login), '[]')
                               FROM addon_members m JOIN users mu ON mu.id = m.user_id WHERE m.addon_id = a.id),
              'blocked', a.blocked_at IS NOT NULL,
@@ -158,7 +162,7 @@ pub async fn addon_view(state: &AppState, id: i64) -> ApiResult<Value> {
              'icon_url', (SELECT $2 || '/' || i.file FROM images i WHERE i.addon_id = a.id AND i.kind = 'icon'),
              'verified_author', EXISTS (SELECT 1 FROM verifications w JOIN versions wv ON wv.id = w.version_id WHERE wv.addon_id = a.id),
              'created_at', a.created_at, 'updated_at', a.updated_at)
-         FROM addons a JOIN users u ON u.id = a.owner_id
+         FROM addons a LEFT JOIN users u ON u.id = a.owner_id
          LEFT JOIN version_trust t ON t.version_id = relevant_version(a.id)
          WHERE a.id = $1",
     )
@@ -172,29 +176,37 @@ pub async fn addon_view(state: &AppState, id: i64) -> ApiResult<Value> {
     Ok(view)
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct CreateAddon {
-    slug: String,
-    name: String,
-    repo: String,
-    source_type: String,
-    asset_pattern: Option<String>,
-    category: String,
+    pub slug: String,
+    pub name: String,
+    pub repo: String,
+    pub source_type: String,
+    pub asset_pattern: Option<String>,
+    pub category: String,
     #[serde(default)]
-    summary: String,
-    folders: Vec<String>,
+    pub summary: String,
+    pub folders: Vec<String>,
+    /// Admin additions only: the author's name while nobody owns the addon.
+    #[serde(default)]
+    pub author_name: Option<String>,
 }
 
-pub async fn create(State(state): State<AppState>, user: CurrentUser, Json(body): Json<CreateAddon>) -> ApiResult<(StatusCode, Json<Value>)> {
+/// Validates and stores a new addon, then queues its first sync. The repo checks are the caller's.
+pub async fn insert_addon(
+    state: &AppState,
+    body: &CreateAddon,
+    owner: Option<i64>,
+    repo: &crate::github::types::Repo,
+    installation: Option<i64>,
+) -> ApiResult<i64> {
     validate_slug(&body.slug)?;
     validate_name(&body.name)?;
     validate_summary(&body.summary)?;
-    let pattern = body.asset_pattern.filter(|_| body.source_type == "release");
+    let pattern = body.asset_pattern.clone().filter(|_| body.source_type == "release");
     validate_source(&body.source_type, pattern.as_deref())?;
     validate_folders(&body.folders)?;
     check_category(&state.pool, &body.category).await?;
-    let (repo, installation) = verify_repo(&state, &user, &body.repo).await?;
-
     let taken: Option<String> = sqlx::query_scalar("SELECT slug::text FROM addons WHERE repo_id = $1 AND deleted_at IS NULL")
         .bind(repo.id)
         .fetch_optional(&state.pool)
@@ -208,12 +220,12 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser, Json(body)
     let mut tx = state.pool.begin().await?;
     let id: i64 = sqlx::query_scalar(
         "INSERT INTO addons (slug, name, owner_id, repo_id, repo_full_name, installation_id, source_type, asset_pattern,
-                             category, summary, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11) RETURNING id",
+                             category, summary, author_name, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12) RETURNING id",
     )
     .bind(&body.slug)
     .bind(body.name.trim())
-    .bind(user.id)
+    .bind(owner)
     .bind(repo.id)
     .bind(&repo.full_name)
     .bind(installation)
@@ -221,11 +233,65 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser, Json(body)
     .bind(&pattern)
     .bind(&body.category)
     .bind(&body.summary)
+    .bind(body.author_name.as_deref().map(str::trim).filter(|a| !a.is_empty() && owner.is_none()))
     .bind(now)
     .fetch_one(&mut *tx)
     .await
     .map_err(map_unique)?;
     write_folders(&mut tx, id, &body.folders).await?;
+    tx.commit().await?;
+    crate::sync::enqueue_sync(state, id, now).await?;
+    Ok(id)
+}
+
+pub async fn create(State(state): State<AppState>, user: CurrentUser, Json(body): Json<CreateAddon>) -> ApiResult<(StatusCode, Json<Value>)> {
+    validate_slug(&body.slug)?;
+    let (repo, installation) = verify_repo(&state, &user, &body.repo).await?;
+    let id = insert_addon(&state, &body, Some(user.id), &repo, Some(installation)).await?;
+    Ok((StatusCode::CREATED, Json(addon_view(&state, id).await?)))
+}
+
+/// The public repo `owner/name` for an addon an admin adds: through the App when it is installed
+/// there, else without a token.
+pub async fn public_repo(state: &AppState, full_name: &str) -> ApiResult<(crate::github::types::Repo, Option<i64>)> {
+    let full_name = full_name.trim();
+    let valid = full_name.split('/').count() == 2 && full_name.split('/').all(|p| !p.is_empty()) && full_name.len() <= 140;
+    if !valid {
+        return Err(unprocessable("invalid_repo", "The repo must be owner/name"));
+    }
+    let installation = state.github.installation_for_repo(full_name).await.map_err(github_error)?;
+    let repo = match state.github.repo_by_name(installation, full_name).await {
+        Ok(repo) => repo,
+        Err(crate::github::GitHubError::NotFound) => return Err(unprocessable("repo_not_found", "There is no public repo with that name")),
+        Err(e) => return Err(github_error(e)),
+    };
+    if repo.private {
+        return Err(unprocessable("repo_private", "Only public repos can be published"));
+    }
+    Ok((repo, installation))
+}
+
+/// `POST /v1/admin/addons`: an admin adds an addon of someone else's repo without the GitHub App
+/// checks, like an entry of the old verified list. Nobody owns it until its author claims it.
+pub async fn admin_create(
+    State(state): State<AppState>,
+    crate::auth::AdminUser(admin): crate::auth::AdminUser,
+    Json(body): Json<CreateAddon>,
+) -> ApiResult<(StatusCode, Json<Value>)> {
+    validate_slug(&body.slug)?;
+    let (repo, installation) = public_repo(&state, &body.repo).await?;
+    let id = insert_addon(&state, &body, None, &repo, installation).await?;
+    let now = (state.clock)();
+    let mut tx = state.pool.begin().await?;
+    let entry = crate::audit::Entry {
+        admin_id: admin.id,
+        action: "admin_create_addon",
+        target_type: "addon",
+        target_id: id.to_string(),
+        note: "",
+        details: json!({ "slug": body.slug, "repo": repo.full_name }),
+    };
+    crate::audit::record(&mut tx, entry, now).await?;
     tx.commit().await?;
     Ok((StatusCode::CREATED, Json(addon_view(&state, id).await?)))
 }
@@ -332,7 +398,7 @@ pub async fn update(
     let (repo_id, repo_full_name, installation) = match &body.repo {
         Some(repo) => {
             let (repo, installation) = verify_repo(&state, &user, repo).await?;
-            (repo.id, repo.full_name, installation)
+            (repo.id, repo.full_name, Some(installation))
         }
         None => (addon.repo_id, addon.repo_full_name.clone(), addon.installation_id),
     };
@@ -374,4 +440,32 @@ pub async fn delete(State(state): State<AppState>, user: CurrentUser, Path(slug)
     sqlx::query("UPDATE addon_folders SET active = false WHERE addon_id = $1").bind(addon.id).execute(&mut *tx).await?;
     tx.commit().await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// `POST /v1/addons/{slug}/claim`: the author of an imported addon takes it over by proving admin
+/// rights on its repo, the same check as for publishing.
+pub async fn claim(State(state): State<AppState>, user: CurrentUser, Path(slug): Path<String>) -> ApiResult<Json<Value>> {
+    let addon = load_addon(&state.pool, &slug).await?;
+    not_blocked(&addon)?;
+    if addon.owner_id.is_some() {
+        return Err(conflict("already_claimed", "This addon has an owner"));
+    }
+    let (repo, installation) = verify_repo(&state, &user, &addon.repo_full_name).await?;
+    if repo.id != addon.repo_id {
+        return Err(conflict("repo_mismatch", "The repo behind this name is not the addon's repo"));
+    }
+    let claimed = sqlx::query(
+        "UPDATE addons SET owner_id = $2, installation_id = $3, repo_full_name = $4, updated_at = $5 WHERE id = $1 AND owner_id IS NULL",
+    )
+    .bind(addon.id)
+    .bind(user.id)
+    .bind(installation)
+    .bind(&repo.full_name)
+    .bind((state.clock)())
+    .execute(&state.pool)
+    .await?;
+    if claimed.rows_affected() == 0 {
+        return Err(conflict("already_claimed", "This addon has an owner"));
+    }
+    Ok(Json(addon_view(&state, addon.id).await?))
 }

@@ -1,5 +1,6 @@
 //! Types of the addon registry (`registry/verified.json`, schema 1), shared by launcher and server.
 
+use crate::trust::Trust;
 use crate::{Error, Result};
 use serde::{Deserialize, Serialize};
 
@@ -30,6 +31,42 @@ pub struct VerifiedAddon {
     pub category: String,
     pub folders: Vec<String>,
     pub source: SourceSpec,
+    /// Platform fields from here on. Launchers that read only schema 1 ignore them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trust: Option<Trust>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verified_author: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latest: Option<LatestVersion>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub dependencies: Vec<DependencyRef>,
+}
+
+/// The version the launcher installs, as the platform scanned it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LatestVersion {
+    pub tag: String,
+    pub asset_url: String,
+    /// Hex SHA-256 of the scanned file; the launcher installs only a file with this hash.
+    pub sha256: Option<String>,
+    pub size: Option<i64>,
+    pub trust: Trust,
+    pub findings: FindingCounts,
+    pub game_min: Option<String>,
+    pub game_max: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+pub struct FindingCounts {
+    pub critical: u32,
+    pub warn: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DependencyRef {
+    /// The `id` of the addon depended on.
+    pub id: String,
+    pub required: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

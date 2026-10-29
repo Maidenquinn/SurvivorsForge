@@ -73,7 +73,7 @@ pub async fn add(
     .bind(&github_user.avatar_url)
     .fetch_one(&state.pool)
     .await?;
-    if member_id == addon.owner_id {
+    if Some(member_id) == addon.owner_id {
         return Err(ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "owner_not_member", "The owner can do everything already"));
     }
     let inserted = sqlx::query(

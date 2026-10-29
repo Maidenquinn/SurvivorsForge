@@ -8,6 +8,7 @@ pub mod game_versions;
 pub mod images;
 pub mod me;
 pub mod members;
+pub mod registry;
 pub mod reports;
 pub mod search;
 pub mod versions;

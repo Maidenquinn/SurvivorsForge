@@ -74,6 +74,10 @@ pub fn router(state: AppState) -> Router {
         )
         .route("/v1/admin/users/{github_id}/ban", post(routes::admin_moderation::ban).delete(routes::admin_moderation::unban))
         .route("/v1/admin/versions/{id}/accept-source", post(routes::admin_verify::accept_source))
+        .route("/v1/addons/{slug}/claim", post(routes::addons::claim))
+        .route("/v1/admin/addons", post(routes::addons::admin_create))
+        .route("/v1/admin/addons/{slug}/owner", post(routes::admin_moderation::transfer_owner))
+        .route("/v1/registry", get(routes::registry::registry))
         .route("/v1/addons/{slug}/members", get(routes::members::list).post(routes::members::add))
         .route(
             "/v1/addons/{slug}/members/{github_id}",

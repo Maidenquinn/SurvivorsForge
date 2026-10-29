@@ -179,6 +179,12 @@ async fn mark_missing(
 
 /// The repo is reachable again: lift the lock and re-sync, which also finds out what is still there.
 async fn unlock(state: &AppState, repo_ids: &[i64], installation: Option<i64>) -> sqlx::Result<()> {
+    // Unlocked addons on these repos (unclaimed imports, say) get the installation too.
+    sqlx::query("UPDATE addons SET installation_id = $2 WHERE repo_id = ANY($1) AND deleted_at IS NULL AND $2::bigint IS NOT NULL")
+        .bind(repo_ids)
+        .bind(installation)
+        .execute(&state.pool)
+        .await?;
     let unlocked: Vec<i64> = sqlx::query_scalar(
         "UPDATE addons SET locked_at = NULL, locked_reason = NULL, installation_id = coalesce($2, installation_id)
          WHERE repo_id = ANY($1) AND deleted_at IS NULL AND locked_at IS NOT NULL RETURNING id",

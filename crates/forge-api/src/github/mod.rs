@@ -1,5 +1,6 @@
 //! The API talks to GitHub as a GitHub App: App JWT for `/app` and `/repos/.../installation`,
-//! installation tokens (5000 requests/h per installation) for everything else.
+//! installation tokens (5000 requests/h per installation) for everything else. Repos without the
+//! App (imported addons nobody claimed yet) are read without a token, like the launcher does.
 //!
 //! `GitHubApi` is the seam for tests; `GitHubClient` is the real thing.
 
@@ -66,16 +67,16 @@ pub type GitHubResult<T> = Result<T, GitHubError>;
 pub trait GitHubApi: Send + Sync {
     /// The installation of the App on `owner/name`; `None` when the App is not installed there.
     async fn installation_for_repo(&self, full_name: &str) -> GitHubResult<Option<i64>>;
-    async fn repo(&self, installation: i64, repo_id: i64) -> GitHubResult<Repo>;
-    async fn repo_by_name(&self, installation: i64, full_name: &str) -> GitHubResult<Repo>;
+    async fn repo(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo>;
+    async fn repo_by_name(&self, installation: Option<i64>, full_name: &str) -> GitHubResult<Repo>;
     /// `admin`, `maintain`, `write`, `triage`, `read` or `none`.
     async fn user_permission(&self, installation: i64, repo_id: i64, login: &str) -> GitHubResult<String>;
-    async fn user_by_login(&self, installation: i64, login: &str) -> GitHubResult<Option<User>>;
+    async fn user_by_login(&self, installation: Option<i64>, login: &str) -> GitHubResult<Option<User>>;
     /// Newest first.
-    async fn releases(&self, installation: i64, repo_id: i64) -> GitHubResult<Vec<Release>>;
-    async fn release(&self, installation: i64, repo_id: i64, release_id: i64) -> GitHubResult<Option<Release>>;
+    async fn releases(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Vec<Release>>;
+    async fn release(&self, installation: Option<i64>, repo_id: i64, release_id: i64) -> GitHubResult<Option<Release>>;
     /// Newest first.
-    async fn tags(&self, installation: i64, repo_id: i64) -> GitHubResult<Vec<Tag>>;
+    async fn tags(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Vec<Tag>>;
     /// Finishes a user's OAuth login: trades the code for a user token, reads the user with it and
     /// drops the token.
     async fn oauth_user(&self, code: &str, verifier: &str, redirect_uri: &str) -> GitHubResult<User>;
@@ -169,10 +170,19 @@ impl GitHubClient {
     }
 
     /// GET with an installation token and `If-None-Match`; a `304` answers from the cache.
-    async fn get_json<T: serde::de::DeserializeOwned>(&self, installation: i64, path: &str) -> GitHubResult<T> {
+    // ponytail: without an installation GitHub allows 60 requests/h per IP; enough for a daily poll of
+    // the unclaimed addons, not for many more.
+    async fn get_json<T: serde::de::DeserializeOwned>(&self, installation: Option<i64>, path: &str) -> GitHubResult<T> {
         let url = format!("{}{path}", self.api_url);
-        let token = self.installation_token(installation).await?;
-        let mut builder = self.request(self.http.get(&url), &token);
+        let mut builder = match installation {
+            Some(installation) => self.request(self.http.get(&url), &self.installation_token(installation).await?),
+            None => self
+                .http
+                .get(&url)
+                .header(ACCEPT, "application/vnd.github+json")
+                .header("X-GitHub-Api-Version", "2022-11-28")
+                .header(USER_AGENT, "SurvivorsForge"),
+        };
         let cached = self.etags.lock().unwrap().get(&url).cloned();
         if let Some((etag, _)) = &cached {
             builder = builder.header(IF_NONE_MATCH, etag);
@@ -266,37 +276,37 @@ impl GitHubApi for GitHubClient {
         Ok(optional(installation)?.map(|i| i.id))
     }
 
-    async fn repo(&self, installation: i64, repo_id: i64) -> GitHubResult<Repo> {
+    async fn repo(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Repo> {
         self.get_json(installation, &format!("/repositories/{repo_id}")).await
     }
 
-    async fn repo_by_name(&self, installation: i64, full_name: &str) -> GitHubResult<Repo> {
+    async fn repo_by_name(&self, installation: Option<i64>, full_name: &str) -> GitHubResult<Repo> {
         self.get_json(installation, &format!("/repos/{full_name}")).await
     }
 
     async fn user_permission(&self, installation: i64, repo_id: i64, login: &str) -> GitHubResult<String> {
         let path = format!("/repositories/{repo_id}/collaborators/{login}/permission");
-        match self.get_json::<Permission>(installation, &path).await {
+        match self.get_json::<Permission>(Some(installation), &path).await {
             Ok(p) => Ok(p.permission),
             Err(GitHubError::NotFound) => Ok("none".into()),
             Err(e) => Err(e),
         }
     }
 
-    async fn user_by_login(&self, installation: i64, login: &str) -> GitHubResult<Option<User>> {
+    async fn user_by_login(&self, installation: Option<i64>, login: &str) -> GitHubResult<Option<User>> {
         optional(self.get_json(installation, &format!("/users/{login}")).await)
     }
 
-    async fn releases(&self, installation: i64, repo_id: i64) -> GitHubResult<Vec<Release>> {
+    async fn releases(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Vec<Release>> {
         // ponytail: newest 100 releases only; paginate if an addon ever keeps more.
         self.get_json(installation, &format!("/repositories/{repo_id}/releases?per_page=100")).await
     }
 
-    async fn release(&self, installation: i64, repo_id: i64, release_id: i64) -> GitHubResult<Option<Release>> {
+    async fn release(&self, installation: Option<i64>, repo_id: i64, release_id: i64) -> GitHubResult<Option<Release>> {
         optional(self.get_json(installation, &format!("/repositories/{repo_id}/releases/{release_id}")).await)
     }
 
-    async fn tags(&self, installation: i64, repo_id: i64) -> GitHubResult<Vec<Tag>> {
+    async fn tags(&self, installation: Option<i64>, repo_id: i64) -> GitHubResult<Vec<Tag>> {
         self.get_json(installation, &format!("/repositories/{repo_id}/tags?per_page=100")).await
     }
 

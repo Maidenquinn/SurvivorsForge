@@ -34,7 +34,7 @@ struct SyncTarget {
     id: i64,
     repo_id: i64,
     repo_full_name: String,
-    installation_id: i64,
+    installation_id: Option<i64>,
     source_type: String,
     asset_pattern: Option<String>,
 }
