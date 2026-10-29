@@ -2,19 +2,19 @@
 {% block title %}Build an addon pack - SurvivorsForge{% endblock %}
 {% block head %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<h1>Build an addon pack</h1>
-<p>Pick the addons you play with. You get one zip with all of them and a link to share. Upload the zip in the browser version of the game.</p>
+<h1><span data-l10n-en="Build an addon pack" data-l10n-fr="Créer un pack d'AddOns">Build an addon pack</span></h1>
+<p><span data-l10n-en="Pick the addons you play with. You get one zip with all of them and a link to share. Upload the zip in the browser version of the game." data-l10n-fr="Choisissez vos AddOns. Vous recevrez une archive ZIP et un lien à partager pour la version navigateur du jeu.">Pick the addons you play with. You get one zip with all of them and a link to share. Upload the zip in the browser version of the game.</span></p>
 {% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
 
 <form class="panel" method="post" action="/packs/new">
   <input type="hidden" name="csrf" value="{{ csrf }}">
-  <label for="name">Name of the pack (optional)</label>
+  <label for="name"><span data-l10n-en="Name of the pack (optional)" data-l10n-fr="Nom du pack (facultatif)">Name of the pack (optional)</span></label>
   <input id="name" name="name" value="{{ name }}" maxlength="80" placeholder="My UI">
 
   <fieldset class="picker">
-    <legend>Addons</legend>
+    <legend><span data-l10n-en="Addons" data-l10n-fr="AddOns">Addons</span></legend>
     {% if choices.is_empty() %}
-      <p class="muted">No addon can go into a pack yet. Packs take checked versions only.</p>
+      <p class="muted"><span data-l10n-en="No addon can go into a pack yet. Packs take checked versions only." data-l10n-fr="Aucun AddOn compatible pour le moment. Les packs n'acceptent que des versions contrôlées.">No addon can go into a pack yet. Packs take checked versions only.</span></p>
     {% endif %}
     {% for c in choices %}
     <label class="check pick">
@@ -25,9 +25,9 @@
     </label>
     {% endfor %}
   </fieldset>
-  <p class="muted">Only checked versions go into a pack. Flagged or unchecked ones are not listed.</p>
+  <p class="muted"><span data-l10n-en="Only checked versions go into a pack. Flagged or unchecked ones are not listed." data-l10n-fr="Seules les versions contrôlées sont disponibles ; les versions signalées ou non vérifiées sont exclues.">Only checked versions go into a pack. Flagged or unchecked ones are not listed.</span></p>
   <label class="check"><input type="checkbox" name="listed" value="1"> Show it on the public pack list</label>
-  <p class="muted">Without it, only people with the link find the pack.</p>
-  <p><button type="submit">Create the pack</button></p>
+  <p class="muted"><span data-l10n-en="Without it, only people with the link find the pack." data-l10n-fr="Sinon, seules les personnes disposant du lien pourront voir ce pack.">Without it, only people with the link find the pack.</span></p>
+  <p><button type="submit"><span data-l10n-en="Create the pack" data-l10n-fr="Créer le pack">Create the pack</span></button></p>
 </form>
 {% endblock %}
