@@ -24,7 +24,7 @@
       <input type="hidden" name="csrf" value="{{ csrf }}">
       <strong>{{ m.login }}</strong>
       <label class="check"><input type="checkbox" name="description" value="1" {% if m.description %}checked{% endif %}> <span data-i18n="description">Description</span></label>
-      <label class="check"><input type="checkbox" name="images" value="1" {% if m.images %}checked{% endif %}> Images</label>
+      <label class="check"><input type="checkbox" name="images" value="1" {% if m.images %}checked{% endif %}> <span data-i18n="creator_images_title">Images</span></label>
       <button type="submit" class="secondary" data-i18n="action_save">Save</button>
     </form>
     <form method="post" action="/addons/{{ slug }}/members/{{ m.github_id }}/delete" class="inline">
