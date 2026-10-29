@@ -157,6 +157,7 @@ fn grouped(n: i64) -> String {
 #[derive(Deserialize, Default)]
 pub struct ClaimError {
     error: Option<String>,
+    before: Option<i64>,
     tab: Option<String>,
     issue: Option<i64>,
 }
@@ -243,7 +244,7 @@ pub async fn addon(
         } else { false }
     } else { false };
     let (comments, comments_next, comments_moderator) = if tab == "comments" {
-        crate::comments::feed(&state, &slug, &session, None).await?
+        crate::comments::feed(&state, &slug, &session, claim.before).await?
     } else { (Vec::new(), None, false) };
     let page = AddonPage {
         tab,
