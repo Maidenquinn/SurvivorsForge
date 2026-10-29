@@ -299,6 +299,7 @@
       if (!current) return;
       current.replaceWith(next);
       if (push) history.pushState({issuePanel: true}, "", response.url);
+      document.dispatchEvent(new Event("htmx:afterSwap"));
       setup();
       var detail = document.getElementById("issue-detail");
       if (detail) detail.scrollIntoView({block: "nearest"});
