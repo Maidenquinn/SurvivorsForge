@@ -13,6 +13,14 @@
     <p>{{ summary }}</p>
   </div>
 </header>
+{% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
+{% if can_claim %}
+<form class="notice ok admin-actions" method="post" action="/addons/{{ slug }}/claim">
+  <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="back" value="/addons/{{ slug }}">
+  <p>This addon comes from your repo {{ repo }} and has no owner here yet. Claiming checks on GitHub that you are an admin of the repo and that the <a href="{{ install_url }}" rel="noopener">SurvivorsForge App</a> is installed on it.</p>
+  <button type="submit">Claim it</button>
+</form>
+{% endif %}
 
 <section class="panel download">
   {% match latest %}

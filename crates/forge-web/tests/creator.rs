@@ -189,6 +189,32 @@ async fn dashboard_lists_own_and_shared() {
 }
 
 #[tokio::test]
+async fn unclaimed_addons_of_my_repos_can_be_claimed() {
+    let mut web = logged_in(owner()).await;
+    get_json(&web, "/v1/me/addons", json!([
+        { "slug": "orphan", "name": "Orphan", "role": "claimable", "trust": "scanned", "latest_tag": "v1", "findings": { "critical": 0, "warn": 0 }, "blocked": false, "locked": false }
+    ]))
+    .await;
+    let page = web.get("/me/addons").await;
+    assert!(page.body.contains(r#"action="/addons/orphan/claim""#) && page.body.contains("Claim it"), "{}", page.body);
+    assert!(!page.body.contains("/addons/orphan/edit"), "not editable before the claim");
+
+    Mock::given(method("POST")).and(path("/v1/addons/orphan/claim")).respond_with(ResponseTemplate::new(200).set_body_json(json!({ "slug": "orphan" }))).expect(1).mount(&web.api).await;
+    let done = web.post_form("/addons/orphan/claim", &[("back", "/me/addons")]).await;
+    assert!(done.location().starts_with("/me/addons?msg="), "{}", done.location());
+
+    Mock::given(method("POST"))
+        .and(path("/v1/addons/other/claim"))
+        .respond_with(ResponseTemplate::new(422).set_body_json(json!({ "error": "app_not_installed", "message": "Install the SurvivorsForge GitHub App on this repo first" })))
+        .mount(&web.api)
+        .await;
+    let failed = web.post_form("/addons/other/claim", &[("back", "/addons/other")]).await;
+    assert!(failed.location().starts_with("/addons/other?error="), "{}", failed.location());
+    let evil = web.post_form("/addons/other/claim", &[("back", "https://evil.test/")]).await;
+    assert!(evil.location().starts_with("/me/addons?"), "only our own pages: {}", evil.location());
+}
+
+#[tokio::test]
 async fn delete_requires_slug() {
     let mut web = logged_in(owner()).await;
     Mock::given(method("DELETE")).and(path("/v1/addons/lucky")).respond_with(ResponseTemplate::new(204)).expect(1).mount(&web.api).await;

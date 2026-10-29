@@ -5,6 +5,8 @@
   <h1>My addons</h1>
   <a class="button" href="/addons/new">Publish an addon</a>
 </div>
+{% if let Some(m) = msg %}<div class="notice ok" role="status">{{ m }}</div>{% endif %}
+{% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
 {% if rows.is_empty() %}
 <section class="panel">
   <p>You have no addons here yet. Publish one from your GitHub repo, or ask an owner to add you as a contributor.</p>
@@ -19,13 +21,21 @@
       <td><a href="/addons/{{ r.slug }}">{{ r.name }}</a>
         {% if r.blocked %} <span class="badge bad">Blocked</span>{% endif %}
         {% if r.locked %} <span class="badge warn">Repo not reachable</span>{% endif %}</td>
-      <td>{{ r.role }}</td>
+      <td>{% if r.role == "claimable" %}not claimed yet{% else %}{{ r.role }}{% endif %}</td>
       <td>{% if r.has_version %}<span class="badge {{ r.notice.class }}">{{ r.notice.badge }}</span>{% if r.findings > 0 %} {{ r.findings }} finding{% if r.findings != 1 %}s{% endif %}{% endif %}{% else %}<span class="muted">No release yet</span>{% endif %}</td>
-      <td><a href="/addons/{{ r.slug }}/edit">Edit</a></td>
+      <td>{% if r.role == "claimable" %}
+        <form method="post" action="/addons/{{ r.slug }}/claim" class="inline">
+          <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="back" value="/me/addons">
+          <button type="submit">Claim it</button>
+        </form>
+      {% else %}<a href="/addons/{{ r.slug }}/edit">Edit</a>{% endif %}</td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
 </div>
+{% if claimable %}
+<p class="muted">Addons an admin added from your repos. Claiming checks on GitHub that you are an admin of the repo and that the <a href="{{ install_url }}" rel="noopener">SurvivorsForge App</a> is installed on it.</p>
+{% endif %}
 {% endif %}
 {% endblock %}

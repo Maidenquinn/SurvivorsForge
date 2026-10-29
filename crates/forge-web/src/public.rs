@@ -9,10 +9,11 @@ use crate::templates::{
 };
 use crate::trust::{Notice, notice};
 use axum::Extension;
-use axum::extract::{Path, RawQuery, State};
+use axum::extract::{Path, Query, RawQuery, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum_extra::extract::PrivateCookieJar;
+use serde::Deserialize;
 use serde_json::Value;
 
 fn s(v: &Value) -> String {
@@ -137,7 +138,18 @@ pub async fn addons(State(state): State<AppState>, jar: PrivateCookieJar, Extens
     }))
 }
 
-pub async fn addon(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(slug): Path<String>) -> WebResult<Response> {
+#[derive(Deserialize, Default)]
+pub struct ClaimError {
+    error: Option<String>,
+}
+
+pub async fn addon(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Extension(csrf): Extension<CsrfToken>,
+    Path(slug): Path<String>,
+    Query(claim): Query<ClaimError>,
+) -> WebResult<Response> {
     let user = visitor(&state, &jar).await?.map(|(v, _)| v);
     let a = state.api.get(&format!("/v1/addons/{}", seg(&slug)), None).await?;
     if a["blocked"] == true {
@@ -160,7 +172,13 @@ pub async fn addon(State(state): State<AppState>, jar: PrivateCookieJar, Extensi
         }
         None => None,
     };
+    // GitHub logins ignore case; the claim itself checks the repo rights on GitHub.
+    let repo_owner = s(&a["repo"]).split('/').next().unwrap_or_default().to_string();
+    let can_claim = a["claimed"] == false && user.as_ref().is_some_and(|u| u.login.eq_ignore_ascii_case(&repo_owner));
     let page = AddonPage {
+        can_claim,
+        install_url: state.install_url(),
+        error: claim.error,
         user,
         csrf: csrf.0,
         canonical: format!("{}/addons/{slug}", state.config.public_web_url),

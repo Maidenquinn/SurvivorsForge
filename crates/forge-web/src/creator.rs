@@ -78,7 +78,19 @@ fn forbidden() -> Response {
     crate::error::error_page(StatusCode::FORBIDDEN, "Not allowed", "You may not change this part of the addon.")
 }
 
-pub async fn my_addons(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>) -> WebResult<Html<String>> {
+/// `?msg=` and `?error=` of a page, set by the action that redirected here.
+#[derive(Deserialize, Default)]
+pub struct Flash {
+    msg: Option<String>,
+    error: Option<String>,
+}
+
+pub async fn my_addons(
+    State(state): State<AppState>,
+    jar: PrivateCookieJar,
+    Extension(csrf): Extension<CsrfToken>,
+    Query(flash): Query<Flash>,
+) -> WebResult<Html<String>> {
     let (user, token) = me(&state, &jar).await?;
     let list = state.api.get("/v1/me/addons", Some(&token)).await?;
     let rows = list
@@ -96,7 +108,30 @@ pub async fn my_addons(State(state): State<AppState>, jar: PrivateCookieJar, Ext
             locked: a["locked"] == true,
         })
         .collect();
-    Ok(render(&MyAddonsPage { user: Some(user), csrf: csrf.0, rows }))
+    let rows: Vec<crate::templates::MyAddon> = rows;
+    let claimable = rows.iter().any(|r| r.role == "claimable");
+    Ok(render(&MyAddonsPage { user: Some(user), csrf: csrf.0, rows, claimable, install_url: state.install_url(), msg: flash.msg, error: flash.error }))
+}
+
+#[derive(Deserialize, Default)]
+pub struct ClaimForm {
+    #[serde(default)]
+    back: String,
+}
+
+/// `POST /addons/{slug}/claim`: an addon an admin added becomes the visitor's. The API checks on
+/// GitHub that they are an admin of the repo and that the App is installed there.
+pub async fn claim(State(state): State<AppState>, jar: PrivateCookieJar, Path(slug): Path<String>, Form(form): Form<ClaimForm>) -> WebResult<Response> {
+    let (_, token) = me(&state, &jar).await?;
+    // Only the two pages with the button, never a URL from the form.
+    let page = if form.back == format!("/addons/{slug}") { form.back.as_str() } else { "/me/addons" };
+    let (page, key, text) = match state.api.post(&format!("/v1/addons/{}/claim", seg(&slug)), Some(&token), &json!({})).await {
+        Ok(_) => ("/me/addons", "msg", "The addon is yours now. Edit it, add screenshots or invite contributors.".to_string()),
+        Err(e @ (ApiError::Unauthorized | ApiError::Down(_))) => return Err(e.into()),
+        Err(e) => (page, "error", e.message()),
+    };
+    let query = reqwest::Url::parse_with_params("http://x/", &[(key, text)]).map(|u| u.query().unwrap_or_default().to_string()).unwrap_or_default();
+    Ok(Redirect::to(&format!("{page}?{query}")).into_response())
 }
 
 #[derive(Deserialize, Default, Clone)]

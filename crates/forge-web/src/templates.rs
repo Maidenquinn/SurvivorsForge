@@ -175,6 +175,11 @@ pub struct AddonPage {
     pub contributors: Vec<String>,
     pub deps: Vec<Dep>,
     pub latest: Option<LatestBlock>,
+    /// Unclaimed, and the repo belongs to the visitor's GitHub account.
+    pub can_claim: bool,
+    pub install_url: String,
+    /// Why a claim failed.
+    pub error: Option<String>,
 }
 
 #[derive(Template)]
@@ -254,7 +259,13 @@ pub struct MyAddon {
 pub struct MyAddonsPage {
     pub user: Option<Visitor>,
     pub csrf: String,
+    /// Owned, shared and `claimable` (added by an admin from a repo of the visitor) addons.
     pub rows: Vec<MyAddon>,
+    /// Some row can be claimed: the page explains what a claim checks.
+    pub claimable: bool,
+    pub install_url: String,
+    pub msg: Option<String>,
+    pub error: Option<String>,
 }
 
 #[derive(Template)]

@@ -95,6 +95,7 @@ pub fn router(state: AppState) -> Router {
         )
         .route("/addons/{slug}/edit", get(crate::creator::edit_addon).post(crate::creator::save_addon))
         .route("/addons/{slug}/preview", post(crate::creator::preview))
+        .route("/addons/{slug}/claim", post(crate::creator::claim))
         .route(
             "/addons/{slug}/images",
             get(crate::creator::images)

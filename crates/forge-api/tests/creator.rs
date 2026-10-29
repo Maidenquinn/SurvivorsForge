@@ -22,6 +22,21 @@ async fn my_addons_lists_own_and_shared(pool: PgPool) {
 }
 
 #[sqlx::test]
+async fn my_addons_offer_unclaimed_addons_of_my_repos(pool: PgPool) {
+    // An addon an admin added without owner, from a repo of alice (GitHub logins ignore case).
+    let app = TestApp::new(pool);
+    app.publish(3, "carol", "orphan").await;
+    app.publish(4, "dave", "foreign").await;
+    sqlx::query("UPDATE addons SET owner_id = NULL, repo_full_name = 'ALICE/orphan' WHERE slug = 'orphan'").execute(&app.pool).await.unwrap();
+    sqlx::query("UPDATE addons SET owner_id = NULL WHERE slug = 'foreign'").execute(&app.pool).await.unwrap();
+    let alice = app.login(1, "alice").await;
+
+    let mine = app.get("/v1/me/addons", Some(&alice)).await.json();
+    let rows: Vec<(String, String)> = mine.as_array().unwrap().iter().map(|a| (a["slug"].as_str().unwrap().into(), a["role"].as_str().unwrap().into())).collect();
+    assert_eq!(rows, [("orphan".to_string(), "claimable".to_string())], "only unclaimed addons of her own repos");
+}
+
+#[sqlx::test]
 async fn permissions_and_categories(pool: PgPool) {
     let app = TestApp::new(pool);
     let alice = app.publish(1, "alice", "lucky").await;

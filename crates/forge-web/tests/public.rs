@@ -132,6 +132,30 @@ async fn admins_get_a_manage_link_on_addon_pages() {
 }
 
 #[tokio::test]
+async fn the_repo_owner_may_claim_an_unclaimed_addon() {
+    async fn unclaimed() -> TestWeb {
+        let web = TestWeb::new().await;
+        let mut a = addon("scanned");
+        a["claimed"] = json!(false);
+        a["owner"] = Value::Null;
+        mock(&web, "/v1/addons/lucky", a).await;
+        mock(&web, "/v1/addons/lucky/versions", versions("scanned", "available")).await;
+        web
+    }
+    let claim = r#"action="/addons/lucky/claim""#;
+    let mut web = unclaimed().await;
+    assert!(!web.get("/addons/lucky").await.body.contains(claim), "not for visitors");
+    web.login_as("bob-token", common::me("bob", "user")).await;
+    assert!(!web.get("/addons/lucky").await.body.contains(claim), "not for others");
+
+    // GitHub logins ignore case; the repo is alice/lucky.
+    let mut web = unclaimed().await;
+    web.login_as("alice-token", common::me("ALICE", "user")).await;
+    let page = web.get("/addons/lucky?error=Install+the+App+first").await;    assert!(page.body.contains(claim) && page.body.contains("Claim it"), "the repo alice/lucky is hers: {}", page.body);
+    assert!(page.body.contains("Install the App first"), "the claim error shows");
+}
+
+#[tokio::test]
 async fn trust_notice_per_level() {
     let cases = [
         ("unscanned", "available", "Not checked automatically yet", true),
