@@ -455,3 +455,58 @@ document.addEventListener("DOMContentLoaded", function () {
     if (event.key === "ArrowRight") { event.preventDefault(); display(index + 1); }
   });
 });
+
+/* Progressive enhancement for addon discussions. Ordinary forms and links remain functional. */
+(function () {
+  "use strict";
+  var busy = false;
+  function root() { return document.querySelector("[data-dynamic-comments]"); }
+  async function load(url, options, push) {
+    if (busy || !root()) return;
+    busy = true;
+    var old = root();
+    old.setAttribute("aria-busy", "true");
+    try {
+      var response = await fetch(url, Object.assign({credentials: "same-origin", headers: {"Accept": "text/html"}}, options || {}));
+      if (!response.ok) throw new Error("Request failed (" + response.status + ")");
+      var html = new DOMParser().parseFromString(await response.text(), "text/html");
+      var next = html.querySelector("[data-dynamic-comments]");
+      if (!next) { window.location.assign(response.url); return; }
+      old.replaceWith(next);
+      if (push) history.pushState({comments: true}, "", response.url);
+      var heading = next.querySelector("h1");
+      if (heading) { heading.setAttribute("tabindex", "-1"); heading.focus({preventScroll: true}); }
+      document.dispatchEvent(new Event("htmx:afterSwap"));
+    } catch (err) {
+      old.removeAttribute("aria-busy");
+      var notice = old.querySelector("[data-comment-error]");
+      if (!notice) {
+        notice = document.createElement("p");
+        notice.className = "notice bad";
+        notice.setAttribute("role", "alert");
+        notice.dataset.commentError = "";
+        old.prepend(notice);
+      }
+      notice.textContent = "Could not update comments: " + err.message;
+    } finally { busy = false; }
+  }
+  document.addEventListener("submit", function (event) {
+    var form = event.target.closest("[data-dynamic-comments] form");
+    if (!form || busy) return;
+    if (form.hasAttribute("data-confirm-delete") && !window.confirm(form.getAttribute("data-confirm-delete"))) {
+      event.preventDefault(); return;
+    }
+    if (!form.reportValidity()) { event.preventDefault(); return; }
+    event.preventDefault();
+    load(form.action, {method: "POST", body: new FormData(form)}, true);
+  });
+  document.addEventListener("click", function (event) {
+    var link = event.target.closest("[data-dynamic-comments] a[href*='/comments?before=']");
+    if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    event.preventDefault();
+    load(link.href, null, true);
+  });
+  window.addEventListener("popstate", function () {
+    if (root()) load(window.location.href, null, false);
+  });
+})();
