@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Comments - {{ name }}{% endblock %}
+{% block content %}
+<main class="issues-shell addon-comments">
+  <p class="back"><a href="/addons/{{ slug }}">← {{ name }}</a></p>
+  <div class="issues-heading"><div><h1>Community comments</h1><p class="muted">Discuss this addon with its creator and community.</p></div></div>
+  {% if user.is_some() %}
+  <form class="panel issue-reply" method="post" action="/addons/{{ slug }}/comments">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="new-comment">Your comment</label>
+    <textarea id="new-comment" name="body" required minlength="1" maxlength="10000" rows="4" placeholder="Share your feedback..."></textarea>
+    <div class="issues-form-footer"><button type="submit">Post comment</button></div>
+  </form>
+  {% else %}<p class="panel">You can read comments without signing in. <a href="/login">Log in to participate</a>.</p>{% endif %}
+  <section aria-label="Comments" class="issue-discussion">
+    {% for comment in comments %}
+    <article class="issue-message">
+      <header class="issue-message-head">
+        {% if !comment.avatar.is_empty() %}<img class="issue-avatar" src="{{ comment.avatar }}" alt="" width="32" height="32">{% endif %}
+        <strong>{{ comment.author }}</strong><span class="muted">{{ comment.created }}{% if comment.edited %} · edited{% endif %}</span>
+        <span class="issue-action-spacer"></span>
+        {% if comment.can_edit %}<button type="button" class="issue-action" data-edit-toggle>Edit</button>{% endif %}
+        {% if comment.can_delete %}<form method="post" action="/addons/{{ slug }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="issue-action issue-danger" type="submit">Delete</button></form>{% endif %}
+      </header>
+      <div class="issue-message-body" data-edit-view>{{ comment.body }}</div>
+      {% if comment.can_edit %}<form class="issue-inline-form" data-edit-form hidden method="post" action="/addons/{{ slug }}/comments/{{ comment.id }}/edit">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <textarea name="body" required maxlength="10000" rows="4">{{ comment.body }}</textarea>
+        <div class="issues-form-footer"><button type="button" class="secondary" data-edit-cancel>Cancel</button><button type="submit">Save changes</button></div>
+      </form>{% endif %}
+    </article>
+    {% else %}<p class="panel muted">No comments yet. Start the discussion!</p>{% endfor %}
+  </section>
+  {% if let Some(id) = next %}<p><a class="button secondary" href="/addons/{{ slug }}/comments?before={{ id }}">Older comments →</a></p>{% endif %}
+</main>
+{% endblock %}
