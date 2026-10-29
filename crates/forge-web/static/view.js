@@ -480,6 +480,8 @@ document.addEventListener("DOMContentLoaded", function () {
   async function load(url, options, push) {
     var old = root();
     if (!old) return;
+    var inline = old.classList.contains('addon-tab-section');
+    var requestedUrl = url;
     // A browser Back action may supersede an in-flight request.
     if (busy && !options) {
       if (controller) controller.abort();
@@ -506,6 +508,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         throw new Error("Comment request rejected");
       }
+      // After a successful write, fetch the addon tab instead of replacing it with
+      // the standalone comments page returned by the server redirect.
+      if (inline && options) {
+        response = await fetch(location.pathname + "?tab=comments", {
+          credentials: "same-origin", headers: {"Accept": "text/html"}, signal: current.signal
+        });
+        if (!response.ok) throw new Error("Could not refresh comments");
+      }
       var html = new DOMParser().parseFromString(await response.text(), "text/html");
       var next = html.querySelector("[data-dynamic-comments]");
       if (!next) throw new Error("Unexpected response");
@@ -513,7 +523,7 @@ document.addEventListener("DOMContentLoaded", function () {
       old.replaceWith(next);
       // POST redirects to the canonical feed. Do not add mutation URLs to history.
       if (push && !options) history.pushState({comments: true}, "", response.url);
-      else if (options && new URL(response.url).origin === location.origin) history.replaceState({comments: true}, "", response.url);
+      else if (options && !inline && new URL(response.url).origin === location.origin) history.replaceState({comments: true}, "", response.url);
       var heading = next.querySelector("h1");
       if (heading) {
         heading.setAttribute("tabindex", "-1");
@@ -552,13 +562,14 @@ document.addEventListener("DOMContentLoaded", function () {
       if (form) form.reset();
       return;
     }
-    var link = event.target.closest("[data-dynamic-comments] a[href*='/comments?before=']");
+    var link = event.target.closest("[data-dynamic-comments] a[href]");
+    if (link && !new URL(link.href).searchParams.has("before")) link = null;
     if (!link || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
     if (new URL(link.href).origin !== location.origin) return;
     event.preventDefault();
     load(link.href, null, true);
   });
   window.addEventListener("popstate", function () {
-    if (root() && location.pathname.endsWith("/comments")) load(location.href, null, false);
+    if (root() && (location.pathname.endsWith("/comments") || new URL(location.href).searchParams.get("tab") === "comments")) load(location.href, null, false);
   });
 })();
