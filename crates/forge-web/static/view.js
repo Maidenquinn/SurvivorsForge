@@ -49,11 +49,13 @@
     }
     function manual() {
       field.select();
-      say("Press Ctrl+C to copy the selected link.");
+      if (status) status.setAttribute("data-i18n", "js_copy_manual");
+      say(window.ForgeI18n ? window.ForgeI18n.t("js_copy_manual") : "Press Ctrl+C to copy the selected link.");
     }
     if (!navigator.clipboard) return manual();
     navigator.clipboard.writeText(field.value).then(function () {
-      say("Link copied.");
+      if (status) status.setAttribute("data-i18n", "js_link_copied");
+      say(window.ForgeI18n ? window.ForgeI18n.t("js_link_copied") : "Link copied.");
     }, manual);
   });
 
@@ -73,7 +75,9 @@
       if (left || document.hidden) return;
       note.setAttribute("role", "status");
       note.className = "notice warn";
-      note.firstChild.textContent = "Nothing opened? The launcher is probably not installed yet. ";
+      var intro = note.querySelector("[data-i18n=addon_launcher_explain]") || note.firstChild;
+      if (intro && intro.nodeType === 1) intro.setAttribute("data-i18n", "js_launcher_missing");
+      if (intro) intro.textContent = window.ForgeI18n ? window.ForgeI18n.t("js_launcher_missing") : "Nothing opened? The launcher may not be installed yet.";
     }, 2000);
   });
 
@@ -264,7 +268,8 @@
       note.setAttribute("role", "alert");
       target.prepend(note);
     }
-    note.textContent = "Could not load the results. Check your connection and try again.";
+    note.setAttribute("data-i18n", "js_load_error");
+    note.textContent = window.ForgeI18n ? window.ForgeI18n.t("js_load_error") : "Could not load the results. Check your connection and try again.";
   }
   document.addEventListener("htmx:responseError", failed);
   document.addEventListener("htmx:sendError", failed);
@@ -398,7 +403,7 @@ document.addEventListener("DOMContentLoaded", function () {
     index = (n + links.length) % links.length;
     var link = links[index], img = link.querySelector("img");
     image.src = link.href;
-    image.alt = img ? img.alt : "Screenshot";
+    image.alt = img ? img.alt : (window.ForgeI18n ? window.ForgeI18n.t("js_gallery_screenshot") : "Screenshot");
     caption.textContent = link.closest("figure").querySelector("figcaption")?.textContent || "";
     count.textContent = (index + 1) + " / " + links.length;
   }
@@ -414,8 +419,12 @@ document.addEventListener("DOMContentLoaded", function () {
   function syncFullscreenButton() {
     var active = dialog.classList.contains("gallery-expanded");
     fullscreenButton.textContent = active ? "↙" : "⛶";
-    fullscreenButton.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
-    fullscreenButton.title = active ? "Exit fullscreen" : "Fullscreen";
+    var ariaKey = active ? "js_exit_fullscreen" : "js_enter_fullscreen";
+    var titleKey = active ? "js_exit_fullscreen" : "js_fullscreen";
+    fullscreenButton.setAttribute("data-i18n-aria-label", ariaKey);
+    fullscreenButton.setAttribute("data-i18n-title", titleKey);
+    fullscreenButton.setAttribute("aria-label", window.ForgeI18n ? window.ForgeI18n.t(ariaKey) : (active ? "Exit fullscreen" : "Enter fullscreen"));
+    fullscreenButton.title = window.ForgeI18n ? window.ForgeI18n.t(titleKey) : (active ? "Exit fullscreen" : "Fullscreen");
   }
   function leaveExpanded() {
     dialog.classList.remove("gallery-expanded");
