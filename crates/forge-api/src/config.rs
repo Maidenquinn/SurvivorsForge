@@ -16,6 +16,13 @@ pub struct Config {
     /// PEM text; `\n` escapes allowed. Read by `github::app_auth::load_private_key`.
     pub github_app_private_key: Option<String>,
     pub github_app_private_key_file: Option<String>,
+    pub github_oauth_url: String,
+    pub github_client_id: String,
+    pub github_client_secret: String,
+    /// Exact client URLs a login may return to.
+    pub auth_return_urls: Vec<String>,
+    /// GitHub user IDs that are admins.
+    pub admin_github_ids: Vec<i64>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -40,6 +47,11 @@ impl Config {
         "GITHUB_APP_ID",
         "GITHUB_APP_PRIVATE_KEY",
         "GITHUB_APP_PRIVATE_KEY_FILE",
+        "GITHUB_OAUTH_URL",
+        "GITHUB_CLIENT_ID",
+        "GITHUB_CLIENT_SECRET",
+        "AUTH_RETURN_URLS",
+        "ADMIN_GITHUB_IDS",
     ];
 
     pub fn from_env() -> Result<Config, ConfigError> {
@@ -62,16 +74,20 @@ impl Config {
             bind_addr: bind.parse().map_err(|_| invalid("BIND_ADDR", &bind))?,
             migrate_on_start: migrate.parse().map_err(|_| invalid("MIGRATE_ON_START", &migrate))?,
             rate_limit_per_minute: limit.parse().map_err(|_| invalid("RATE_LIMIT_PER_MINUTE", &limit))?,
-            trusted_proxies: proxies
-                .split(',')
-                .map(str::trim)
-                .filter(|p| !p.is_empty())
+            trusted_proxies: list(&proxies)
                 .map(|p| p.parse().map_err(|_| invalid("TRUSTED_PROXIES", p)))
                 .collect::<Result<_, _>>()?,
             github_api_url: parse("GITHUB_API_URL", "https://api.github.com")?.trim_end_matches('/').to_string(),
             github_app_id: required("GITHUB_APP_ID")?,
             github_app_private_key: get("GITHUB_APP_PRIVATE_KEY").map(str::to_string),
             github_app_private_key_file: get("GITHUB_APP_PRIVATE_KEY_FILE").map(str::to_string),
+            github_oauth_url: parse("GITHUB_OAUTH_URL", "https://github.com")?.trim_end_matches('/').to_string(),
+            github_client_id: required("GITHUB_CLIENT_ID")?,
+            github_client_secret: required("GITHUB_CLIENT_SECRET")?,
+            auth_return_urls: list(&parse("AUTH_RETURN_URLS", "")?).map(str::to_string).collect(),
+            admin_github_ids: list(&parse("ADMIN_GITHUB_IDS", "")?)
+                .map(|id| id.parse().map_err(|_| invalid("ADMIN_GITHUB_IDS", id)))
+                .collect::<Result<_, _>>()?,
         })
     }
 
@@ -88,8 +104,18 @@ impl Config {
             github_app_id: "1".into(),
             github_app_private_key: None,
             github_app_private_key_file: None,
+            github_oauth_url: "http://github-oauth.test".into(),
+            github_client_id: "client-id".into(),
+            github_client_secret: "client-secret".into(),
+            auth_return_urls: vec!["https://web.test/auth/callback".into()],
+            admin_github_ids: Vec::new(),
         }
     }
+}
+
+/// Comma-separated values without blanks.
+fn list(value: &str) -> impl Iterator<Item = &str> {
+    value.split(',').map(str::trim).filter(|v| !v.is_empty())
 }
 
 #[cfg(test)]
@@ -104,14 +130,16 @@ mod tests {
         ("DATABASE_URL", "postgres://x"),
         ("PUBLIC_API_URL", "https://api.example.com/"),
         ("GITHUB_APP_ID", "1"),
+        ("GITHUB_CLIENT_ID", "c"),
+        ("GITHUB_CLIENT_SECRET", "s"),
     ];
 
     #[test]
     fn missing_database_url_names_variable() {
-        let err = Config::from_map(&env(&[("PUBLIC_API_URL", "https://a"), ("GITHUB_APP_ID", "1")])).unwrap_err();
+        let err = Config::from_map(&env(&[("PUBLIC_API_URL", "https://a"), ("GITHUB_APP_ID", "1"), ("GITHUB_CLIENT_ID", "c"), ("GITHUB_CLIENT_SECRET", "s")])).unwrap_err();
         assert!(err.0.contains("DATABASE_URL"), "{}", err.0);
         let err =
-            Config::from_map(&env(&[("DATABASE_URL", "postgres://x"), ("PUBLIC_API_URL", " "), ("GITHUB_APP_ID", "1")])).unwrap_err();
+            Config::from_map(&env(&[("DATABASE_URL", "postgres://x"), ("PUBLIC_API_URL", " "), ("GITHUB_APP_ID", "1"), ("GITHUB_CLIENT_ID", "c"), ("GITHUB_CLIENT_SECRET", "s")])).unwrap_err();
         assert!(err.0.contains("PUBLIC_API_URL"), "{}", err.0);
     }
 
@@ -131,6 +159,15 @@ mod tests {
         let mut bad = env(MINIMAL);
         bad.insert("TRUSTED_PROXIES".into(), "10.0.0.1, nope".into());
         assert!(Config::from_map(&bad).unwrap_err().0.contains("TRUSTED_PROXIES"));
+        let mut bad = env(MINIMAL);
+        bad.insert("ADMIN_GITHUB_IDS".into(), "12, octocat".into());
+        assert!(Config::from_map(&bad).unwrap_err().0.contains("ADMIN_GITHUB_IDS"));
+        let mut good = env(MINIMAL);
+        good.insert("ADMIN_GITHUB_IDS".into(), "12, 34".into());
+        good.insert("AUTH_RETURN_URLS".into(), "https://a/cb, https://b/cb".into());
+        let config = Config::from_map(&good).unwrap();
+        assert_eq!(config.admin_github_ids, [12, 34]);
+        assert_eq!(config.auth_return_urls, ["https://a/cb", "https://b/cb"]);
     }
 
     #[test]

@@ -162,3 +162,33 @@ async fn download_stops_at_max_bytes_without_content_length() {
     let gh = client(&server, Arc::new(Mutex::new(t0())));
     assert_eq!(gh.download(&format!("http://{addr}/big"), 4096).await, Err(GitHubError::TooLarge));
 }
+
+#[tokio::test]
+async fn oauth_user_trades_code_and_reads_user() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/login/oauth/access_token"))
+        .and(wiremock::matchers::body_partial_json(json!({ "code": "abc", "code_verifier": "ver", "client_secret": "sec" })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "access_token": "gho_user" })))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/login/oauth/access_token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "error": "bad_verification_code" })))
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/user"))
+        .and(header("authorization", "Bearer gho_user"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "id": 9, "login": "nine", "avatar_url": "a" })))
+        .mount(&server)
+        .await;
+    let gh = client(&server, Arc::new(Mutex::new(t0()))).with_oauth(forge_api::github::OAuthApp {
+        oauth_url: server.uri(),
+        client_id: "cid".into(),
+        client_secret: "sec".into(),
+    });
+    let user = gh.oauth_user("abc", "ver", "https://api.test/cb").await.unwrap();
+    assert_eq!((user.id, user.login.as_str()), (9, "nine"));
+    assert_eq!(gh.oauth_user("wrong", "ver", "https://api.test/cb").await, Err(GitHubError::Auth("bad_verification_code".into())));
+}

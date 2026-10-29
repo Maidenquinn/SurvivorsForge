@@ -56,6 +56,9 @@ pub trait GitHubApi: Send + Sync {
     async fn release(&self, installation: i64, repo_id: i64, release_id: i64) -> GitHubResult<Option<Release>>;
     /// Newest first.
     async fn tags(&self, installation: i64, repo_id: i64) -> GitHubResult<Vec<Tag>>;
+    /// Finishes a user's OAuth login: trades the code for a user token, reads the user with it and
+    /// drops the token.
+    async fn oauth_user(&self, code: &str, verifier: &str, redirect_uri: &str) -> GitHubResult<User>;
     /// Reads at most `max_bytes`; more is `TooLarge`, whatever `Content-Length` says.
     async fn download(&self, url: &str, max_bytes: u64) -> GitHubResult<Vec<u8>>;
 }
@@ -71,6 +74,14 @@ pub struct GitHubClient {
     tokens: Mutex<HashMap<i64, InstallationToken>>,
     /// URL -> (ETag, body) of the last `200`, for conditional requests.
     etags: Mutex<HashMap<String, (String, String)>>,
+    oauth: Option<OAuthApp>,
+}
+
+/// The OAuth side of the GitHub App, for user logins.
+pub struct OAuthApp {
+    pub oauth_url: String,
+    pub client_id: String,
+    pub client_secret: String,
 }
 
 /// Installation tokens are renewed this long before they expire.
@@ -89,7 +100,13 @@ impl GitHubClient {
             clock,
             tokens: Mutex::new(HashMap::new()),
             etags: Mutex::new(HashMap::new()),
+            oauth: None,
         }
+    }
+
+    pub fn with_oauth(mut self, oauth: OAuthApp) -> GitHubClient {
+        self.oauth = Some(oauth);
+        self
     }
 
     fn app_jwt(&self) -> GitHubResult<String> {
@@ -227,6 +244,25 @@ impl GitHubApi for GitHubClient {
 
     async fn tags(&self, installation: i64, repo_id: i64) -> GitHubResult<Vec<Tag>> {
         self.get_json(installation, &format!("/repositories/{repo_id}/tags?per_page=100")).await
+    }
+
+    async fn oauth_user(&self, code: &str, verifier: &str, redirect_uri: &str) -> GitHubResult<User> {
+        let oauth = self.oauth.as_ref().ok_or_else(|| GitHubError::Auth("OAuth is not configured".into()))?;
+        let url = format!("{}/login/oauth/access_token", oauth.oauth_url.trim_end_matches('/'));
+        let body = serde_json::json!({
+            "client_id": oauth.client_id,
+            "client_secret": oauth.client_secret,
+            "code": code,
+            "redirect_uri": redirect_uri,
+            "code_verifier": verifier,
+        });
+        let request = self.http.post(&url).header(ACCEPT, "application/json").header(USER_AGENT, "SurvivorsForge").json(&body);
+        let answer: serde_json::Value = parse(check(request.send().await.map_err(network)?).await?).await?;
+        let token = answer["access_token"]
+            .as_str()
+            .ok_or_else(|| GitHubError::Auth(answer["error"].as_str().unwrap_or("no access token").to_string()))?;
+        let response = self.request(self.http.get(format!("{}/user", self.api_url)), token).send().await.map_err(network)?;
+        parse(check(response).await?).await
     }
 
     async fn download(&self, url: &str, max_bytes: u64) -> GitHubResult<Vec<u8>> {

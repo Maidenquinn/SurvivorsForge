@@ -1,11 +1,14 @@
 //! The HTTP router of the API.
 
 use crate::config::Config;
+use crate::auth::oauth;
 use crate::error::ApiError;
+use crate::github::{Clock, GitHubApi};
+use crate::routes;
 use crate::rate_limit::{self, RateLimiter};
 use axum::http::{HeaderValue, StatusCode, header};
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Json, Router, extract::State, middleware};
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -17,12 +20,19 @@ use tower_http::set_header::SetResponseHeaderLayer;
 pub struct AppState {
     pub pool: PgPool,
     pub config: Arc<Config>,
+    pub github: Arc<dyn GitHubApi>,
+    pub clock: Clock,
 }
 
 pub fn router(state: AppState) -> Router {
     let config = state.config.clone();
     let routes = Router::new()
         .route("/healthz", get(healthz))
+        .route("/v1/auth/github/start", get(oauth::start))
+        .route("/v1/auth/github/callback", get(oauth::callback))
+        .route("/v1/auth/exchange", post(oauth::exchange))
+        .route("/v1/auth/logout", post(routes::me::logout))
+        .route("/v1/me", get(routes::me::me))
         .fallback(|| async { ApiError::not_found() })
         .with_state(state);
     with_layers(routes, &config)
