@@ -1,5 +1,5 @@
 <div id="repo-field">
-  <label for="repo_name">GitHub repo</label>
+  <label for="repo_name"><span data-l10n-en="GitHub repo" data-l10n-fr="Dépôt GitHub">GitHub repo</span></label>
   <div class="repo-input">
     {% if repo.editable %}<input name="repo_owner" value="{{ repo.owner }}" aria-label="Account" placeholder="account" required autocomplete="off"
       hx-get="/addons/new/repos" hx-trigger="input changed delay:300ms" hx-target="#repo-suggestions" hx-include="#repo-field">
@@ -13,7 +13,7 @@
       hx-get="/addons/new/repos" hx-trigger="input changed delay:300ms, focus once" hx-target="#repo-suggestions" hx-include="#repo-field">
     <input type="hidden" name="page" value="{{ repo.page }}">
   </div>
-  {% if !repo.editable %}<p class="muted">New releases show up here within a day; with the SurvivorsForge App <a href="{{ repo.install_url }}" rel="noopener">installed on the repo</a> they show up at once.{% if repo.accounts.len() > 1 %} Repos of an organization need the App and your admin rights there.{% endif %}</p>{% endif %}
+  {% if !repo.editable %}<p class="muted">New releases show up here within a day; with the SurvivorsForge App <a href="{{ repo.install_url }}" rel="noopener"><span data-l10n-en="installed on the repo" data-l10n-fr="installée sur le dépôt">installed on the repo</span></a> they show up at once.{% if repo.accounts.len() > 1 %} Repos of an organization need the App and your admin rights there.{% endif %}</p>{% endif %}
   <div id="repo-suggestions" class="suggestions">{% include "creator/repo_suggestions.html" %}</div>
   {% if repo.picked %}<p><a class="button secondary" href="{% if repo.page == "admin" %}/admin{% endif %}/addons/new?repo={{ repo.owner }}/{{ repo.name }}">Fill in from this repo</a></p>{% endif %}
 </div>
