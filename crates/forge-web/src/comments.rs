@@ -32,13 +32,14 @@ pub async fn list(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
         state.api.get(&format!("/v1/addons/{}/permissions",seg(&slug)),Some(token)).await.ok()
     } else {None};
     let moderator = user.as_ref().is_some_and(|u|u.admin) || perms.as_ref().is_some_and(|p|p["owner"]==true || p["admin"]==true || p["edit_description"]==true);
-    let comments: Vec<Comment> = data.as_array().into_iter().flatten().map(|c| {
+    let has_more = data.as_array().is_some_and(|items| items.len() > 30);
+    let comments: Vec<Comment> = data.as_array().into_iter().flatten().take(30).map(|c| {
         let author=strval(&c["author"]);
-        let own=user.as_ref().is_some_and(|u|u.login.eq_ignore_ascii_case(&author));
+        let own=user.as_ref().is_some_and(|u|u.id > 0 && c["author_id"].as_i64() == Some(u.id));
         Comment { id:c["id"].as_i64().unwrap_or_default(), author, avatar:strval(&c["avatar_url"]), body:strval(&c["body"]),
             created:strval(&c["created_at"]).chars().take(10).collect(), edited:c["edited_at"].is_string(),can_edit:own || user.as_ref().is_some_and(|u|u.admin),can_delete:own || moderator }
     }).collect();
-    let next=if comments.len()==30 {comments.last().map(|c|c.id)} else {None};
+    let next=if has_more {comments.last().map(|c|c.id)} else {None};
     Ok(Html(CommentsPage {user,csrf:csrf.0,slug,name:strval(&addon["name"]),comments,next}.render().map_err(|_|WebError::NotFound)?))
 }
 pub async fn create(State(state): State<AppState>,jar:PrivateCookieJar,Path(slug):Path<String>,Form(body):Form<Body>)->WebResult<Redirect>{
