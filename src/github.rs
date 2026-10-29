@@ -72,9 +72,26 @@ pub fn download_allowed(url: &str) -> bool {
     DOWNLOAD_HOSTS.contains(&host.as_str())
 }
 
+/// The next address of a download after a redirect to `location`: absolute, or relative to the
+/// host of `current`. It must again be one of `DOWNLOAD_HOSTS`.
+pub fn next_hop(current: &str, location: &str) -> Result<String> {
+    let next = if location.starts_with('/') && !location.starts_with("//") {
+        let host_end = current.find("://").map(|i| i + 3).and_then(|i| current[i..].find('/').map(|j| i + j)).unwrap_or(current.len());
+        format!("{}{location}", &current[..host_end])
+    } else {
+        location.to_string()
+    };
+    if download_allowed(&next) { Ok(next) } else { Err(Error::ForbiddenHost(next)) }
+}
+
+/// Redirects one download may take: GitHub sends one or two.
+const MAX_REDIRECTS: usize = 5;
+
 #[derive(Clone)]
 pub struct Client {
     agent: ureq::Agent,
+    /// Follows no redirect itself, so every hop of a download is checked.
+    downloads: ureq::Agent,
 }
 
 impl Default for Client {
@@ -85,12 +102,13 @@ impl Default for Client {
 
 impl Client {
     pub fn new() -> Client {
-        let agent = ureq::AgentBuilder::new()
-            .timeout_connect(Duration::from_secs(10))
-            .timeout_read(Duration::from_secs(60))
-            .user_agent(&format!("{}/{}", crate::APP_NAME, crate::APP_VERSION))
-            .build();
-        Client { agent }
+        let builder = || {
+            ureq::AgentBuilder::new()
+                .timeout_connect(Duration::from_secs(10))
+                .timeout_read(Duration::from_secs(60))
+                .user_agent(&format!("{}/{}", crate::APP_NAME, crate::APP_VERSION))
+        };
+        Client { agent: builder().build(), downloads: builder().redirects(0).build() }
     }
 
     fn call(req: ureq::Request) -> Result<ureq::Response> {
@@ -106,14 +124,25 @@ impl Client {
     }
 
     /// Downloads into a temp file next to `dest` and renames it only when complete. Only from
-    /// GitHub: the URL comes from the server, which must not point the launcher elsewhere.
-    // ponytail: ureq follows redirects unchecked; the start URL is checked, and the hash check
-    // after the download catches a swapped file of a platform version.
+    /// GitHub: the URL comes from the server, which must not point the launcher elsewhere, and
+    /// every redirect is checked the same way.
     pub fn download(&self, url: &str, dest: &Path) -> Result<()> {
         if !download_allowed(url) {
             return Err(Error::ForbiddenHost(url.to_string()));
         }
-        let resp = Self::call(self.agent.get(url))?;
+        let mut current = url.to_string();
+        let mut resp = Self::call(self.downloads.get(&current))?;
+        for _ in 0..MAX_REDIRECTS {
+            if !(300..400).contains(&resp.status()) {
+                break;
+            }
+            let location = resp.header("location").ok_or_else(|| Error::Network(format!("redirect without a target from {current}")))?;
+            current = next_hop(&current, location)?;
+            resp = Self::call(self.downloads.get(&current))?;
+        }
+        if (300..400).contains(&resp.status()) {
+            return Err(Error::Network(format!("too many redirects from {url}")));
+        }
         let tmp = dest.with_extension("part");
         if let Some(dir) = dest.parent() {
             std::fs::create_dir_all(dir)?;
@@ -286,6 +315,17 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let refused = Client::new().download("https://evil.test/a.zip", &dir.path().join("a.zip"));
         assert_eq!(refused, Err(Error::ForbiddenHost("https://evil.test/a.zip".into())));
+    }
+
+    #[test]
+    fn every_redirect_stays_on_github() {
+        let start = "https://github.com/o/r/releases/download/v1/a.zip";
+        let asset = "https://release-assets.githubusercontent.com/x/a.zip?sig=1";
+        assert_eq!(next_hop(start, asset), Ok(asset.to_string()));
+        assert_eq!(next_hop(start, "/o/r/archive/v1.zip"), Ok("https://github.com/o/r/archive/v1.zip".to_string()), "relative to the host");
+        for evil in ["https://evil.test/a.zip", "http://objects.githubusercontent.com/a.zip", "//evil.test/a.zip"] {
+            assert!(matches!(next_hop(start, evil), Err(Error::ForbiddenHost(_))), "{evil}");
+        }
     }
 
     #[test]
