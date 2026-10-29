@@ -22,7 +22,7 @@
         <span class="issue-state" aria-hidden="true">{% if issue.status == "open" %}◉{% else if issue.status == "in_progress" %}◷{% else %}✓{% endif %}</span>
         <div class="issue-row-content">
           <a class="issue-row-title" href="/addons/{{ slug }}/issues/{{ issue.id }}">{{ issue.title }}</a>
-          <div class="issue-row-meta">#{{ issue.id }} · <span data-i18n="issue_opened_by">opened by</span> {{ issue.author }} <span class="badge">{{ issue.kind }}</span> <span class="badge">{{ issue.status }}</span></div>
+          <div class="issue-row-meta">#{{ issue.id }} · <span data-i18n="issue_opened_by">opened by</span> {{ issue.author }} <span class="badge" data-i18n-enum="issue_kind" data-i18n-value="{{ issue.kind }}">{{ issue.kind }}</span> <span class="badge" data-i18n-enum="issue_status" data-i18n-value="{{ issue.status }}">{{ issue.status }}</span></div>
         </div>
         <a class="issue-row-arrow" href="/addons/{{ slug }}/issues/{{ issue.id }}" aria-label="View issue #{{ issue.id }}">→</a>
       </article>
