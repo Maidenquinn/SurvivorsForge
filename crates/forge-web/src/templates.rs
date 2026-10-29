@@ -320,3 +320,133 @@ pub struct DeleteAddonPage {
     pub slug: String,
     pub error: Option<String>,
 }
+
+#[derive(Template)]
+#[template(path = "admin/index.html")]
+pub struct AdminIndexPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub queue: usize,
+    pub reports: usize,
+}
+
+pub struct ReviewItem {
+    pub version_id: i64,
+    pub slug: String,
+    pub name: String,
+    pub tag: String,
+    pub trust: String,
+    pub compare_url: Option<String>,
+    pub findings: Vec<FindingRow>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/review.html")]
+pub struct AdminReviewPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub items: Vec<ReviewItem>,
+    pub msg: Option<String>,
+    pub error: Option<String>,
+}
+
+pub struct ReportRow {
+    pub id: i64,
+    pub target: String,
+    pub addon: String,
+    pub reason: String,
+    pub text: String,
+    pub reporter: String,
+    pub created: String,
+}
+
+#[derive(Template)]
+#[template(path = "admin/reports.html")]
+pub struct AdminReportsPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub rows: Vec<ReportRow>,
+    pub msg: Option<String>,
+    pub error: Option<String>,
+}
+
+pub struct UserRow {
+    pub github_id: i64,
+    pub login: String,
+    pub role: String,
+    pub banned: bool,
+    pub ban_reason: String,
+    pub addons: i64,
+}
+
+#[derive(Template)]
+#[template(path = "admin/users.html")]
+pub struct AdminUsersPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub login: String,
+    pub found: Option<UserRow>,
+    pub not_found: bool,
+    pub msg: Option<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/addon.html")]
+pub struct AdminAddonPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub name: String,
+    pub owner: String,
+    pub blocked: bool,
+    pub block_reason: String,
+    pub msg: Option<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/add_addon.html")]
+pub struct AdminAddAddonPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub categories: Vec<String>,
+    pub form: crate::admin::AdminAddonForm,
+    pub error: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/list.html")]
+pub struct AdminListPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    /// `game-versions` or `categories`.
+    pub kind: String,
+    pub title: String,
+    /// (key, name, sort key)
+    pub rows: Vec<(String, String, String)>,
+    pub msg: Option<String>,
+    pub error: Option<String>,
+}
+
+pub struct AuditRow {
+    pub when: String,
+    pub admin: String,
+    pub action: String,
+    pub target: String,
+    pub note: String,
+}
+
+#[derive(Template)]
+#[template(path = "admin/audit.html")]
+pub struct AdminAuditPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub filter_admin: String,
+    pub filter_action: String,
+    pub filter_target_type: String,
+    pub filter_target_id: String,
+    pub entries: Vec<AuditRow>,
+    pub prev: Option<String>,
+    pub next: Option<String>,
+}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Review - Admin - SurvivorsForge{% endblock %}
+{% block content %}
+<p><a href="/admin">Admin</a></p>
+<h1>Versions to review</h1>
+{% include "admin/flash.html" %}
+{% if items.is_empty() %}<section class="panel"><p>Nothing to review.</p></section>{% endif %}
+{% for item in items %}
+<section class="panel">
+  <h2><a href="/addons/{{ item.slug }}">{{ item.name }}</a> {{ item.tag }} <span class="badge {% if item.trust == "scanned" %}{% else %}bad{% endif %}">{{ item.trust }}</span></h2>
+  <p>
+    <a href="/addons/{{ item.slug }}/versions/{{ item.tag }}">Version page</a>
+    {% if let Some(url) = item.compare_url %} · <a href="{{ url }}" rel="noopener">Changes since the previous version on GitHub</a>{% endif %}
+    · <a href="/admin/addons/{{ item.slug }}">Addon actions</a>
+  </p>
+  {% if !item.findings.is_empty() %}
+  <ul class="findings">
+    {% for f in item.findings %}
+    <li><span class="badge {% if f.severity == "critical" %}bad{% else %}warn{% endif %}">{{ f.severity }}</span> <code>{{ f.place }}</code> {{ f.message }} <span class="muted">({{ f.rule }})</span>{% if f.snippet != "" %}<pre>{{ f.snippet }}</pre>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <div class="admin-actions">
+    {% if item.trust == "source_changed" %}
+    <form method="post" action="/admin/versions/{{ item.version_id }}/accept-source">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label for="accept-{{ item.version_id }}">Note</label>
+      <input id="accept-{{ item.version_id }}" name="note">
+      <button type="submit">Accept the new file</button>
+    </form>
+    {% else %}
+    <form method="post" action="/admin/versions/{{ item.version_id }}/verify">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label for="verify-{{ item.version_id }}">Note{% if item.trust == "flagged" %} (required: why the findings are fine){% endif %}</label>
+      <input id="verify-{{ item.version_id }}" name="note" {% if item.trust == "flagged" %}required{% endif %}>
+      <button type="submit">Verify this file</button>
+    </form>
+    {% endif %}
+    <form method="post" action="/admin/versions/{{ item.version_id }}/block">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label for="block-{{ item.version_id }}">Reason</label>
+      <input id="block-{{ item.version_id }}" name="note" required>
+      <button type="submit" class="danger">Block this version</button>
+    </form>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

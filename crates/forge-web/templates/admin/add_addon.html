@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Add an addon - Admin - SurvivorsForge{% endblock %}
+{% block content %}
+<p><a href="/admin">Admin</a></p>
+<h1>Add an addon of someone else</h1>
+<p class="muted">Like an entry of the old verified list: no GitHub App needed. Nobody owns it until its author logs in and claims it.</p>
+{% if let Some(e) = error %}<div class="notice bad" role="alert">{{ e }}</div>{% endif %}
+<form class="panel" method="post" action="/admin/addons/new">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label for="repo">GitHub repo</label>
+  <input id="repo" name="repo" value="{{ form.base.repo }}" placeholder="owner/name" required>
+  <label for="author_name">Author name</label>
+  <input id="author_name" name="author_name" value="{{ form.author_name }}" required>
+  <label for="name">Name</label>
+  <input id="name" name="name" value="{{ form.base.name }}" required>
+  <label for="slug">Address on this site</label>
+  <input id="slug" name="slug" value="{{ form.base.slug }}" required>
+  <label for="summary">One line about it</label>
+  <input id="summary" name="summary" value="{{ form.base.summary }}" maxlength="200">
+  <label for="category">Category</label>
+  <select id="category" name="category">
+    {% for c in categories %}<option value="{{ c }}" {% if *c == form.base.category %}selected{% endif %}>{{ c }}</option>{% endfor %}
+  </select>
+  <label for="source_type">Downloads come from</label>
+  <select id="source_type" name="source_type">
+    <option value="release" {% if form.base.source_type == "release" %}selected{% endif %}>A zip attached to each release</option>
+    <option value="tag" {% if form.base.source_type == "tag" %}selected{% endif %}>The source zip of each tag</option>
+  </select>
+  <label for="asset_pattern">Release zip name</label>
+  <input id="asset_pattern" name="asset_pattern" value="{{ form.base.asset_pattern }}">
+  <label for="folders">Addon folders, one per line</label>
+  <textarea id="folders" name="folders" rows="3" required>{{ form.base.folders }}</textarea>
+  <p><button type="submit">Add</button></p>
+</form>
+{% endblock %}

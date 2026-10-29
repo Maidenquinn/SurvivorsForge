@@ -13,6 +13,8 @@ pub enum WebError {
     NotFound,
     /// A page that needs a login, opened without one.
     LoginRequired,
+    /// Logged in, but not allowed here.
+    Forbidden,
 }
 
 impl From<ApiError> for WebError {
@@ -39,6 +41,7 @@ impl IntoResponse for WebError {
                 response
             }
             WebError::NotFound => error_page(StatusCode::NOT_FOUND, "Not found", "This page does not exist."),
+            WebError::Forbidden => error_page(StatusCode::FORBIDDEN, "Not allowed", "This page is for admins."),
             WebError::Api(e @ ApiError::Down(_)) => error_page(StatusCode::BAD_GATEWAY, "Unavailable", &e.message()),
             WebError::Api(ApiError::Api { status, message, .. }) => {
                 let status = StatusCode::from_u16(status).unwrap_or(StatusCode::BAD_REQUEST);

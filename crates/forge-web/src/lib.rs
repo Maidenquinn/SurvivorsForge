@@ -1,5 +1,6 @@
 //! Website of the SurvivorsForge platform: server-rendered pages over the public forge-api.
 
+pub mod admin;
 pub mod api_client;
 pub mod app;
 pub mod config;

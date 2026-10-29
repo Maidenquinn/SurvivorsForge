@@ -101,6 +101,14 @@ label.check input { width: auto; }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline; }
 button:disabled { opacity: 0.4; cursor: default; }
 
+.tile { display: block; text-decoration: none; color: var(--text); }
+.tile strong { color: var(--accent); font-size: 1.4rem; }
+.admin-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-top: 12px; }
+.admin-actions label { margin: 0; flex-basis: 100%; }
+.admin-actions input { flex: 1 1 220px; width: auto; }
+input.narrow { width: 6em; flex: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 @media (max-width: 640px) {
   .addon-head { flex-direction: column; }
   .hero { padding: 24px 0; }

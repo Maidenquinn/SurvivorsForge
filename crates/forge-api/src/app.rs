@@ -64,6 +64,14 @@ pub fn router(state: AppState) -> Router {
             "/v1/admin/versions/{id}/verification",
             post(routes::admin_verify::verify).delete(routes::admin_verify::unverify),
         )
+        .route("/v1/admin/review-queue", get(routes::admin_queue::review_queue))
+        .route("/v1/admin/audit", get(routes::admin_queue::audit_log))
+        .route("/v1/admin/users/{user}", get(routes::admin_queue::user))
+        .route("/v1/admin/categories", post(routes::admin_queue::create_category))
+        .route(
+            "/v1/admin/categories/{name}",
+            axum::routing::patch(routes::admin_queue::update_category).delete(routes::admin_queue::delete_category),
+        )
         .route("/v1/reports", post(routes::reports::create))
         .route("/v1/admin/reports", get(routes::reports::queue))
         .route("/v1/admin/reports/{id}/resolve", post(routes::reports::resolve))
@@ -75,7 +83,7 @@ pub fn router(state: AppState) -> Router {
             "/v1/admin/versions/{id}/block",
             post(routes::admin_moderation::block_version).delete(routes::admin_moderation::unblock_version),
         )
-        .route("/v1/admin/users/{github_id}/ban", post(routes::admin_moderation::ban).delete(routes::admin_moderation::unban))
+        .route("/v1/admin/users/{user}/ban", post(routes::admin_moderation::ban).delete(routes::admin_moderation::unban))
         .route("/v1/admin/versions/{id}/accept-source", post(routes::admin_verify::accept_source))
         .route("/v1/addons/{slug}/claim", post(routes::addons::claim))
         .route("/v1/admin/addons", post(routes::addons::admin_create))
