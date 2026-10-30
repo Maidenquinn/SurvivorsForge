@@ -772,6 +772,7 @@ pub struct IssuesPage {
     pub slug: String,
     pub name: String,
     pub issues: Vec<IssueItem>,
+    pub next: Option<i64>,
 }
 #[derive(Template)]
 #[template(path = "issue.html")]
