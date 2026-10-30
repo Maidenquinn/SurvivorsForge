@@ -462,7 +462,18 @@
     "admin_block_note": "Blocking requires a reason.",
     "admin_under": "Under",
     "audit_verify": "Verified",
-    "audit_version": "Version"
+    "audit_version": "Version",
+    "comment_reply": "Reply",
+    "comment_quote": "Quote",
+    "comment_report": "Report",
+    "comment_report_reason": "Reason",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harassment",
+    "comment_reason_hate": "Hateful content",
+    "comment_reason_unsafe": "Unsafe content",
+    "comment_reason_other": "Other",
+    "comment_report_details": "Additional details (optional)",
+    "comment_submit_report": "Submit report"
   },
   "fr": {
     "tiles": "Vignettes",
@@ -924,7 +935,18 @@
     "admin_block_note": "Le blocage nécessite un motif.",
     "admin_under": "Sous",
     "audit_verify": "Vérifié",
-    "audit_version": "Version"
+    "audit_version": "Version",
+    "comment_reply": "Répondre",
+    "comment_quote": "Citer",
+    "comment_report": "Signaler",
+    "comment_report_reason": "Motif",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harcèlement",
+    "comment_reason_hate": "Contenu haineux",
+    "comment_reason_unsafe": "Contenu dangereux",
+    "comment_reason_other": "Autre",
+    "comment_report_details": "Précisions (facultatif)",
+    "comment_submit_report": "Envoyer le signalement"
   },
   "pl": {
     "tiles": "Tiles",
@@ -1386,7 +1408,18 @@
     "admin_block_note": "Blokowanie wymaga podania powodu.",
     "admin_under": "Pod",
     "audit_verify": "Zweryfikowano",
-    "audit_version": "Wersja"
+    "audit_version": "Wersja",
+    "comment_reply": "Reply",
+    "comment_quote": "Quote",
+    "comment_report": "Report",
+    "comment_report_reason": "Reason",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harassment",
+    "comment_reason_hate": "Hateful content",
+    "comment_reason_unsafe": "Unsafe content",
+    "comment_reason_other": "Other",
+    "comment_report_details": "Additional details (optional)",
+    "comment_submit_report": "Submit report"
   },
   "cs": {
     "tiles": "Tiles",
@@ -1848,7 +1881,18 @@
     "admin_block_note": "Blokování vyžaduje důvod.",
     "admin_under": "Pod",
     "audit_verify": "Ověřeno",
-    "audit_version": "Verze"
+    "audit_version": "Verze",
+    "comment_reply": "Reply",
+    "comment_quote": "Quote",
+    "comment_report": "Report",
+    "comment_report_reason": "Reason",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harassment",
+    "comment_reason_hate": "Hateful content",
+    "comment_reason_unsafe": "Unsafe content",
+    "comment_reason_other": "Other",
+    "comment_report_details": "Additional details (optional)",
+    "comment_submit_report": "Submit report"
   },
   "de": {
     "tiles": "Tiles",
@@ -2310,7 +2354,18 @@
     "admin_block_note": "Für eine Sperre ist ein Grund erforderlich.",
     "admin_under": "Unter",
     "audit_verify": "Verifiziert",
-    "audit_version": "Version"
+    "audit_version": "Version",
+    "comment_reply": "Reply",
+    "comment_quote": "Quote",
+    "comment_report": "Report",
+    "comment_report_reason": "Reason",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harassment",
+    "comment_reason_hate": "Hateful content",
+    "comment_reason_unsafe": "Unsafe content",
+    "comment_reason_other": "Other",
+    "comment_report_details": "Additional details (optional)",
+    "comment_submit_report": "Submit report"
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2772,7 +2827,18 @@
     "admin_block_note": "O bloqueio exige um motivo.",
     "admin_under": "Sob",
     "audit_verify": "Verificado",
-    "audit_version": "Versão"
+    "audit_version": "Versão",
+    "comment_reply": "Reply",
+    "comment_quote": "Quote",
+    "comment_report": "Report",
+    "comment_report_reason": "Reason",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harassment",
+    "comment_reason_hate": "Hateful content",
+    "comment_reason_unsafe": "Unsafe content",
+    "comment_reason_other": "Other",
+    "comment_report_details": "Additional details (optional)",
+    "comment_submit_report": "Submit report"
   },
   "es": {
     "tiles": "Tiles",
@@ -3234,7 +3300,18 @@
     "admin_block_note": "El bloqueo requiere un motivo.",
     "admin_under": "Bajo",
     "audit_verify": "Verificado",
-    "audit_version": "Versión"
+    "audit_version": "Versión",
+    "comment_reply": "Reply",
+    "comment_quote": "Quote",
+    "comment_report": "Report",
+    "comment_report_reason": "Reason",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harassment",
+    "comment_reason_hate": "Hateful content",
+    "comment_reason_unsafe": "Unsafe content",
+    "comment_reason_other": "Other",
+    "comment_report_details": "Additional details (optional)",
+    "comment_submit_report": "Submit report"
   },
   "ro": {
     "tiles": "Tiles",
@@ -3696,7 +3773,18 @@
     "admin_block_note": "Blocarea necesită un motiv.",
     "admin_under": "Sub",
     "audit_verify": "Verificat",
-    "audit_version": "Versiune"
+    "audit_version": "Versiune",
+    "comment_reply": "Reply",
+    "comment_quote": "Quote",
+    "comment_report": "Report",
+    "comment_report_reason": "Reason",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harassment",
+    "comment_reason_hate": "Hateful content",
+    "comment_reason_unsafe": "Unsafe content",
+    "comment_reason_other": "Other",
+    "comment_report_details": "Additional details (optional)",
+    "comment_submit_report": "Submit report"
   },
   "tr": {
     "tiles": "Tiles",
@@ -4158,7 +4246,18 @@
     "admin_block_note": "Engelleme için gerekçe gerekir.",
     "admin_under": "Altında",
     "audit_verify": "Doğrulandı",
-    "audit_version": "Sürüm"
+    "audit_version": "Sürüm",
+    "comment_reply": "Reply",
+    "comment_quote": "Quote",
+    "comment_report": "Report",
+    "comment_report_reason": "Reason",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harassment",
+    "comment_reason_hate": "Hateful content",
+    "comment_reason_unsafe": "Unsafe content",
+    "comment_reason_other": "Other",
+    "comment_report_details": "Additional details (optional)",
+    "comment_submit_report": "Submit report"
   },
   "ru": {
     "tiles": "Tiles",
@@ -4620,7 +4719,18 @@
     "admin_block_note": "Для блокировки нужна причина.",
     "admin_under": "В разделе",
     "audit_verify": "Проверено",
-    "audit_version": "Версия"
+    "audit_version": "Версия",
+    "comment_reply": "Reply",
+    "comment_quote": "Quote",
+    "comment_report": "Report",
+    "comment_report_reason": "Reason",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harassment",
+    "comment_reason_hate": "Hateful content",
+    "comment_reason_unsafe": "Unsafe content",
+    "comment_reason_other": "Other",
+    "comment_report_details": "Additional details (optional)",
+    "comment_submit_report": "Submit report"
   },
   "uk": {
     "tiles": "Tiles",
@@ -5082,7 +5192,18 @@
     "admin_block_note": "Для блокування потрібна причина.",
     "admin_under": "У розділі",
     "audit_verify": "Перевірено",
-    "audit_version": "Версія"
+    "audit_version": "Версія",
+    "comment_reply": "Reply",
+    "comment_quote": "Quote",
+    "comment_report": "Report",
+    "comment_report_reason": "Reason",
+    "comment_reason_spam": "Spam",
+    "comment_reason_harassment": "Harassment",
+    "comment_reason_hate": "Hateful content",
+    "comment_reason_unsafe": "Unsafe content",
+    "comment_reason_other": "Other",
+    "comment_report_details": "Additional details (optional)",
+    "comment_submit_report": "Submit report"
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -5544,7 +5665,18 @@
     "admin_block_note": "屏蔽时必须填写原因。",
     "admin_under": "属于",
     "audit_verify": "已验证",
-    "audit_version": "版本"
+    "audit_version": "版本",
+    "comment_reply": "回复",
+    "comment_quote": "引用",
+    "comment_report": "举报",
+    "comment_report_reason": "原因",
+    "comment_reason_spam": "垃圾信息",
+    "comment_reason_harassment": "骚扰",
+    "comment_reason_hate": "仇恨内容",
+    "comment_reason_unsafe": "危险内容",
+    "comment_reason_other": "其他",
+    "comment_report_details": "补充说明（可选）",
+    "comment_submit_report": "提交举报"
   },
   "ja": {
     "tiles": "Tiles",
@@ -6006,7 +6138,18 @@
     "admin_block_note": "ブロックには理由が必要です。",
     "admin_under": "次の下位：",
     "audit_verify": "検証済み",
-    "audit_version": "バージョン"
+    "audit_version": "バージョン",
+    "comment_reply": "返信",
+    "comment_quote": "引用",
+    "comment_report": "報告",
+    "comment_report_reason": "理由",
+    "comment_reason_spam": "スパム",
+    "comment_reason_harassment": "嫌がらせ",
+    "comment_reason_hate": "差別的な内容",
+    "comment_reason_unsafe": "危険な内容",
+    "comment_reason_other": "その他",
+    "comment_report_details": "詳細（任意）",
+    "comment_submit_report": "報告する"
   },
   "ko": {
     "tiles": "Tiles",
@@ -6468,7 +6611,18 @@
     "admin_block_note": "차단에는 사유가 필요합니다.",
     "admin_under": "하위",
     "audit_verify": "검증됨",
-    "audit_version": "버전"
+    "audit_version": "버전",
+    "comment_reply": "답글",
+    "comment_quote": "인용",
+    "comment_report": "신고",
+    "comment_report_reason": "사유",
+    "comment_reason_spam": "스팸",
+    "comment_reason_harassment": "괴롭힘",
+    "comment_reason_hate": "혐오 콘텐츠",
+    "comment_reason_unsafe": "위험한 콘텐츠",
+    "comment_reason_other": "기타",
+    "comment_report_details": "추가 설명(선택)",
+    "comment_submit_report": "신고 제출"
   }
 };
   var supported = Object.keys(translations);
