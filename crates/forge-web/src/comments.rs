@@ -18,7 +18,19 @@ fn next_cursor(data: &[Value]) -> Option<i64> {
 #[derive(Deserialize)]
 pub struct Page { before: Option<i64> }
 #[derive(Deserialize)]
-pub struct Body { body: String, #[serde(default)] parent_id: Option<i64>, #[serde(default)] quote_id: Option<i64> }
+pub struct Body {
+    body: String,
+    #[serde(default, deserialize_with = "empty_i64")]
+    parent_id: Option<i64>,
+    #[serde(default, deserialize_with = "empty_i64")]
+    quote_id: Option<i64>,
+}
+fn empty_i64<'de, D>(deserializer: D) -> Result<Option<i64>, D::Error>
+where D: serde::Deserializer<'de> {
+    let value = String::deserialize(deserializer)?;
+    if value.is_empty() { return Ok(None); }
+    value.parse::<i64>().map(Some).map_err(serde::de::Error::custom)
+}
 #[derive(Deserialize)]
 pub struct ReportBody { reason: String, #[serde(default)] details: String }
 #[derive(Clone)]
