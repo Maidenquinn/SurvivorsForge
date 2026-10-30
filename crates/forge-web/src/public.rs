@@ -158,6 +158,7 @@ fn grouped(n: i64) -> String {
 pub struct ClaimError {
     error: Option<String>,
     before: Option<i64>,
+    issues_before: Option<i64>,
     tab: Option<String>,
     issue: Option<i64>,
 }
@@ -203,14 +204,17 @@ pub async fn addon(
         _ => "overview",
     }.to_string();
     // Only request issue data on its tab, keeping the main addon page fast.
-    let issues: Vec<IssueItem> = if tab == "issues" {
-        let list = state.api.get(&format!("/v1/addons/{}/issues", seg(&slug)), None).await?;
-        list.as_array().into_iter().flatten().map(|i| IssueItem {
+    let (issues, issues_next): (Vec<IssueItem>, Option<i64>) = if tab == "issues" {
+        let cursor = claim.issues_before.filter(|n| *n > 0).map(|n| format!("?before={n}")).unwrap_or_default();
+        let list = state.api.get(&format!("/v1/addons/{}/issues{cursor}", seg(&slug)), None).await?;
+        let next = list.as_array().and_then(|items| (items.len() > 30).then(|| items[29]["id"].as_i64()).flatten());
+        let issues = list.as_array().into_iter().flatten().take(30).map(|i| IssueItem {
             id: i["id"].as_i64().unwrap_or(0),
             title: s(&i["title"]), kind: s(&i["kind"]),
             status: s(&i["status"]), author: s(&i["author"]),
-        }).collect()
-    } else { Vec::new() };
+        }).collect();
+        (issues, next)
+    } else { (Vec::new(), None) };
     let version_rows = if tab == "versions" {
         versions.as_array().into_iter().flatten().map(|v| {
             let row = version_row(v, verified_author);
@@ -252,6 +256,7 @@ pub async fn addon(
         comments_next,
         comments_moderator,
         issues,
+        issues_next,
         selected_issue,
         can_manage_issues,
         version_rows,
