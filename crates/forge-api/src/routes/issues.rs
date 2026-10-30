@@ -92,18 +92,21 @@ pub async fn comment(State(state): State<AppState>, user: CurrentUser, Path((slu
     if !valid_text(&body.body, 1, 10000) { return Err(invalid("Comment must be 1-10000 characters")); }
     let addon = load_addon(&state.pool, &slug).await?;
     if addon.blocked_at.is_some() { return Err(forbidden()); }
+    let mut tx = state.pool.begin().await?;
+    sqlx::query("SELECT pg_advisory_xact_lock($1)").bind(user.id).execute(&mut *tx).await?;
     let exists: bool = sqlx::query_scalar(
         "SELECT EXISTS(SELECT 1 FROM addon_issues WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL)"
-    ).bind(id).bind(addon.id).fetch_one(&state.pool).await?;
+    ).bind(id).bind(addon.id).fetch_one(&mut *tx).await?;
     if !exists { return Err(ApiError::not_found()); }
     let now = (state.clock)();
     let recent: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM addon_issue_comments WHERE author_id=$1 AND created_at>$2"
-    ).bind(user.id).bind(now - chrono::Duration::hours(24)).fetch_one(&state.pool).await?;
+    ).bind(user.id).bind(now - chrono::Duration::hours(24)).fetch_one(&mut *tx).await?;
     if recent >= 100 { return Err(ApiError::new(StatusCode::TOO_MANY_REQUESTS, "comment_limit", "Daily comment limit reached")); }
     let comment_id: i64 = sqlx::query_scalar(
         "INSERT INTO addon_issue_comments(issue_id, author_id, body, created_at) VALUES($1,$2,$3,$4) RETURNING id"
-    ).bind(id).bind(user.id).bind(body.body.trim()).bind(now).fetch_one(&state.pool).await?;
+    ).bind(id).bind(user.id).bind(body.body.trim()).bind(now).fetch_one(&mut *tx).await?;
+    tx.commit().await?;
     Ok((StatusCode::CREATED, Json(json!({"id":comment_id}))))
 }
 pub async fn set_status(State(state): State<AppState>, user: CurrentUser, Path((slug,id)): Path<(String,i64)>,
