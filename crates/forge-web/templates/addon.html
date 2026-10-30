@@ -94,6 +94,7 @@
     {% if issues.is_empty() %}<div class="issues-empty" data-i18n="no_issues">No issues yet. Start the first discussion!</div>{% endif %}
     </div>
   </div>
+  {% if let Some(cursor) = issues_next %}<nav aria-label="Issue pages"><a class="button secondary" href="/addons/{{ slug }}?tab=issues&amp;issues_before={{ cursor }}" data-i18n="older_issues">Older issues →</a></nav>{% endif %}
   {% if let Some(issue) = selected_issue %}
   <section id="issue-detail" class="inline-issue-detail" aria-label="Selected issue">
     <div class="issues-heading">
