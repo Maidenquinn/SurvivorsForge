@@ -3,7 +3,7 @@ use crate::app::{AppState, visitor};
 use crate::csrf::CsrfToken;
 use crate::error::{WebError, WebResult};
 use crate::templates::{IssuesPage, IssuePage, IssueItem, IssueComment, render};
-use axum::{Extension, extract::{Path, Form, State}, response::{Html, Redirect}};
+use axum::{Extension, extract::{Path, Form, Query, State}, response::{Html, Redirect}};
 use axum_extra::extract::PrivateCookieJar;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -20,18 +20,23 @@ pub struct IssueForm { title: String, body: String, kind: String }
 pub struct CommentForm { body: String }
 #[derive(Deserialize)]
 pub struct StatusForm { status: String }
+#[derive(Deserialize)]
+pub struct IssuePageQuery { before: Option<i64> }
 
 pub async fn list(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>,
-    Path(slug): Path<String>) -> WebResult<Html<String>> {
+    Path(slug): Path<String>, Query(page): Query<IssuePageQuery>) -> WebResult<Html<String>> {
     let user = visitor(&state, &jar).await?.map(|(v,_)|v);
     let a = state.api.get(&format!("/v1/addons/{}",segment(&slug)),None).await?;
     if a["blocked"] == true { return Err(WebError::NotFound); }
-    let data = state.api.get(&format!("/v1/addons/{}/issues",segment(&slug)),None).await?;
-    let issues = data.as_array().into_iter().flatten().map(|i| IssueItem {
+    let before = page.before.filter(|n| *n > 0);
+    let path = format!("/v1/addons/{}/issues{}", segment(&slug), before.map(|n| format!("?before={n}")).unwrap_or_default());
+    let data = state.api.get(&path,None).await?;
+    let next = data.as_array().and_then(|rows| (rows.len() > 30).then(|| rows[29]["id"].as_i64()).flatten());
+    let issues = data.as_array().into_iter().flatten().take(30).map(|i| IssueItem {
         id: i["id"].as_i64().unwrap_or(0), title:s(&i["title"]), kind:s(&i["kind"]),
         status:s(&i["status"]), author:s(&i["author"]),
     }).collect();
-    Ok(render(&IssuesPage { user, csrf:csrf.0, slug, name:s(&a["name"]), issues }))
+    Ok(render(&IssuesPage { user, csrf:csrf.0, slug, name:s(&a["name"]), issues, next }))
 }
 pub async fn create(State(state): State<AppState>, jar: PrivateCookieJar, Path(slug): Path<String>,
     Form(form): Form<IssueForm>) -> WebResult<Redirect> {
