@@ -130,7 +130,7 @@
     var list = figure.parentNode;
     if (new FormData(form).get("direction") === "up") list.insertBefore(figure, figure.previousElementSibling);
     else list.insertBefore(figure, figure.nextElementSibling && figure.nextElementSibling.nextElementSibling);
-    saved(fetch(form.action, { method: "POST", body: new URLSearchParams(new FormData(form, event.submitter)) }), list);
+    saved(fetch(form.action, { method: "POST", body: new URLSearchParams(new FormData(form)) }), list);
   });
 
   // After a move is saved the first and last arrows switch off; a failed save shows the real order.
@@ -570,7 +570,7 @@ document.addEventListener("htmx:afterSwap", initializeGalleryLightbox);
     if (!form.reportValidity()) return;
     var submit = form.querySelector('button[type="submit"]');
     if (submit) submit.disabled = true;
-    load(form.action, {method: "POST", body: new URLSearchParams(new FormData(form)), headers: {"Accept": "text/html", "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"}}, false).finally(function () {
+    load(form.action, {method: "POST", body: new URLSearchParams(new FormData(form, event.submitter)), headers: {"Accept": "text/html", "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"}}, false).finally(function () {
       if (submit && submit.isConnected) submit.disabled = false;
     });
   });
