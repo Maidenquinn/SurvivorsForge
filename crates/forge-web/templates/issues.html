@@ -31,6 +31,7 @@
       {% if issues.is_empty() %}<div class="issues-empty" data-i18n="issue_empty">No issues yet. Be the first to start a discussion.</div>{% endif %}
     </div>
   </section>
+  {% if let Some(cursor) = next %}<nav aria-label="Issue pages"><a class="button secondary" href="/addons/{{ slug }}/issues?before={{ cursor }}" data-i18n="older_issues">Older issues →</a></nav>{% endif %}
   {% if user.is_some() %}
   <section class="panel issues-compose" id="new-issue">
     <div class="issues-compose-heading"><h2 data-i18n="issue_new_heading">Open a new issue</h2><p class="muted" data-i18n="issue_new_intro">Describe what happened, or explain what you would like to improve.</p></div>
