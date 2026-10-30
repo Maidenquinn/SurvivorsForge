@@ -577,3 +577,16 @@ button.suggestion:hover { border-color: var(--outline-hover); background: var(--
   .top .forge-locale-label { width: 100%; justify-content: center; }
   .top #forge-locale { max-width: min(100%, 220px); }
 }
+
+
+/* Threaded addon discussions */
+.threaded-comment { margin-left: min(calc(var(--comment-depth, 0) * 24px), 72px); border-left: 2px solid var(--outline); scroll-margin-top: 90px; }
+.threaded-comment:target { border-left-color: var(--gold); }
+.comment-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:0 14px 12px; }
+.comment-report { position:relative; }
+.comment-report summary { cursor:pointer; color:var(--muted); font-size:13px; padding:5px 9px; }
+.comment-report form { display:grid; gap:8px; padding:12px; border:1px solid var(--outline); border-radius:5px; background:var(--panel); min-width:min(300px,80vw); }
+.comment-report textarea { width:100%; }
+.comment-quote-link { display:block; margin-bottom:8px; color:var(--gold); font-size:13px; }
+#comment-context { margin:8px 0; }
+@media(max-width:600px) { .threaded-comment { margin-left:min(calc(var(--comment-depth, 0) * 12px),36px); } }
