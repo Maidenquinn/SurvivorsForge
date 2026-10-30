@@ -391,10 +391,11 @@
 })();
 
 /* Accessible screenshot lightbox. Links still open the image without JS. */
-document.addEventListener("DOMContentLoaded", function () {
+function initializeGalleryLightbox() {
   var gallery = document.querySelector("[data-gallery]");
   var dialog = document.getElementById("gallery-lightbox");
-  if (!gallery || !dialog || !dialog.showModal) return;
+  if (!gallery || !dialog || !dialog.showModal || dialog.dataset.galleryInitialized === "true") return;
+  dialog.dataset.galleryInitialized = "true";
   var links = Array.from(gallery.querySelectorAll("[data-gallery-link]"));
   var image = dialog.querySelector("[data-gallery-image]");
   var caption = dialog.querySelector("[data-gallery-caption]");
@@ -466,8 +467,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (event.key === "ArrowLeft") { event.preventDefault(); display(index - 1); }
     if (event.key === "ArrowRight") { event.preventDefault(); display(index + 1); }
   });
-});
-
+}
+document.addEventListener("DOMContentLoaded", initializeGalleryLightbox);
+document.addEventListener("htmx:afterSwap", initializeGalleryLightbox);
 /* Progressive enhancement for addon discussions. Forms work without JavaScript. */
 (function () {
   "use strict";
