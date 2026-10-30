@@ -3,7 +3,7 @@ use crate::app::AppState;
 use crate::auth::CurrentUser;
 use crate::error::{ApiError, ApiResult};
 use crate::routes::addons::{load_addon, user_permissions, not_blocked};
-use axum::{Json, extract::{Path, State}, http::StatusCode};
+use axum::{Json, extract::{Path, Query, State}, http::StatusCode};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -25,16 +25,19 @@ pub struct NewComment { body: String }
 #[derive(Deserialize)]
 pub struct ChangeStatus { status: String }
 
-pub async fn list(State(state): State<AppState>, Path(slug): Path<String>) -> ApiResult<Json<Value>> {
+#[derive(Deserialize)]
+pub struct IssuePageQuery { pub before: Option<i64> }
+
+pub async fn list(State(state): State<AppState>, Path(slug): Path<String>, Query(page): Query<IssuePageQuery>) -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
     not_blocked(&addon)?;
     let items: Value = sqlx::query_scalar(
         "SELECT coalesce(json_agg(json_build_object('id', i.id, 'title', i.title, 'kind', i.kind,
           'status', i.status, 'author', u.login, 'created_at', i.created_at, 'updated_at', i.updated_at)
           ORDER BY i.created_at DESC, i.id DESC), '[]'::json)
-         FROM (SELECT * FROM addon_issues WHERE addon_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 100) i
+         FROM (SELECT * FROM addon_issues WHERE addon_id = $1 AND deleted_at IS NULL AND id < $2 ORDER BY id DESC LIMIT 31) i
          JOIN users u ON u.id = i.author_id"
-    ).bind(addon.id).fetch_one(&state.pool).await?;
+    ).bind(addon.id).bind(page.before.unwrap_or(i64::MAX)).fetch_one(&state.pool).await?;
     Ok(Json(items))
 }
 pub async fn create(State(state): State<AppState>, user: CurrentUser, Path(slug): Path<String>, Json(body): Json<NewIssue>)
