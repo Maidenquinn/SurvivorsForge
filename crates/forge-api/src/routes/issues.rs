@@ -34,7 +34,7 @@ pub async fn list(State(state): State<AppState>, Path(slug): Path<String>, Query
     let items: Value = sqlx::query_scalar(
         "SELECT coalesce(json_agg(json_build_object('id', i.id, 'title', i.title, 'kind', i.kind,
           'status', i.status, 'author', u.login, 'created_at', i.created_at, 'updated_at', i.updated_at)
-          ORDER BY i.created_at DESC, i.id DESC), '[]'::json)
+          ORDER BY i.id DESC), '[]'::json)
          FROM (SELECT * FROM addon_issues WHERE addon_id = $1 AND deleted_at IS NULL AND id < $2 ORDER BY id DESC LIMIT 31) i
          JOIN users u ON u.id = i.author_id"
     ).bind(addon.id).bind(page.before.unwrap_or(i64::MAX)).fetch_one(&state.pool).await?;
