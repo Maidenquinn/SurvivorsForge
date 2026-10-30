@@ -135,10 +135,12 @@ pub async fn report(State(state): State<AppState>, user: CurrentUser,
     if author == user.id {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "own_comment", "Cannot report your own comment"));
     }
+    let mut tx = state.pool.begin().await?;
+    sqlx::query("SELECT pg_advisory_xact_lock($1)").bind(user.id).execute(&mut *tx).await?;
     let recent: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM addon_comment_reports WHERE reporter_id=$1 AND created_at > $2"
     ).bind(user.id).bind((state.clock)() - chrono::Duration::days(1))
-        .fetch_one(&state.pool).await?;
+        .fetch_one(&mut *tx).await?;
     if recent >= 10 {
         return Err(ApiError::new(StatusCode::TOO_MANY_REQUESTS, "report_limit", "At most 10 reports a day"));
     }
@@ -146,10 +148,11 @@ pub async fn report(State(state): State<AppState>, user: CurrentUser,
         "INSERT INTO addon_comment_reports(comment_id,reporter_id,reason,details)
          VALUES($1,$2,$3,$4) ON CONFLICT(comment_id,reporter_id) DO NOTHING RETURNING id"
     ).bind(id).bind(user.id).bind(&body.reason).bind(body.details.trim())
-        .fetch_optional(&state.pool).await?;
+        .fetch_optional(&mut *tx).await?;
     if inserted.is_none() {
         return Err(ApiError::new(StatusCode::CONFLICT, "already_reported", "You already reported this comment"));
     }
+    tx.commit().await?;
     Ok((StatusCode::CREATED, Json(json!({"reported":true}))))
 }
 
