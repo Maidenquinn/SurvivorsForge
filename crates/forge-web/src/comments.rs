@@ -94,6 +94,16 @@ mod tests {
     use serde_json::json;
 
     #[test]
+    fn optional_comment_ids_accept_empty_and_numeric_form_values() {
+        use serde::de::value::{Error, StringDeserializer};
+        let empty = super::empty_i64(StringDeserializer::<Error>::new(String::new())).unwrap();
+        let numeric = super::empty_i64(StringDeserializer::<Error>::new("42".into())).unwrap();
+        assert_eq!(empty, None);
+        assert_eq!(numeric, Some(42));
+        assert!(super::empty_i64(StringDeserializer::<Error>::new("abc".into())).is_err());
+    }
+
+    #[test]
     fn identity_uses_numeric_user_id_not_display_name() {
         assert!(owns_comment(12, Some(12)));
         assert!(!owns_comment(12, Some(13)));
