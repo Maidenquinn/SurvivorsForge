@@ -2,7 +2,7 @@
 {% block title %}{{ title }} - Admin - SurvivorsForge{% endblock %}
 {% block content %}
 <p><a href="/admin"><span data-i18n="admin">Admin</span></a></p>
-<h1 data-i18n="{% if kind == "categories" %}admin_categories{% else %}admin_game_versions{% endif %}">{{ title }}</h1>
+{% if kind == "categories" %}<h1 data-i18n="admin_categories">{{ title }}</h1>{% else %}<h1 data-i18n="admin_game_versions">{{ title }}</h1>{% endif %}
 {% include "admin/flash.html" %}
 <form class="panel admin-actions" method="post" action="/admin/list/{{ kind }}">
   <input type="hidden" name="csrf" value="{{ csrf }}">
