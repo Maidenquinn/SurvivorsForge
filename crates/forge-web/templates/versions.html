@@ -25,4 +25,5 @@
 </table>
 </div>
 {% endif %}
+<nav class="pagination" aria-label="Version pages"><span>{% if let Some(url) = prev %}<a class="button secondary" href="{{ url }}">← Previous</a>{% endif %}</span> <span>{% if let Some(url) = next %}<a class="button secondary" href="{{ url }}">Next →</a>{% endif %}</span></nav>
 {% endblock %}
