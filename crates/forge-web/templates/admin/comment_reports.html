@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Comment reports - Admin - SurvivorsForge{% endblock %}
+{% block content %}
+<p><a href="/admin"><span data-i18n="admin">Admin</span></a></p>
+<h1 data-i18n="admin_comment_reports">Comment reports</h1>
+{% include "admin/flash.html" %}
+{% if rows.is_empty() %}<p class="panel" data-i18n="comment_report_none">No pending comment reports.</p>{% endif %}
+<div class="list">
+{% for r in rows %}
+<section class="panel">
+  <h2>{{ r.reason }} — <a href="/addons/{{ r.addon }}/comments#comment-{{ r.comment_id }}">{{ r.addon }} #{{ r.comment_id }}</a></h2>
+  <p class="muted"><span data-i18n="comment_reported_by">Reported by</span> {{ r.reporter }} · {{ r.created }}</p>
+  <p><strong data-i18n="comment_reported_comment">Reported comment</strong> ({{ r.author }})</p>
+  <blockquote>{{ r.comment }}</blockquote>
+  {% if !r.details.is_empty() %}<p>{{ r.details }}</p>{% endif %}
+  <form method="post" action="/admin/comment-reports/{{ r.id }}/resolve" class="admin-actions">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="report-note-{{ r.id }}" data-i18n="admin_note">Note</label>
+    <input id="report-note-{{ r.id }}" name="note" required maxlength="2000">
+    <button type="submit" name="status" value="actioned" data-i18n="comment_report_remove">Remove comment and resolve</button>
+    <button type="submit" name="status" value="dismissed" class="secondary" data-i18n="comment_report_dismiss">Dismiss report</button>
+  </form>
+</section>
+{% endfor %}
+</div>
+{% endblock %}

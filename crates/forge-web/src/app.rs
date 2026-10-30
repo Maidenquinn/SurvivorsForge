@@ -140,6 +140,8 @@ pub fn router(state: AppState) -> Router {
         .route("/admin/review/{slug}/{action}", post(crate::admin::review_bulk))
         .route("/admin/versions/{id}/{action}", post(crate::admin::version_action))
         .route("/admin/reports", get(crate::admin::reports))
+        .route("/admin/comment-reports", get(crate::admin::comment_reports))
+        .route("/admin/comment-reports/{id}/resolve", post(crate::admin::resolve_comment_report))
         .route("/admin/reports/{id}/resolve", post(crate::admin::resolve_report))
         .route("/admin/users", get(crate::admin::users))
         .route("/admin/users/{id}/{action}", post(crate::admin::ban))

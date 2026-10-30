@@ -505,6 +505,26 @@ pub struct AdminReviewAddonPage {
     pub error: Option<String>,
 }
 
+pub struct CommentReportRow {
+    pub id: i64,
+    pub comment_id: i64,
+    pub addon: String,
+    pub author: String,
+    pub comment: String,
+    pub reason: String,
+    pub details: String,
+    pub reporter: String,
+    pub created: String,
+}
+#[derive(Template)]
+#[template(path = "admin/comment_reports.html")]
+pub struct AdminCommentReportsPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub rows: Vec<CommentReportRow>,
+    pub msg: Option<String>,
+    pub error: Option<String>,
+}
 pub struct ReportRow {
     pub id: i64,
     pub target: String,

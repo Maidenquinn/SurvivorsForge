@@ -135,6 +135,13 @@ pub async fn report(State(state): State<AppState>, user: CurrentUser,
     if author == user.id {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "own_comment", "Cannot report your own comment"));
     }
+    let recent: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM addon_comment_reports WHERE reporter_id=$1 AND created_at > $2"
+    ).bind(user.id).bind((state.clock)() - chrono::Duration::days(1))
+        .fetch_one(&state.pool).await?;
+    if recent >= 10 {
+        return Err(ApiError::new(StatusCode::TOO_MANY_REQUESTS, "report_limit", "At most 10 reports a day"));
+    }
     let inserted: Option<i64> = sqlx::query_scalar(
         "INSERT INTO addon_comment_reports(comment_id,reporter_id,reason,details)
          VALUES($1,$2,$3,$4) ON CONFLICT(comment_id,reporter_id) DO NOTHING RETURNING id"

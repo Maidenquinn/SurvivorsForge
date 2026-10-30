@@ -6,7 +6,7 @@ use crate::app::{AppState, visitor};
 use crate::csrf::CsrfToken;
 use crate::error::{WebError, WebResult};
 use crate::templates::{
-    AdminAddAddonPage, AdminAddonPage, AdminAuditPage, AdminIndexPage, AdminListPage, AdminReportsPage, AdminReviewPage, AdminUsersPage, Visitor, render,
+    AdminCommentReportsPage, AdminAddAddonPage, AdminAddonPage, AdminAuditPage, AdminIndexPage, AdminListPage, AdminReportsPage, AdminReviewPage, AdminUsersPage, Visitor, render,
 };
 use axum::Extension;
 use axum::extract::{Form, Path, Query, State};
@@ -241,6 +241,23 @@ pub async fn resolve_report(State(state): State<AppState>, jar: PrivateCookieJar
     let (_, token) = admin(&state, &jar).await?;
     let body = json!({ "status": form.status, "note": form.note });
     back("/admin/reports", state.api.post(&format!("/v1/admin/reports/{id}/resolve"), Some(&token), &body).await, "Report closed.")
+}
+
+pub async fn comment_reports(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Query(flash): Query<Flash>) -> WebResult<Html<String>> {
+    let (user, token) = admin(&state, &jar).await?;
+    let data = state.api.get("/v1/admin/comment-reports", Some(&token)).await?;
+    let rows = data.as_array().into_iter().flatten().map(|r| crate::templates::CommentReportRow {
+        id: r["id"].as_i64().unwrap_or_default(),
+        comment_id: r["comment_id"].as_i64().unwrap_or_default(),
+        addon: s(&r["addon"]), author: s(&r["author"]), comment: s(&r["comment"]),
+        reason: s(&r["reason"]), details: s(&r["details"]), reporter: s(&r["reporter"]),
+        created: s(&r["created_at"]).chars().take(16).collect(),
+    }).collect();
+    Ok(render(&AdminCommentReportsPage {user:Some(user),csrf:csrf.0,rows,msg:flash.msg,error:flash.error}))
+}
+pub async fn resolve_comment_report(State(state): State<AppState>, jar: PrivateCookieJar, Path(id): Path<i64>, Form(form): Form<NoteForm>) -> WebResult<Response> {
+    let (_,token) = admin(&state,&jar).await?;
+    back("/admin/comment-reports",state.api.post(&format!("/v1/admin/comment-reports/{id}/resolve"),Some(&token),&json!({"status":form.status,"note":form.note})).await,"Comment report resolved.")
 }
 
 pub async fn users(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Query(flash): Query<Flash>) -> WebResult<Html<String>> {

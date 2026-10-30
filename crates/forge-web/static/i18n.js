@@ -473,7 +473,13 @@
     "comment_reason_unsafe": "Unsafe content",
     "comment_reason_other": "Other",
     "comment_report_details": "Additional details (optional)",
-    "comment_submit_report": "Submit report"
+    "comment_submit_report": "Submit report",
+    "admin_comment_reports": "Comment reports",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "fr": {
     "tiles": "Vignettes",
@@ -946,7 +952,13 @@
     "comment_reason_unsafe": "Contenu dangereux",
     "comment_reason_other": "Autre",
     "comment_report_details": "Précisions (facultatif)",
-    "comment_submit_report": "Envoyer le signalement"
+    "comment_submit_report": "Envoyer le signalement",
+    "admin_comment_reports": "Signalements de commentaires",
+    "comment_reported_by": "Signalé par",
+    "comment_reported_comment": "Commentaire signalé",
+    "comment_report_dismiss": "Rejeter le signalement",
+    "comment_report_remove": "Masquer le commentaire et traiter",
+    "comment_report_none": "Aucun signalement de commentaire en attente."
   },
   "pl": {
     "tiles": "Tiles",
@@ -1419,7 +1431,13 @@
     "comment_reason_unsafe": "Unsafe content",
     "comment_reason_other": "Other",
     "comment_report_details": "Additional details (optional)",
-    "comment_submit_report": "Submit report"
+    "comment_submit_report": "Submit report",
+    "admin_comment_reports": "Zgłoszenia komentarzy",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "cs": {
     "tiles": "Tiles",
@@ -1892,7 +1910,13 @@
     "comment_reason_unsafe": "Unsafe content",
     "comment_reason_other": "Other",
     "comment_report_details": "Additional details (optional)",
-    "comment_submit_report": "Submit report"
+    "comment_submit_report": "Submit report",
+    "admin_comment_reports": "Nahlášení komentářů",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "de": {
     "tiles": "Tiles",
@@ -2365,7 +2389,13 @@
     "comment_reason_unsafe": "Unsafe content",
     "comment_reason_other": "Other",
     "comment_report_details": "Additional details (optional)",
-    "comment_submit_report": "Submit report"
+    "comment_submit_report": "Submit report",
+    "admin_comment_reports": "Kommentarmeldungen",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "pt-BR": {
     "tiles": "Tiles",
@@ -2838,7 +2868,13 @@
     "comment_reason_unsafe": "Unsafe content",
     "comment_reason_other": "Other",
     "comment_report_details": "Additional details (optional)",
-    "comment_submit_report": "Submit report"
+    "comment_submit_report": "Submit report",
+    "admin_comment_reports": "Denúncias de comentários",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "es": {
     "tiles": "Tiles",
@@ -3311,7 +3347,13 @@
     "comment_reason_unsafe": "Unsafe content",
     "comment_reason_other": "Other",
     "comment_report_details": "Additional details (optional)",
-    "comment_submit_report": "Submit report"
+    "comment_submit_report": "Submit report",
+    "admin_comment_reports": "Denuncias de comentarios",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "ro": {
     "tiles": "Tiles",
@@ -3784,7 +3826,13 @@
     "comment_reason_unsafe": "Unsafe content",
     "comment_reason_other": "Other",
     "comment_report_details": "Additional details (optional)",
-    "comment_submit_report": "Submit report"
+    "comment_submit_report": "Submit report",
+    "admin_comment_reports": "Raportări comentarii",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "tr": {
     "tiles": "Tiles",
@@ -4257,7 +4305,13 @@
     "comment_reason_unsafe": "Unsafe content",
     "comment_reason_other": "Other",
     "comment_report_details": "Additional details (optional)",
-    "comment_submit_report": "Submit report"
+    "comment_submit_report": "Submit report",
+    "admin_comment_reports": "Yorum bildirimleri",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "ru": {
     "tiles": "Tiles",
@@ -4730,7 +4784,13 @@
     "comment_reason_unsafe": "Unsafe content",
     "comment_reason_other": "Other",
     "comment_report_details": "Additional details (optional)",
-    "comment_submit_report": "Submit report"
+    "comment_submit_report": "Submit report",
+    "admin_comment_reports": "Жалобы на комментарии",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "uk": {
     "tiles": "Tiles",
@@ -5203,7 +5263,13 @@
     "comment_reason_unsafe": "Unsafe content",
     "comment_reason_other": "Other",
     "comment_report_details": "Additional details (optional)",
-    "comment_submit_report": "Submit report"
+    "comment_submit_report": "Submit report",
+    "admin_comment_reports": "Скарги на коментарі",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "zh-Hans": {
     "tiles": "Tiles",
@@ -5676,7 +5742,13 @@
     "comment_reason_unsafe": "危险内容",
     "comment_reason_other": "其他",
     "comment_report_details": "补充说明（可选）",
-    "comment_submit_report": "提交举报"
+    "comment_submit_report": "提交举报",
+    "admin_comment_reports": "评论举报",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "ja": {
     "tiles": "Tiles",
@@ -6149,7 +6221,13 @@
     "comment_reason_unsafe": "危険な内容",
     "comment_reason_other": "その他",
     "comment_report_details": "詳細（任意）",
-    "comment_submit_report": "報告する"
+    "comment_submit_report": "報告する",
+    "admin_comment_reports": "コメントの通報",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   },
   "ko": {
     "tiles": "Tiles",
@@ -6622,7 +6700,13 @@
     "comment_reason_unsafe": "위험한 콘텐츠",
     "comment_reason_other": "기타",
     "comment_report_details": "추가 설명(선택)",
-    "comment_submit_report": "신고 제출"
+    "comment_submit_report": "신고 제출",
+    "admin_comment_reports": "댓글 신고",
+    "comment_reported_by": "Reported by",
+    "comment_reported_comment": "Reported comment",
+    "comment_report_dismiss": "Dismiss report",
+    "comment_report_remove": "Remove comment and resolve",
+    "comment_report_none": "No pending comment reports."
   }
 };
   var supported = Object.keys(translations);

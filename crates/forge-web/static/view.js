@@ -639,53 +639,60 @@ document.addEventListener("DOMContentLoaded", function () {
 })();
 
 
-/* Addon comment threads: progressive enhancement of ordinary POST forms. */
+/* Threaded comments, re-run when server-rendered tabs are swapped. */
 (function () {
   function init() {
-    var root = document.querySelector(".addon-comments");
+    var root=document.querySelector(".addon-comments");
     if (!root) return;
-    var list = root.querySelector(".issue-discussion");
+    var list=root.querySelector(".issue-discussion");
     if (!list) return;
-    var articles = Array.from(list.querySelectorAll(".threaded-comment"));
-    var byId = new Map(articles.map(function (el) { return [el.dataset.commentId, el]; }));
-    articles.forEach(function (el) {
-      var parent = byId.get(el.dataset.parentId);
-      if (parent && parent !== el) {
-        var depth = 0, cursor = parent, visited = new Set([el.dataset.commentId]);
-        while (cursor && depth < 20 && !visited.has(cursor.dataset.commentId)) {
-          visited.add(cursor.dataset.commentId);
-          depth++;
-          cursor = byId.get(cursor.dataset.parentId);
-        }
-        if (!cursor || !visited.has(cursor.dataset.commentId)) {
-          el.style.setProperty("--comment-depth", Math.min(depth, 3));
-          parent.after(el);
-        }
+    var articles=Array.from(list.querySelectorAll(".threaded-comment"));
+    var byId=new Map(articles.map(function(el){return [el.dataset.commentId,el];}));
+    var children=new Map();
+    articles.forEach(function(el){
+      var parent=el.dataset.parentId;
+      if (parent && byId.has(parent) && parent!==el.dataset.commentId) {
+        if (!children.has(parent)) children.set(parent,[]);
+        children.get(parent).push(el);
       }
     });
+    var visited=new Set();
+    function place(el,depth,ancestors) {
+      var id=el.dataset.commentId;
+      if (visited.has(id) || ancestors.has(id)) return;
+      visited.add(id);
+      el.style.setProperty("--comment-depth",Math.min(depth,3));
+      list.appendChild(el);
+      var next=new Set(ancestors);next.add(id);
+      (children.get(id)||[]).forEach(function(child){place(child,depth+1,next);});
+    }
+    articles.forEach(function(el){if(!byId.has(el.dataset.parentId))place(el,0,new Set());});
+    articles.forEach(function(el){place(el,0,new Set());});
   }
-  document.addEventListener("DOMContentLoaded", init);
-  document.addEventListener("click", function (event) {
-    var button = event.target.closest("[data-comment-reply],[data-comment-quote]");
+  document.addEventListener("DOMContentLoaded",init);
+  document.addEventListener("htmx:afterSwap",init);
+  document.addEventListener("click",function(event){
+    var button=event.target.closest("[data-comment-reply],[data-comment-quote]");
     if (!button) return;
-    var form = document.querySelector(".addon-comments form.issue-reply");
+    var form=document.querySelector(".addon-comments form.issue-reply");
     if (!form) return;
-    var id = button.dataset.commentReply || button.dataset.commentQuote;
-    form.querySelector("#comment-parent-id").value = id;
-    form.querySelector("#comment-quote-id").value = button.hasAttribute("data-comment-quote") ? id : "";
-    var context = form.querySelector("#comment-context");
-    context.hidden = false;
-    context.textContent = (button.hasAttribute("data-comment-quote") ? "↳ " : "↪ ") + button.dataset.commentAuthor;
-    form.querySelector("#comment-clear-context").hidden = false;
+    var id=button.dataset.commentReply||button.dataset.commentQuote;
+    form.querySelector("#comment-parent-id").value=id;
+    form.querySelector("#comment-quote-id").value=button.hasAttribute("data-comment-quote")?id:"";
+    var context=form.querySelector("#comment-context");
+    context.hidden=false;
+    context.textContent=(button.hasAttribute("data-comment-quote")?"↳ ":"↪ ")+button.dataset.commentAuthor;
+    form.querySelector("#comment-clear-context").hidden=false;
     form.scrollIntoView({behavior:"smooth",block:"center"});
     form.querySelector("textarea[name=body]").focus();
   });
-  document.addEventListener("click", function (event) {
-    if (!event.target.closest("#comment-clear-context")) return;
-    var form = document.querySelector(".addon-comments form.issue-reply");
-    form.querySelector("#comment-parent-id").value = "";
-    form.querySelector("#comment-quote-id").value = "";
-    form.querySelector("#comment-context").hidden = true;
-    form.querySelector("#comment-clear-context").hidden = true;
+  document.addEventListener("click",function(event){
+    if (!event.target.closest("#comment-clear-context"))return;
+    var form=document.querySelector(".addon-comments form.issue-reply");
+    if (!form)return;
+    form.querySelector("#comment-parent-id").value="";
+    form.querySelector("#comment-quote-id").value="";
+    form.querySelector("#comment-context").hidden=true;
+    form.querySelector("#comment-clear-context").hidden=true;
   });
 })();
