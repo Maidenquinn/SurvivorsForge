@@ -232,7 +232,7 @@
         {% if comment.can_delete %}<form method="post" action="/addons/{{ slug }}/comments/{{ comment.id }}/delete" data-confirm-delete="Delete this comment?" data-i18n-confirm="confirm_delete"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="issue-action issue-danger" data-i18n="delete">Delete</button></form>{% endif %}
       </header>
       <div class="issue-message-body" data-edit-view>{% if let Some(quote) = comment.quote_id %}<a href="#comment-{{ quote }}" class="comment-quote-link">↳ #{{ quote }}</a>{% endif %}{{ comment.body }}</div>
-      {% if user.is_some() %}
+      {% if user.is_some() && !comment.deleted %}
       <div class="comment-actions">
         <button type="button" class="issue-action" data-comment-reply="{{ comment.id }}" data-comment-author="{{ comment.author }}" data-i18n="comment_reply">Reply</button>
         <button type="button" class="issue-action" data-comment-quote="{{ comment.id }}" data-comment-author="{{ comment.author }}" data-i18n="comment_quote">Quote</button>
