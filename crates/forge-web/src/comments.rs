@@ -34,7 +34,7 @@ where D: serde::Deserializer<'de> {
 #[derive(Deserialize)]
 pub struct ReportBody { reason: String, #[serde(default)] details: String }
 #[derive(Clone)]
-pub struct Comment { pub id: i64, pub author: String, pub avatar: String, pub body: String, pub created: String, pub created_iso: String, pub edited: bool, pub edited_iso: String, pub can_edit: bool, pub can_delete: bool, pub can_report: bool, pub parent_id: Option<i64>, pub quote_id: Option<i64> }
+pub struct Comment { pub id: i64, pub author: String, pub avatar: String, pub body: String, pub created: String, pub created_iso: String, pub edited: bool, pub edited_iso: String, pub can_edit: bool, pub can_delete: bool, pub can_report: bool, pub deleted: bool, pub parent_id: Option<i64>, pub quote_id: Option<i64> }
 #[derive(Template)]
 #[template(path="comments.html")]
 struct CommentsPage { user: Option<crate::templates::Visitor>, csrf: String, slug: String, name: String, comments: Vec<Comment>, next: Option<i64> }
@@ -51,8 +51,9 @@ pub async fn feed(state: &AppState, slug: &str, session: &Option<(crate::templat
     let comments: Vec<Comment> = data.as_array().into_iter().flatten().take(PAGE_SIZE).map(|c| {
         let author=strval(&c["author"]);
         let own=user.as_ref().is_some_and(|u|owns_comment(u.id, c["author_id"].as_i64()));
+        let deleted = c["deleted"] == true;
         Comment { id:c["id"].as_i64().unwrap_or_default(), author, avatar:strval(&c["avatar_url"]), body:strval(&c["body"]),
-            created:strval(&c["created_at"]).chars().take(10).collect(), created_iso:strval(&c["created_at"]), edited:c["edited_at"].is_string(), edited_iso:strval(&c["edited_at"]),can_edit:own || user.as_ref().is_some_and(|u|u.admin),can_delete:own || moderator,can_report:user.is_some() && !own,parent_id:c["parent_id"].as_i64(),quote_id:c["quote_id"].as_i64() }
+            created:strval(&c["created_at"]).chars().take(10).collect(), created_iso:strval(&c["created_at"]), edited:c["edited_at"].is_string(), edited_iso:strval(&c["edited_at"]),can_edit:!deleted && (own || user.as_ref().is_some_and(|u|u.admin)),can_delete:!deleted && (own || moderator),can_report:!deleted && user.is_some() && !own,deleted,parent_id:c["parent_id"].as_i64(),quote_id:c["quote_id"].as_i64() }
     }).collect();
     Ok((comments,next,moderator))
 }

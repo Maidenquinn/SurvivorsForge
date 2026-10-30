@@ -2,7 +2,7 @@
 use crate::app::AppState;
 use crate::auth::CurrentUser;
 use crate::error::{ApiError, ApiResult};
-use crate::routes::addons::{load_addon, user_permissions};
+use crate::routes::addons::{load_addon, user_permissions, not_blocked};
 use axum::{Json, extract::{Path, State}, http::StatusCode};
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -27,6 +27,7 @@ pub struct ChangeStatus { status: String }
 
 pub async fn list(State(state): State<AppState>, Path(slug): Path<String>) -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
+    not_blocked(&addon)?;
     let items: Value = sqlx::query_scalar(
         "SELECT coalesce(json_agg(json_build_object('id', i.id, 'title', i.title, 'kind', i.kind,
           'status', i.status, 'author', u.login, 'created_at', i.created_at, 'updated_at', i.updated_at)
@@ -75,10 +76,11 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser, Path(slug)
 }
 pub async fn show(State(state): State<AppState>, Path((slug, id)): Path<(String, i64)>) -> ApiResult<Json<Value>> {
     let addon = load_addon(&state.pool, &slug).await?;
+    not_blocked(&addon)?;
     let issue: Option<Value> = sqlx::query_scalar(
         "SELECT json_build_object('id', i.id, 'title', i.title, 'body', i.body, 'kind', i.kind,
          'status', i.status, 'author', u.login, 'created_at', i.created_at, 'updated_at', i.updated_at, 'edited_at', i.edited_at, 'acknowledged_at', i.acknowledged_at,
-         'events', (SELECT coalesce(json_agg(json_build_object('action', e.action, 'old_value', e.old_value, 'new_value', e.new_value, 'actor', eu.login, 'created_at', e.created_at) ORDER BY e.created_at, e.id), '[]'::json) FROM addon_issue_events e JOIN users eu ON eu.id=e.actor_id WHERE e.issue_id=i.id), 'comments', (SELECT coalesce(json_agg(json_build_object('id', c.id, 'body', c.body,
+         'events', (SELECT coalesce(json_agg(json_build_object('action', e.action, 'old_value', e.old_value, 'new_value', e.new_value, 'actor', eu.login, 'created_at', e.created_at) ORDER BY e.created_at, e.id), '[]'::json) FROM addon_issue_events e JOIN users eu ON eu.id=e.actor_id WHERE e.issue_id=i.id), 'comments', (SELECT coalesce(json_agg(json_build_object('id', c.id, 'body', CASE WHEN c.deleted_at IS NULL THEN c.body ELSE '[deleted]' END,
          'author', cu.login, 'created_at', c.created_at, 'edited_at', c.edited_at, 'deleted', c.deleted_at IS NOT NULL) ORDER BY c.created_at, c.id), '[]'::json)
          FROM addon_issue_comments c JOIN users cu ON cu.id = c.author_id WHERE c.issue_id = i.id))
          FROM addon_issues i JOIN users u ON u.id = i.author_id WHERE i.id = $1 AND i.addon_id = $2 AND i.deleted_at IS NULL"
@@ -91,7 +93,7 @@ pub async fn comment(State(state): State<AppState>, user: CurrentUser, Path((slu
     let addon = load_addon(&state.pool, &slug).await?;
     if addon.blocked_at.is_some() { return Err(forbidden()); }
     let exists: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM addon_issues WHERE id=$1 AND addon_id=$2)"
+        "SELECT EXISTS(SELECT 1 FROM addon_issues WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL)"
     ).bind(id).bind(addon.id).fetch_one(&state.pool).await?;
     if !exists { return Err(ApiError::not_found()); }
     let now = (state.clock)();

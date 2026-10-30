@@ -130,7 +130,7 @@
     var list = figure.parentNode;
     if (new FormData(form).get("direction") === "up") list.insertBefore(figure, figure.previousElementSibling);
     else list.insertBefore(figure, figure.nextElementSibling && figure.nextElementSibling.nextElementSibling);
-    saved(fetch(form.action, { method: "POST", body: new URLSearchParams(new FormData(form)) }), list);
+    saved(fetch(form.action, { method: "POST", body: new URLSearchParams(new FormData(form, event.submitter)) }), list);
   });
 
   // After a move is saved the first and last arrows switch off; a failed save shows the real order.

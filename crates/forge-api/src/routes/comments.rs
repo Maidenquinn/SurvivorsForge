@@ -38,11 +38,11 @@ pub async fn list(State(state): State<AppState>, Path(slug): Path<String>, Query
     let before = page.before.unwrap_or(i64::MAX);
     let comments: Value = sqlx::query_scalar(
         "SELECT coalesce(json_agg(json_build_object(
-            'id', c.id, 'body', c.body, 'author_id', c.author_id, 'author', u.login,
+            'id', c.id, 'body', CASE WHEN c.deleted_at IS NULL THEN c.body ELSE '[deleted]' END, 'deleted', c.deleted_at IS NOT NULL, 'author_id', c.author_id, 'author', u.login,
             'avatar_url', u.avatar_url, 'created_at', c.created_at, 'edited_at', c.edited_at, 'parent_id', c.parent_id, 'quote_id', c.quote_id
         ) ORDER BY c.id DESC), '[]'::json)
         FROM (SELECT * FROM addon_comments
-              WHERE addon_id=$1 AND id<$2 AND deleted_at IS NULL
+              WHERE addon_id=$1 AND id<$2
               ORDER BY id DESC LIMIT 31) c
         JOIN users u ON u.id=c.author_id"
     ).bind(addon.id).bind(before).fetch_one(&state.pool).await?;
