@@ -203,6 +203,8 @@ pub struct AddonPage {
     pub selected_issue: Option<InlineIssue>,
     pub can_manage_issues: bool,
     pub version_rows: Vec<(String, VersionRow)>,
+    pub versions_prev: Option<String>,
+    pub versions_next: Option<String>,
     pub user: Option<Visitor>,
     pub csrf: String,
     pub canonical: String,
@@ -245,6 +247,8 @@ pub struct VersionsPage {
     pub name: String,
     /// (download link, version)
     pub rows: Vec<(String, VersionRow)>,
+    pub prev: Option<String>,
+    pub next: Option<String>,
     /// What the visitor may edit; `None` shows no edit toolbar.
     pub perms: Option<Perms>,
 }
