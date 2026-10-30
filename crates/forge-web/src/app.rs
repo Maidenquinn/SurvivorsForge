@@ -90,6 +90,7 @@ pub fn router(state: AppState) -> Router {
         .route("/addons/{slug}/comments", get(crate::comments::list).post(crate::comments::create))
         .route("/addons/{slug}/comments/{id}/edit", post(crate::comments::edit))
         .route("/addons/{slug}/comments/{id}/delete", post(crate::comments::delete))
+        .route("/addons/{slug}/comments/{id}/report", post(crate::comments::report))
         .route("/addons/{slug}/issues", get(crate::issues::list).post(crate::issues::create))
         .route("/addons/{slug}/issues/{id}", get(crate::issues::show))
         .route("/addons/{slug}/issues/{id}/comments", post(crate::issues::comment))
