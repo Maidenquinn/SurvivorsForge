@@ -18,7 +18,7 @@
     {% for comment in comments %}
     <article class="issue-message threaded-comment" data-inline-editor data-comment-id="{{ comment.id }}" data-parent-id="{% if let Some(parent) = comment.parent_id %}{{ parent }}{% endif %}" id="comment-{{ comment.id }}">
       <header class="issue-message-head">
-        {% if !comment.avatar.is_empty() %}<img class="issue-avatar" src="{{ comment.avatar }}" alt="" width="32" height="32">{% endif %}
+        {% if !comment.avatar.is_empty() %}<img class="issue-avatar" src="{{ comment.avatar }}" alt="" width="32" height="32" loading="lazy" decoding="async">{% endif %}
         <strong>{{ comment.author }}</strong><span class="muted"><time datetime="{{ comment.created_iso }}" title="{{ comment.created_iso }}">{{ comment.created }}</time>{% if comment.edited %} · <time datetime="{{ comment.edited_iso }}" title="{{ comment.edited_iso }}"><span data-i18n="edited">edited</span></time>{% endif %}</span>
         <span class="issue-action-spacer"></span>
         {% if comment.can_edit %}<button type="button" class="issue-action" data-edit-toggle data-i18n="edit">Edit</button>{% endif %}
