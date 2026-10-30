@@ -69,7 +69,7 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser,
         return Err(ApiError::new(StatusCode::TOO_MANY_REQUESTS, "comment_limit", "Daily comment limit reached"));
     }
     if let Some(parent) = body.parent_id {
-        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM addon_comments WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL)")
+        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM addon_comments WHERE id=$1 AND addon_id=$2)")
             .bind(parent).bind(addon.id).fetch_one(&mut *tx).await?;
         if !exists { return Err(ApiError::not_found()); }
     }
