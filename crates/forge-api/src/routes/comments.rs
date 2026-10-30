@@ -10,7 +10,9 @@ use serde_json::{json, Value};
 #[derive(Deserialize)]
 pub struct Page { pub before: Option<i64> }
 #[derive(Deserialize)]
-pub struct Body { pub body: String }
+pub struct Body { pub body: String, pub parent_id: Option<i64>, pub quote_id: Option<i64> }
+#[derive(Deserialize)]
+pub struct ReportBody { pub reason: String, #[serde(default)] pub details: String }
 
 fn invalid() -> ApiError {
     ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "invalid_comment", "Comment must contain 1-10000 characters")
@@ -37,7 +39,7 @@ pub async fn list(State(state): State<AppState>, Path(slug): Path<String>, Query
     let comments: Value = sqlx::query_scalar(
         "SELECT coalesce(json_agg(json_build_object(
             'id', c.id, 'body', c.body, 'author_id', c.author_id, 'author', u.login,
-            'avatar_url', u.avatar_url, 'created_at', c.created_at, 'edited_at', c.edited_at
+            'avatar_url', u.avatar_url, 'created_at', c.created_at, 'edited_at', c.edited_at, 'parent_id', c.parent_id, 'quote_id', c.quote_id
         ) ORDER BY c.id DESC), '[]'::json)
         FROM (SELECT * FROM addon_comments
               WHERE addon_id=$1 AND id<$2 AND deleted_at IS NULL
@@ -66,9 +68,19 @@ pub async fn create(State(state): State<AppState>, user: CurrentUser,
     if recent >= 100 {
         return Err(ApiError::new(StatusCode::TOO_MANY_REQUESTS, "comment_limit", "Daily comment limit reached"));
     }
+    if let Some(parent) = body.parent_id {
+        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM addon_comments WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL)")
+            .bind(parent).bind(addon.id).fetch_one(&mut *tx).await?;
+        if !exists { return Err(ApiError::not_found()); }
+    }
+    if let Some(quote) = body.quote_id {
+        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM addon_comments WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL)")
+            .bind(quote).bind(addon.id).fetch_one(&mut *tx).await?;
+        if !exists { return Err(ApiError::not_found()); }
+    }
     let id: i64 = sqlx::query_scalar(
-        "INSERT INTO addon_comments(addon_id,author_id,body,created_at) VALUES($1,$2,$3,$4) RETURNING id"
-    ).bind(addon.id).bind(user.id).bind(body.body.trim()).bind(now).fetch_one(&mut *tx).await?;
+        "INSERT INTO addon_comments(addon_id,author_id,body,created_at,parent_id,quote_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING id"
+    ).bind(addon.id).bind(user.id).bind(body.body.trim()).bind(now).bind(body.parent_id).bind(body.quote_id).fetch_one(&mut *tx).await?;
     tx.commit().await?;
     Ok((StatusCode::CREATED, Json(json!({"id":id}))))
 }
@@ -105,6 +117,33 @@ pub async fn remove(State(state): State<AppState>, user: CurrentUser,
         .bind(id).bind(addon.id).bind((state.clock)()).bind(user.id).execute(&state.pool).await?;
     if removed.rows_affected() == 0 { return Err(ApiError::not_found()); }
     Ok(Json(json!({"id":id,"deleted":true})))
+}
+
+
+pub async fn report(State(state): State<AppState>, user: CurrentUser,
+    Path((slug,id)): Path<(String,i64)>, Json(body): Json<ReportBody>) -> ApiResult<(StatusCode, Json<Value>)> {
+    if !matches!(body.reason.as_str(), "spam"|"harassment"|"hate"|"unsafe"|"other")
+        || body.details.chars().count() > 2000 {
+        return Err(ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "invalid_report", "Invalid report reason or details"));
+    }
+    let addon = load_addon(&state.pool, &slug).await?;
+    not_blocked(&addon)?;
+    let author: Option<i64> = sqlx::query_scalar(
+        "SELECT author_id FROM addon_comments WHERE id=$1 AND addon_id=$2 AND deleted_at IS NULL"
+    ).bind(id).bind(addon.id).fetch_optional(&state.pool).await?;
+    let author = author.ok_or_else(ApiError::not_found)?;
+    if author == user.id {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "own_comment", "Cannot report your own comment"));
+    }
+    let inserted: Option<i64> = sqlx::query_scalar(
+        "INSERT INTO addon_comment_reports(comment_id,reporter_id,reason,details)
+         VALUES($1,$2,$3,$4) ON CONFLICT(comment_id,reporter_id) DO NOTHING RETURNING id"
+    ).bind(id).bind(user.id).bind(&body.reason).bind(body.details.trim())
+        .fetch_optional(&state.pool).await?;
+    if inserted.is_none() {
+        return Err(ApiError::new(StatusCode::CONFLICT, "already_reported", "You already reported this comment"));
+    }
+    Ok((StatusCode::CREATED, Json(json!({"reported":true}))))
 }
 
 #[cfg(test)]
