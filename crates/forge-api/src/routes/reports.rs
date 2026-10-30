@@ -129,3 +129,58 @@ pub async fn resolve(
     tx.commit().await?;
     Ok(StatusCode::NO_CONTENT)
 }
+
+
+#[derive(Deserialize)]
+pub struct CommentResolution {
+    status: String,
+    #[serde(default)]
+    note: String,
+}
+
+/// Private queue for comment reports; never expose reporter identities publicly.
+pub async fn comment_queue(State(state): State<AppState>, AdminUser(_): AdminUser) -> ApiResult<Json<Value>> {
+    let rows: Value = sqlx::query_scalar(
+        "SELECT coalesce(json_agg(json_build_object(
+          'id', r.id, 'comment_id', r.comment_id, 'addon', a.slug,
+          'author', author.login, 'comment', c.body, 'reason', r.reason,
+          'details', r.details, 'reporter', reporter.login, 'created_at', r.created_at
+        ) ORDER BY r.created_at, r.id), '[]'::json)
+        FROM addon_comment_reports r
+        JOIN addon_comments c ON c.id=r.comment_id
+        JOIN addons a ON a.id=c.addon_id
+        JOIN users reporter ON reporter.id=r.reporter_id
+        JOIN users author ON author.id=c.author_id
+        WHERE r.resolved_at IS NULL"
+    ).fetch_one(&state.pool).await?;
+    Ok(Json(rows))
+}
+
+/// Resolve a comment report; optionally remove the reported comment in the same transaction.
+pub async fn resolve_comment(
+    State(state): State<AppState>, AdminUser(admin): AdminUser,
+    Path(id): Path<i64>, Json(body): Json<CommentResolution>
+) -> ApiResult<StatusCode> {
+    if !matches!(body.status.as_str(), "dismissed" | "actioned") {
+        return Err(invalid("invalid_status", "status must be dismissed or actioned"));
+    }
+    let note = note_required(&body.note)?;
+    let now = (state.clock)();
+    let mut tx = state.pool.begin().await?;
+    let target: Option<i64> = sqlx::query_scalar(
+        "UPDATE addon_comment_reports SET resolved_at=$2, resolved_by=$3, resolution_note=$4
+         WHERE id=$1 AND resolved_at IS NULL RETURNING comment_id"
+    ).bind(id).bind(now).bind(admin.id).bind(note).fetch_optional(&mut *tx).await?;
+    let target = target.ok_or_else(ApiError::not_found)?;
+    if body.status == "actioned" {
+        sqlx::query("UPDATE addon_comments SET deleted_at=coalesce(deleted_at,$2), deleted_by=coalesce(deleted_by,$3) WHERE id=$1")
+            .bind(target).bind(now).bind(admin.id).execute(&mut *tx).await?;
+    }
+    audit::record(&mut tx, Entry {
+        admin_id: admin.id, action: "resolve_comment_report", target_type: "comment_report",
+        target_id: id.to_string(), note,
+        details: json!({"status": body.status, "comment_id": target}),
+    }, now).await?;
+    tx.commit().await?;
+    Ok(StatusCode::NO_CONTENT)
+}
