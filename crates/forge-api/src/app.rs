@@ -87,6 +87,8 @@ pub fn router(state: AppState) -> Router {
         )
         .route("/v1/reports", post(routes::reports::create))
         .route("/v1/admin/reports", get(routes::reports::queue))
+        .route("/v1/admin/comment-reports", get(routes::reports::comment_queue))
+        .route("/v1/admin/comment-reports/{id}/resolve", post(routes::reports::resolve_comment))
         .route("/v1/admin/reports/{id}/resolve", post(routes::reports::resolve))
         .route(
             "/v1/admin/addons/{slug}/block",
