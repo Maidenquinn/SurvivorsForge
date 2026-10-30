@@ -668,7 +668,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("click", function (event) {
     var button = event.target.closest("[data-comment-reply],[data-comment-quote]");
     if (!button) return;
-    var form = document.querySelector(".addon-comments .issue-reply");
+    var form = document.querySelector(".addon-comments form.issue-reply");
     if (!form) return;
     var id = button.dataset.commentReply || button.dataset.commentQuote;
     form.querySelector("#comment-parent-id").value = id;
@@ -682,7 +682,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   document.addEventListener("click", function (event) {
     if (!event.target.closest("#comment-clear-context")) return;
-    var form = document.querySelector(".addon-comments .issue-reply");
+    var form = document.querySelector(".addon-comments form.issue-reply");
     form.querySelector("#comment-parent-id").value = "";
     form.querySelector("#comment-quote-id").value = "";
     form.querySelector("#comment-context").hidden = true;
