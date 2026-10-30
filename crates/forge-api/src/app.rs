@@ -54,6 +54,7 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/addons/{slug}/issues/{id}/comments/{comment_id}", axum::routing::patch(routes::issues::edit_comment).delete(routes::issues::remove_comment))
         .route("/v1/addons/{slug}/issues/{id}/comments", post(routes::issues::comment))
         .route("/v1/addons/{slug}/versions", get(routes::versions::list))
+        .route("/v1/addons/{slug}/versions/page", get(routes::versions::paged))
         .route(
             "/v1/addons/{slug}/images",
             post(routes::images::upload).layer(axum::extract::DefaultBodyLimit::max(crate::images::MAX_UPLOAD + 64 * 1024)),
