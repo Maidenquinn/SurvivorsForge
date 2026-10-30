@@ -161,6 +161,7 @@ pub struct ClaimError {
     issues_before: Option<i64>,
     tab: Option<String>,
     issue: Option<i64>,
+    versions_page: Option<i64>,
 }
 
 pub async fn addon(
@@ -215,8 +216,15 @@ pub async fn addon(
         }).collect();
         (issues, next)
     } else { (Vec::new(), None) };
+    let versions_page = claim.versions_page.unwrap_or(1).clamp(1, 1_000_000);
+    let (versions_prev, versions_next, version_data) = if tab == "versions" {
+        let data = state.api.get(&format!("/v1/addons/{}/versions/page?page={versions_page}&per_page=20", seg(&slug)), None).await?;
+        let prev = (versions_page > 1).then(|| format!("/addons/{slug}?tab=versions&versions_page={}", versions_page - 1));
+        let next = (data["has_more"] == true).then(|| format!("/addons/{slug}?tab=versions&versions_page={}", versions_page + 1));
+        (prev, next, data)
+    } else { (None, None, Value::Null) };
     let version_rows = if tab == "versions" {
-        versions.as_array().into_iter().flatten().map(|v| {
+        version_data["versions"].as_array().into_iter().flatten().map(|v| {
             let row = version_row(v, verified_author);
             (download_href(&slug, &row), row)
         }).collect()
@@ -260,6 +268,8 @@ pub async fn addon(
         selected_issue,
         can_manage_issues,
         version_rows,
+        versions_prev,
+        versions_next,
         can_claim,
         install_url: state.install_url(),
         error: claim.error,
@@ -299,7 +309,10 @@ pub async fn addon(
     Ok(render(&page).into_response())
 }
 
-pub async fn versions(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(slug): Path<String>) -> WebResult<Html<String>> {
+#[derive(Deserialize)]
+pub struct VersionsQuery { page: Option<i64> }
+
+pub async fn versions(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Path(slug): Path<String>, Query(query): Query<VersionsQuery>) -> WebResult<Html<String>> {
     let visitor = visitor(&state, &jar).await?;
     let a = state.api.get(&format!("/v1/addons/{}", seg(&slug)), None).await?;
     if a["blocked"] == true {
@@ -311,11 +324,14 @@ pub async fn versions(State(state): State<AppState>, jar: PrivateCookieJar, Exte
         None => None,
     };
     let user = visitor.map(|(v, _)| v);
-    let list = state.api.get(&format!("/v1/addons/{}/versions", seg(&slug)), None).await?;
+    let page = query.page.unwrap_or(1).clamp(1, 1_000_000);
+    let list = state.api.get(&format!("/v1/addons/{}/versions/page?page={page}&per_page=20", seg(&slug)), None).await?;
     let verified_author = a["verified_author"] == true;
-    let rows = list.as_array().into_iter().flatten().map(|v| version_row(v, verified_author)).collect::<Vec<_>>();
+    let rows = list["versions"].as_array().into_iter().flatten().map(|v| version_row(v, verified_author)).collect::<Vec<_>>();
     let rows = rows.into_iter().map(|r| (download_href(&slug, &r), r)).collect();
-    Ok(render(&VersionsPage { user, csrf: csrf.0, slug, name: s(&a["name"]), rows, perms }))
+    let prev = (page > 1).then(|| format!("/addons/{slug}/versions?page={}", page - 1));
+    let next = (list["has_more"] == true).then(|| format!("/addons/{slug}/versions?page={}", page + 1));
+    Ok(render(&VersionsPage { user, csrf: csrf.0, slug, name: s(&a["name"]), rows, perms, prev, next }))
 }
 
 async fn version_data(state: &AppState, slug: &str, tag: &str) -> WebResult<(Value, VersionRow)> {
