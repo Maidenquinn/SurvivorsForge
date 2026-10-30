@@ -18,9 +18,11 @@ fn next_cursor(data: &[Value]) -> Option<i64> {
 #[derive(Deserialize)]
 pub struct Page { before: Option<i64> }
 #[derive(Deserialize)]
-pub struct Body { body: String }
+pub struct Body { body: String, #[serde(default)] parent_id: Option<i64>, #[serde(default)] quote_id: Option<i64> }
+#[derive(Deserialize)]
+pub struct ReportBody { reason: String, #[serde(default)] details: String }
 #[derive(Clone)]
-pub struct Comment { pub id: i64, pub author: String, pub avatar: String, pub body: String, pub created: String, pub created_iso: String, pub edited: bool, pub edited_iso: String, pub can_edit: bool, pub can_delete: bool }
+pub struct Comment { pub id: i64, pub author: String, pub avatar: String, pub body: String, pub created: String, pub created_iso: String, pub edited: bool, pub edited_iso: String, pub can_edit: bool, pub can_delete: bool, pub can_report: bool, pub parent_id: Option<i64>, pub quote_id: Option<i64> }
 #[derive(Template)]
 #[template(path="comments.html")]
 struct CommentsPage { user: Option<crate::templates::Visitor>, csrf: String, slug: String, name: String, comments: Vec<Comment>, next: Option<i64> }
@@ -38,7 +40,7 @@ pub async fn feed(state: &AppState, slug: &str, session: &Option<(crate::templat
         let author=strval(&c["author"]);
         let own=user.as_ref().is_some_and(|u|owns_comment(u.id, c["author_id"].as_i64()));
         Comment { id:c["id"].as_i64().unwrap_or_default(), author, avatar:strval(&c["avatar_url"]), body:strval(&c["body"]),
-            created:strval(&c["created_at"]).chars().take(10).collect(), created_iso:strval(&c["created_at"]), edited:c["edited_at"].is_string(), edited_iso:strval(&c["edited_at"]),can_edit:own || user.as_ref().is_some_and(|u|u.admin),can_delete:own || moderator }
+            created:strval(&c["created_at"]).chars().take(10).collect(), created_iso:strval(&c["created_at"]), edited:c["edited_at"].is_string(), edited_iso:strval(&c["edited_at"]),can_edit:own || user.as_ref().is_some_and(|u|u.admin),can_delete:own || moderator,can_report:user.is_some() && !own,parent_id:c["parent_id"].as_i64(),quote_id:c["quote_id"].as_i64() }
     }).collect();
     Ok((comments,next,moderator))
 }
@@ -54,13 +56,18 @@ pub async fn list(State(state): State<AppState>, jar: PrivateCookieJar, Extensio
 }
 pub async fn create(State(state): State<AppState>,jar:PrivateCookieJar,Path(slug):Path<String>,Form(body):Form<Body>)->WebResult<Redirect>{
     let (_,token)=visitor(&state,&jar).await?.ok_or(WebError::LoginRequired)?;
-    state.api.post(&format!("/v1/addons/{}/comments",seg(&slug)),Some(&token),&json!({"body":body.body})).await?;
+    state.api.post(&format!("/v1/addons/{}/comments",seg(&slug)),Some(&token),&json!({"body":body.body,"parent_id":body.parent_id,"quote_id":body.quote_id})).await?;
     Ok(Redirect::to(&format!("/addons/{}/comments",seg(&slug))))
 }
 pub async fn edit(State(state): State<AppState>,jar:PrivateCookieJar,Path((slug,id)):Path<(String,i64)>,Form(body):Form<Body>)->WebResult<Redirect>{
     let (_,token)=visitor(&state,&jar).await?.ok_or(WebError::LoginRequired)?;
     state.api.call(reqwest::Method::PATCH,&format!("/v1/addons/{}/comments/{id}",seg(&slug)),Some(&token),Some(&json!({"body":body.body}))).await?;
     Ok(Redirect::to(&format!("/addons/{}/comments",seg(&slug))))
+}
+pub async fn report(State(state): State<AppState>,jar:PrivateCookieJar,Path((slug,id)):Path<(String,i64)>,Form(body):Form<ReportBody>)->WebResult<Redirect>{
+    let (_,token)=visitor(&state,&jar).await?.ok_or(WebError::LoginRequired)?;
+    state.api.post(&format!("/v1/addons/{}/comments/{id}/reports",seg(&slug)),Some(&token),&json!({"reason":body.reason,"details":body.details})).await?;
+    Ok(Redirect::to(&format!("/addons/{}/comments#comment-{id}",seg(&slug))))
 }
 pub async fn delete(State(state): State<AppState>,jar:PrivateCookieJar,Path((slug,id)):Path<(String,i64)>)->WebResult<Redirect>{
     let (_,token)=visitor(&state,&jar).await?.ok_or(WebError::LoginRequired)?;
