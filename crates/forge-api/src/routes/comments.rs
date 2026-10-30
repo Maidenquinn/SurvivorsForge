@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 #[derive(Deserialize)]
 pub struct Page { pub before: Option<i64> }
 #[derive(Deserialize)]
-pub struct Body { pub body: String, pub parent_id: Option<i64>, pub quote_id: Option<i64> }
+pub struct Body { pub body: String, #[serde(default)] pub parent_id: Option<i64>, #[serde(default)] pub quote_id: Option<i64> }
 #[derive(Deserialize)]
 pub struct ReportBody { pub reason: String, #[serde(default)] pub details: String }
 
