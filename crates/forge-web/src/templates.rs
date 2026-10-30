@@ -199,6 +199,7 @@ pub struct AddonPage {
     pub comments_next: Option<i64>,
     pub comments_moderator: bool,
     pub issues: Vec<IssueItem>,
+    pub issues_next: Option<i64>,
     pub selected_issue: Option<InlineIssue>,
     pub can_manage_issues: bool,
     pub version_rows: Vec<(String, VersionRow)>,
