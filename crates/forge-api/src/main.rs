@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
-const USAGE: &str = "usage: forge-api <serve | worker | migrate | rescan --all | import-verified <file> | export-verified [file]>";
+const USAGE: &str = "usage: forge-api <serve | worker | worker-once | migrate | rescan --all | import-verified <file> | export-verified [file]>";
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -19,7 +19,7 @@ async fn main() -> ExitCode {
     if command == "healthcheck" {
         return healthcheck(std::env::args().nth(2).unwrap_or_default()).await;
     }
-    if !matches!(command.as_str(), "serve" | "worker" | "migrate" | "rescan" | "import-verified" | "export-verified") {
+    if !matches!(command.as_str(), "serve" | "worker" | "worker-once" | "migrate" | "rescan" | "import-verified" | "export-verified") {
         eprintln!("{USAGE}");
         return ExitCode::from(2);
     }
@@ -40,6 +40,7 @@ async fn main() -> ExitCode {
     let result = match command.as_str() {
         "migrate" => MIGRATOR.run(&pool).await.map_err(|e| e.to_string()),
         "worker" => work(config, pool).await,
+        "worker-once" => work_once(config, pool).await,
         "rescan" if std::env::args().nth(2).as_deref() == Some("--all") => match build_state(config, pool) {
             Ok(state) => forge_api::scan_job::rescan_outdated(&state)
                 .await
@@ -98,6 +99,16 @@ async fn registry_file(command: &str, config: Config, pool: sqlx::PgPool) -> Res
     Ok(())
 }
 
+async fn work_once(config: Config, pool: sqlx::PgPool) -> Result<(), String> {
+    let state = build_state(config, pool.clone())?;
+    let worked = worker::platform(state)
+        .run_once(&pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    println!("worker-once: {}", if worked { "job processed" } else { "queue empty" });
+    Ok(())
+}
 async fn work(config: Config, pool: sqlx::PgPool) -> Result<(), String> {
     let state = build_state(config, pool.clone())?;
     let shutdown = CancellationToken::new();
