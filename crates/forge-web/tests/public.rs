@@ -45,6 +45,7 @@ async fn with_addon(trust: &str, source: &str) -> TestWeb {
     let web = TestWeb::new().await;
     mock(&web, "/v1/addons/lucky", addon(trust)).await;
     mock(&web, "/v1/addons/lucky/versions", versions(trust, source)).await;
+    mock(&web, "/v1/addons/lucky/versions/page", json!({ "versions": versions(trust, source), "total": 2, "page": 1, "per_page": 20 })).await;
     mock(&web, "/v1/addons/lucky/versions/v1/findings", findings()).await;
     web
 }
