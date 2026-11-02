@@ -929,7 +929,7 @@ async fn every_version_shows_its_downloads() {
     let mut list = versions("scanned", "available");
     list[0]["downloads"] = json!(12345);
     list[1]["downloads"] = json!(0);
-    mock(&web, "/v1/addons/lucky/versions", list).await;
+    mock(&web, "/v1/addons/lucky/versions/page", json!({"versions": list, "total": 2, "page": 1, "per_page": 20})).await;
     let page = web.get("/addons/lucky/versions").await;
     assert!(page.body.contains("<th>Downloads</th>"), "{}", page.body);
     assert!(page.body.contains("<td>12,345</td>") && page.body.contains("<td>0</td>"), "a version nobody downloaded says 0: {}", page.body);
@@ -938,7 +938,7 @@ async fn every_version_shows_its_downloads() {
     tag_addon["source_type"] = json!("tag");
     let mut web = TestWeb::new().await;
     mock(&web, "/v1/addons/lucky", tag_addon).await;
-    mock(&web, "/v1/addons/lucky/versions", versions("scanned", "available")).await;
+    mock(&web, "/v1/addons/lucky/versions/page", json!({"versions": versions("scanned", "available"), "total": 2, "page": 1, "per_page": 20})).await;
     let page = web.get("/addons/lucky/versions").await;
     assert!(page.body.contains("not counted"), "GitHub counts no source zips: {}", page.body);
 }
