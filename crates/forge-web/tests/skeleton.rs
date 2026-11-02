@@ -317,3 +317,18 @@ async fn the_nav_link_of_the_current_section_is_marked() {
     let top = top.split("</header>").next().unwrap();
     assert!(!top.contains("aria-current"), "no section is current on other pages: {top}");
 }
+
+#[tokio::test]
+async fn the_language_selector_is_on_every_page() {
+    let mut web = TestWeb::new().await;
+    let page = web.get("/").await;
+    assert_eq!(page.status, StatusCode::OK, "{}", page.body);
+    assert!(page.body.contains(r#"src="/static/i18n.js?"#), "{}", page.body);
+    let script = web.get("/static/i18n.js").await;
+    assert_eq!(script.status, StatusCode::OK);
+    assert!(script.body.contains("ForgeI18n"), "{}", script.body);
+    assert!(page.body.contains(r#"id="forge-locale""#), "{}", page.body);
+    assert!(page.body.contains(r#"<option value="fr">Français</option>"#), "{}", page.body);
+    assert!(page.body.contains(r#"<a href="/docs">Documentation</a>"#), "the v0.5.3 docs link stays: {}", page.body);
+    assert!(page.body.contains(r#"<a href="/stats">Statistics</a>"#), "{}", page.body);
+}

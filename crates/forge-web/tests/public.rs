@@ -9,6 +9,17 @@ use wiremock::{Mock, ResponseTemplate};
 const ASSET: &str = "https://github.com/alice/lucky/releases/download/v1/lucky-v1.zip";
 
 async fn mock(web: &TestWeb, route: &str, body: Value) {
+    if route == "/v1/addons/lucky/versions" {
+        let count = body.as_array().map_or(0, |rows| rows.len());
+        let paged = json!({
+            "versions": body.clone(), "total": count,
+            "page": 1, "per_page": 20, "has_more": false
+        });
+        Mock::given(method("GET"))
+            .and(path("/v1/addons/lucky/versions/page"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged))
+            .mount(&web.api).await;
+    }
     Mock::given(method("GET")).and(path(route)).respond_with(ResponseTemplate::new(200).set_body_json(body)).mount(&web.api).await;
 }
 
@@ -208,6 +219,26 @@ async fn risky_download_needs_confirmation() {
 
     let mut blocked = with_addon("blocked", "available").await;
     assert_eq!(blocked.get("/addons/lucky/versions/v1/download").await.status, StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn version_pages_use_the_numbered_pager() {
+    let mut web = TestWeb::new().await;
+    mock(&web, "/v1/addons/lucky", addon("scanned")).await;
+    let row = json!({ "id": 2, "tag": "v9", "name": "Nine", "prerelease": false, "published_at": "2026-05-01T10:00:00Z", "asset_url": ASSET,
+        "sha256": "ab".repeat(32), "trust": "scanned", "source": "available", "deleted_on_github": false,
+        "findings": { "critical": 0, "warn": 0, "info": 0 }, "game_min": "0.69.0", "game_max": null });
+    Mock::given(method("GET")).and(path("/v1/addons/lucky/versions/page")).and(query_param("page", "2"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "versions": [row], "total": 45, "page": 2, "per_page": 20, "has_more": true
+        })))
+        .mount(&web.api).await;
+    let page = web.get("/addons/lucky/versions?page=2").await;
+    assert_eq!(page.status, StatusCode::OK, "{}", page.body);
+    assert!(page.body.contains("21–40 of 45 versions"), "{}", page.body);
+    assert!(page.body.contains("href=\"/addons/lucky/versions?page=1\""), "{}", page.body);
+    assert!(page.body.contains("href=\"/addons/lucky/versions?page=3\""), "{}", page.body);
+    assert!(page.body.contains("aria-current=\"page\">2<"), "{}", page.body);
 }
 
 #[tokio::test]

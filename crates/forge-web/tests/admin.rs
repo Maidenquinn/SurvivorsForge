@@ -643,6 +643,26 @@ async fn parts_are_pages_of_their_own() {
 }
 
 #[tokio::test]
+async fn comment_reports_are_an_admin_page() {
+    let mut admin = as_admin().await;
+    for route in ["/v1/admin/review-queue", "/v1/admin/reports", "/v1/admin/verification-requests", "/v1/admin/comment-reports"] {
+        get_json(&admin, route, json!([])).await;
+    }
+    let page = admin.get("/admin").await;
+    assert!(page.body.contains(r#"href="/admin/comment-reports""#), "{}", page.body);
+    assert_eq!(admin.get("/admin/comment-reports").await.status, StatusCode::OK);
+
+    let mut moderator = TestWeb::new().await;
+    moderator.login_as("tok", me("mod", "moderator")).await;
+    for route in ["/v1/admin/review-queue", "/v1/admin/reports", "/v1/admin/verification-requests"] {
+        get_json(&moderator, route, json!([])).await;
+    }
+    let home = moderator.get("/admin").await;
+    assert!(!home.body.contains("/admin/comment-reports"), "{}", home.body);
+    assert_eq!(moderator.get("/admin/comment-reports").await.status, StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
 async fn verification_requests_are_listed_and_decided() {
     let mut web = as_admin().await;
     let link = "https://discord.com/channels/1557821819032051852/1564402358094405744/1570000000000000000";

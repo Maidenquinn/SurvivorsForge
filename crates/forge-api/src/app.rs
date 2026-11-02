@@ -51,7 +51,16 @@ pub fn router(state: AppState) -> Router {
             "/v1/addons/{slug}",
             get(routes::addons::show).patch(routes::addons::update).delete(routes::addons::delete),
         )
+        .route("/v1/addons/{slug}/comments", get(routes::comments::list).post(routes::comments::create))
+        .route("/v1/addons/{slug}/comments/{id}", axum::routing::patch(routes::comments::edit).delete(routes::comments::remove))
+        .route("/v1/addons/{slug}/comments/{id}/reports", post(routes::comments::report))
+        .route("/v1/addons/{slug}/issues", get(routes::issues::list).post(routes::issues::create))
+        .route("/v1/addons/{slug}/issues/{id}", get(routes::issues::show).patch(routes::issues::set_status).delete(routes::issues::remove))
+        .route("/v1/addons/{slug}/issues/{id}/edit", axum::routing::patch(routes::issues::edit))
+        .route("/v1/addons/{slug}/issues/{id}/comments", post(routes::issues::comment))
+        .route("/v1/addons/{slug}/issues/{id}/comments/{comment_id}", axum::routing::patch(routes::issues::edit_comment).delete(routes::issues::remove_comment))
         .route("/v1/addons/{slug}/versions", get(routes::versions::list))
+        .route("/v1/addons/{slug}/versions/page", get(routes::versions::paged))
         .route("/v1/addons/{slug}/downloads", post(routes::versions::count_download))
         .route(
             "/v1/addons/{slug}/images",
@@ -94,6 +103,8 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/admin/verification-requests/{id}/approve", post(routes::verification_requests::approve))
         .route("/v1/admin/verification-requests/{id}/reject", post(routes::verification_requests::reject))
         .route("/v1/admin/reports/{id}/resolve", post(routes::reports::resolve))
+        .route("/v1/admin/comment-reports", get(routes::reports::comment_queue))
+        .route("/v1/admin/comment-reports/{id}/resolve", post(routes::reports::resolve_comment))
         .route(
             "/v1/admin/addons/{slug}/block",
             post(routes::admin_moderation::block_addon).delete(routes::admin_moderation::unblock_addon),

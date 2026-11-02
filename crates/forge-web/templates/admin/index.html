@@ -10,6 +10,7 @@
 <div class="grid">
   <a class="panel tile" href="/admin/review"><strong>{{ queue }}</strong> version{% if queue != 1 %}s{% endif %} to review</a>
   <a class="panel tile" href="/admin/reports"><strong>{{ reports }}</strong> open report{% if reports != 1 %}s{% endif %}</a>
+  {% if comment_reports %}<a class="panel tile" href="/admin/comment-reports"><span data-i18n="admin_comment_reports">Comment reports</span></a>{% endif %}
   <a class="panel tile" href="/admin/verification-requests"><strong>{{ verifications }}</strong> verification request{% if verifications != 1 %}s{% endif %}</a>
   <a class="panel tile" href="/admin/users">Users and bans</a>
   <a class="panel tile" href="/packs?all=1">All packs, also unlisted</a>

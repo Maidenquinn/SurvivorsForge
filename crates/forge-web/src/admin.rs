@@ -6,7 +6,7 @@ use crate::app::{AppState, visitor};
 use crate::csrf::CsrfToken;
 use crate::error::{WebError, WebResult};
 use crate::templates::{
-    AdminAddAddonPage, AdminAddonPage, AdminAuditPage, AdminIndexPage, AdminListPage, AdminReportsPage, AdminReviewPage, AdminUsersPage, Permission, Visitor, render,
+    AdminAddAddonPage, AdminAddonPage, AdminAuditPage, AdminIndexPage, AdminListPage, AdminReportsPage, AdminReviewPage, AdminCommentReportsPage, AdminUsersPage, Permission, Visitor, render,
 };
 use axum::Extension;
 use axum::extract::{Form, Path, Query, State};
@@ -94,6 +94,7 @@ pub async fn index(State(state): State<AppState>, jar: PrivateCookieJar, Extensi
     let queue = state.api.get("/v1/admin/review-queue", Some(&token)).await?;
     let reports = state.api.get("/v1/admin/reports", Some(&token)).await?;
     let verifications = state.api.get("/v1/admin/verification-requests", Some(&token)).await?;
+    let comment_reports = user.can(Permission::ManageRoles);
     Ok(render(&AdminIndexPage {
         stats: user.can(Permission::ViewAdminStats),
         grafana: user.can(Permission::ViewGrafana),
@@ -102,6 +103,7 @@ pub async fn index(State(state): State<AppState>, jar: PrivateCookieJar, Extensi
         queue: queue.as_array().map(Vec::len).unwrap_or(0),
         reports: reports.as_array().map(Vec::len).unwrap_or(0),
         verifications: verifications.as_array().map(Vec::len).unwrap_or(0),
+        comment_reports,
     }))
 }
 
@@ -293,6 +295,30 @@ pub async fn resolve_report(State(state): State<AppState>, jar: PrivateCookieJar
     let (_, token) = admin(&state, &jar).await?;
     let body = json!({ "status": form.status, "note": form.note });
     back("/admin/reports", state.api.post(&format!("/v1/admin/reports/{id}/resolve"), Some(&token), &body).await, "Report closed.")
+}
+
+pub async fn comment_reports(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Query(flash): Query<Flash>) -> WebResult<Html<String>> {
+    let (user, token) = admin(&state, &jar).await?;
+    // The API admits only admins (`manage_roles`); a moderator must not reach a 403 from the API.
+    if !user.can(Permission::ManageRoles) {
+        return Err(WebError::Forbidden);
+    }
+    let data = state.api.get("/v1/admin/comment-reports", Some(&token)).await?;
+    let rows = data.as_array().into_iter().flatten().map(|r| crate::templates::CommentReportRow {
+        id: r["id"].as_i64().unwrap_or_default(),
+        comment_id: r["comment_id"].as_i64().unwrap_or_default(),
+        addon: s(&r["addon"]), author: s(&r["author"]), comment: s(&r["comment"]),
+        reason: s(&r["reason"]), details: s(&r["details"]), reporter: s(&r["reporter"]),
+        created: s(&r["created_at"]).chars().take(16).collect(),
+    }).collect();
+    Ok(render(&AdminCommentReportsPage {user:Some(user),csrf:csrf.0,rows,msg:flash.msg,error:flash.error}))
+}
+pub async fn resolve_comment_report(State(state): State<AppState>, jar: PrivateCookieJar, Path(id): Path<i64>, Form(form): Form<NoteForm>) -> WebResult<Response> {
+    let (user, token) = admin(&state,&jar).await?;
+    if !user.can(Permission::ManageRoles) {
+        return Err(WebError::Forbidden);
+    }
+    back("/admin/comment-reports",state.api.post(&format!("/v1/admin/comment-reports/{id}/resolve"),Some(&token),&json!({"status":form.status,"note":form.note})).await,"Comment report resolved.")
 }
 
 pub async fn users(State(state): State<AppState>, jar: PrivateCookieJar, Extension(csrf): Extension<CsrfToken>, Query(flash): Query<Flash>) -> WebResult<Html<String>> {

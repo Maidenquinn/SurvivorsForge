@@ -96,6 +96,18 @@ pub fn router(state: AppState) -> Router {
         .route("/creator-guide", get(moved_doc))
         .route("/addon-api", get(moved_doc))
         .route("/addons", get(crate::public::addons))
+                .route("/addons/{slug}/issues", get(crate::issues::list).post(crate::issues::create))
+        .route("/addons/{slug}/issues/{id}", get(crate::issues::show).post(crate::issues::comment))
+        .route("/addons/{slug}/issues/{id}/comments", post(crate::issues::comment))
+        .route("/addons/{slug}/issues/{id}/status", post(crate::issues::status))
+        .route("/addons/{slug}/issues/{id}/edit", post(crate::issues::edit))
+        .route("/addons/{slug}/issues/{id}/delete", post(crate::issues::delete))
+        .route("/addons/{slug}/issues/{id}/comments/{comment_id}/edit", post(crate::issues::edit_comment))
+        .route("/addons/{slug}/issues/{id}/comments/{comment_id}/delete", post(crate::issues::delete_comment))
+        .route("/addons/{slug}/comments", get(crate::comments::list).post(crate::comments::create))
+        .route("/addons/{slug}/comments/{id}/edit", post(crate::comments::edit))
+        .route("/addons/{slug}/comments/{id}/report", post(crate::comments::report))
+        .route("/addons/{slug}/comments/{id}/delete", post(crate::comments::delete))
         .route("/addons/{slug}", get(crate::public::addon))
         .route("/addons/{slug}/versions", get(crate::public::versions))
         .route("/addons/{slug}/versions/{tag}", get(crate::public::version))
@@ -149,6 +161,8 @@ pub fn router(state: AppState) -> Router {
         .route("/admin/versions/{id}/{action}", post(crate::admin::version_action))
         .route("/admin/reports", get(crate::admin::reports))
         .route("/admin/reports/{id}/resolve", post(crate::admin::resolve_report))
+        .route("/admin/comment-reports", get(crate::admin::comment_reports))
+        .route("/admin/comment-reports/{id}/resolve", post(crate::admin::resolve_comment_report))
         .route("/admin/verification-requests", get(crate::admin::verification_requests))
         .route("/admin/verification-requests/{id}/{action}", post(crate::admin::decide_verification))
         .route("/admin/users", get(crate::admin::users))
@@ -170,6 +184,7 @@ pub fn router(state: AppState) -> Router {
         .route("/logout", post(logout))
         .route("/static/htmx.min.js", get(|| async { asset("text/javascript", HTMX_JS) }))
         .route("/static/app.css", get(|| async { asset("text/css", APP_CSS) }))
+        .route("/static/i18n.js", get(|| async { asset("text/javascript", I18N_JS) }))
         .route("/static/view.js", get(|| async { asset("text/javascript", VIEW_JS) }))
         .route("/static/api-docs.js", get(|| async { asset("text/javascript", API_DOCS_JS) }))
         // The launcher's fonts (SIL OFL, licenses next to them in ui/fonts).
@@ -207,6 +222,7 @@ fn font(body: &'static [u8]) -> Response {
 
 const HTMX_JS: &str = include_str!("../static/htmx.min.js");
 const APP_CSS: &str = include_str!("../static/app.css");
+const I18N_JS: &str = include_str!("../static/i18n.js");
 const VIEW_JS: &str = include_str!("../static/view.js");
 const API_DOCS_JS: &str = include_str!("../static/api-docs.js");
 
@@ -230,7 +246,7 @@ pub fn in_section(section: &str) -> bool {
 /// deploy reaches browsers that still cache the old files.
 pub fn asset_version() -> &'static str {
     static VERSION: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
-        let hash = sha2::Sha256::new().chain_update(HTMX_JS).chain_update(APP_CSS).chain_update(VIEW_JS).chain_update(API_DOCS_JS).finalize();
+        let hash = sha2::Sha256::new().chain_update(HTMX_JS).chain_update(APP_CSS).chain_update(I18N_JS).chain_update(VIEW_JS).chain_update(API_DOCS_JS).finalize();
         hash[..6].iter().map(|b| format!("{b:02x}")).collect()
     });
     &VERSION

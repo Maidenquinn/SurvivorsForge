@@ -9,6 +9,7 @@ use serde_json::Value;
 /// The logged-in visitor as the API describes them (`/v1/me`).
 #[derive(Debug, Clone, Default)]
 pub struct Visitor {
+    pub id: i64,
     pub login: String,
     pub avatar_url: String,
     pub role: String,
@@ -22,6 +23,7 @@ impl Visitor {
     pub fn from_me(me: &Value) -> Visitor {
         let permissions: Vec<String> = me["permissions"].as_array().into_iter().flatten().filter_map(|p| p.as_str().map(str::to_string)).collect();
         Visitor {
+            id: me["id"].as_i64().unwrap_or_default(),
             login: me["login"].as_str().unwrap_or_default().to_string(),
             avatar_url: me["avatar_url"].as_str().unwrap_or_default().to_string(),
             role: me["role"].as_str().unwrap_or("user").to_string(),
@@ -296,6 +298,8 @@ pub struct VersionsPage {
     pub perms: Option<Perms>,
     /// GitHub counts the downloads (release files, not the source zips of tags).
     pub counted: bool,
+    /// Numbered pages, the same pager as `/addons`. Empty when there is no version.
+    pub pager: Option<Pager>,
 }
 
 #[derive(Template)]
@@ -552,6 +556,8 @@ pub struct AdminIndexPage {
     pub queue: usize,
     pub reports: usize,
     pub verifications: usize,
+    /// Admins only: the comment-report queue is not open to moderators.
+    pub comment_reports: bool,
     /// The viewer may open `/admin/stats` (`ADMIN_STATS_ROLES`).
     pub stats: bool,
     /// The viewer may open Grafana (admins).
@@ -670,6 +676,26 @@ pub struct AdminReviewAddonPage {
     pub error: Option<String>,
 }
 
+pub struct CommentReportRow {
+    pub id: i64,
+    pub comment_id: i64,
+    pub addon: String,
+    pub author: String,
+    pub comment: String,
+    pub reason: String,
+    pub details: String,
+    pub reporter: String,
+    pub created: String,
+}
+#[derive(Template)]
+#[template(path = "admin/comment_reports.html")]
+pub struct AdminCommentReportsPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub rows: Vec<CommentReportRow>,
+    pub msg: Option<String>,
+    pub error: Option<String>,
+}
 pub struct ReportRow {
     pub id: i64,
     pub target: String,
@@ -1069,6 +1095,48 @@ pub struct ReportDonePage {
     pub csrf: String,
     pub slug: String,
     pub name: String,
+}
+
+pub struct IssueItem {
+    pub id: i64,
+    pub title: String,
+    pub kind: String,
+    pub status: String,
+    pub author: String,
+}
+pub struct IssueComment {
+    pub id: i64,
+    pub can_edit: bool,
+    pub author: String,
+    pub body: String,
+}
+#[derive(Template)]
+#[template(path = "issues.html")]
+pub struct IssuesPage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub name: String,
+    pub issues: Vec<IssueItem>,
+    pub next: Option<i64>,
+}
+#[derive(Template)]
+#[template(path = "issue.html")]
+pub struct IssuePage {
+    pub user: Option<Visitor>,
+    pub csrf: String,
+    pub slug: String,
+    pub name: String,
+    pub id: i64,
+    pub title: String,
+    pub body: String,
+    pub kind: String,
+    pub status: String,
+    pub author: String,
+    pub comments: Vec<IssueComment>,
+    pub can_manage: bool,
+    pub can_edit_issue: bool,
+    pub can_delete_issue: bool,
 }
 
 /// The page navigation of a long list.
